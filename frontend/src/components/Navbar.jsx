@@ -105,9 +105,9 @@ const PRODUCTS_MEGA_DATA = [
     label: "Billing",
     icon: Receipt,
     items: [
-      { icon: Receipt, title: "Call Billing Software Basic", desc: "Essential telecom resource & cost management", href: "/services/call-billing-basic" },
-      { icon: Receipt, title: "Call Billing Software Standard", desc: "Advanced billing rules and departmental tracking", href: "/services/call-billing-standard" },
-      { icon: Receipt, title: "Call Billing Software Enterprise", desc: "Multi-site management with custom API integrations", href: "/services/call-billing-enterprise" }
+      { icon: Receipt, title: "Call Billing Software Basic", desc: "Essential telecom resource & cost management", href: "/billing/basic" },
+      { icon: Receipt, title: "Call Billing Software Standard", desc: "Advanced billing rules and departmental tracking", href: "/billing/standard" },
+      { icon: Receipt, title: "Call Billing Software Enterprise", desc: "Multi-site management with custom API integrations", href: "/billing/enterprise" }
     ]
   }
 ];
