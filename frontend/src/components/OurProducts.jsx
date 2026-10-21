@@ -8,37 +8,37 @@ const PRODUCTS = [
     key: "cloud-contact-center",
     title: "Contact Center Solution",
     tagline: "Get results with a powerful inbound, outbound and blended cloud contact center solution with full call disposition.",
-    heroImage: "https://images.unsplash.com/photo-1560264280-88b68371db39?auto=format&fit=crop&w=1920&q=80",
+    heroImage: "/contact-center.png",
   },
   {
     key: "voice-logger",
     title: "Callisto Voice Logger",
     tagline: "The ideal call recording solution — every conversation captured, compressed and searchable.",
-    heroImage: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1920&q=80",
+    heroImage: "/voice-logger.png",
   },
   {
     key: "call-billing",
     title: "Call Billing Software",
     tagline: "Take command of telecom resources and costs across every office, hotel and facility.",
-    heroImage: "https://images.unsplash.com/photo-1611125832047-1d7ad1e8e48f?auto=format&fit=crop&w=1920&q=80",
+    heroImage: "/call-billing.png",
   },
   {
     key: "screen-logger",
     title: "Screen Logger",
     tagline: "Next-generation multi-PC screen recording over the network — see what your customers experienced.",
-    heroImage: "https://images.unsplash.com/photo-1551739440-5dd934d3a94a?auto=format&fit=crop&w=1920&q=80",
+    heroImage: "/screen-logger.png",
   },
   {
     key: "voice-mail",
     title: "Cube Voice Mail",
     tagline: "Never miss a message — exchange, deliver and process voice messages automatically.",
-    heroImage: "https://images.unsplash.com/photo-1592890288564-76628a30a657?auto=format&fit=crop&w=1920&q=80",
+    heroImage: "/voice-mail.png",
   },
   {
     key: "voice-logger-insync",
     title: "Voice Logger InSync",
     tagline: "Centralise critical recording data from every location into one synchronised archive.",
-    heroImage: "https://images.unsplash.com/photo-1506399558188-acca6f8cbf41?auto=format&fit=crop&w=1920&q=80",
+    heroImage: "/voice-logger-insync.png",
   },
 ];
 

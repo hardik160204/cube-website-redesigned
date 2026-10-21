@@ -86,8 +86,8 @@ const PRODUCTS_MEGA_DATA = [
       { icon: MessageSquare, title: "Cube Voice Mail", desc: "Exchange and process voice messages instantly", href: "/services/voice-mail" },
       { icon: Radio, title: "IVRS (Interactive Voice Response System)", desc: "Custom IVR solutions built from scratch", href: "/services/ivrs" },
       { icon: Headphones, title: "Conference Bridge", desc: "Secure multi-party audio conferencing rooms", href: "/services/conference-bridge" },
-      { icon: GraduationCap, title: "Student Calling System", desc: "Secure calling solution for educational campuses", href: "/#contact" },
-      { icon: ShieldCheck, title: "Prison Calling System", desc: "Highly secure and managed inmate calling solutions", href: "/#contact" },
+      { icon: GraduationCap, title: "Student Calling System", desc: "Secure calling solution for educational campuses", href: "/student-calling" },
+      { icon: ShieldCheck, title: "Prison Calling System", desc: "Highly secure and managed inmate calling solutions", href: "/prison-calling" },
     ]
   },
   {

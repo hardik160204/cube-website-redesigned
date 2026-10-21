@@ -47,6 +47,8 @@ import AdvertisingIndustryPage from './pages/AdvertisingIndustryPage';
 import NGOIndustryPage from './pages/NGOIndustryPage';
 import ElectionIndustryPage from './pages/ElectionIndustryPage';
 import EducationIndustryPage from './pages/EducationIndustryPage';
+import PrisonCallingSystem from './pages/PrisonCallingSystem';
+import StudentCallingSystem from './pages/StudentCallingSystem';
 
 // --> IMPORT THE ROBOT MASCOT HERE <--
 import RobotMascot from "./components/RobotMascot"; 
@@ -148,6 +150,8 @@ function App() {
           <Route path="/industries/ngo" element={<NGOIndustryPage />} />
           <Route path="/industries/election" element={<ElectionIndustryPage />} />
           <Route path="/industries/education" element={<EducationIndustryPage />} />
+          <Route path="/prison-calling" element={<PrisonCallingSystem />} />
+          <Route path="/student-calling" element={<StudentCallingSystem />} />
           
           
           <Route path="*" element={<Navigate to="/" replace />} />
