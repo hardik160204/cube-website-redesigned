@@ -1,6 +1,8 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
+import { motion, MotionConfig } from "framer-motion";
+import { ease } from "./lib/motion";
 import Home from "./pages/Home";
 import AboutPage from "./pages/AboutPage";
 import ClientVoices from "./pages/ClientVoices";
@@ -97,10 +99,23 @@ const GlobalLayout = () => {
   );
 };
 
+// Fades each page in on route change. Opacity only: a transform here would
+// break every page's position:fixed Navbar. No exit animation, so navigation never waits.
+const PageFade = ({ children }) => {
+  const { pathname } = useLocation();
+  return (
+    <motion.div key={pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25, ease }}>
+      {children}
+    </motion.div>
+  );
+};
+
 function App() {
   return (
     <div className="App">
+      <MotionConfig reducedMotion="user">
       <BrowserRouter>
+        <PageFade>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<AboutPage />} />
@@ -162,14 +177,16 @@ function App() {
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        
+        </PageFade>
+
         {/* Render the forms conditionally based on the route */}
         <GlobalLayout />
 
         {/* --> THE ROBOT MASCOT IS PLACED HERE SO IT APPEARS GLOBALLY <-- */}
         <RobotMascot />
-        
+
       </BrowserRouter>
+      </MotionConfig>
       <Toaster position="bottom-right" richColors />
     </div>
   );

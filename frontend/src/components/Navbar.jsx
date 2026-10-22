@@ -207,31 +207,8 @@ const Navbar = ({ onBookDemo }) => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      
-      <style>
-        {`
-          @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-          }
-          .animate-marquee {
-            display: flex;
-            width: max-content;
-            animation: marquee 30s linear infinite;
-          }
-          .animate-marquee:hover {
-            animation-play-state: paused;
-          }
-          .marquee-group {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-            padding-right: 2rem;
-          }
-        `}
-      </style>
 
-      {/* Top utility bar */}
+      {/* Top utility bar (marquee styles live in App.css) */}
       <div className="bg-[#84081b] text-white text-xs sm:text-sm h-10 flex items-center overflow-hidden">
         <div className="animate-marquee">
           {[1, 2, 3, 4].map((index) => (

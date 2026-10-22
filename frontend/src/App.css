@@ -1,46 +1,22 @@
-/* Cube Software - light theme inspired by The Cloud Dial layout */
+/* Cube Software - navy shell + paper content */
 
-.font-heading {
-  font-family: "Archivo", "Inter", sans-serif;
-}
-
-.hero-bg {
-  background:
-    radial-gradient(ellipse 60% 50% at 85% 20%, rgba(30, 136, 229, 0.08), transparent),
-    linear-gradient(180deg, #f5f8fd 0%, #ffffff 100%);
-}
-
-/* Floating cards */
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-.animate-float {
-  animation: float 5s ease-in-out infinite;
-}
-.animate-float-delayed {
-  animation: float 5s ease-in-out 2.5s infinite;
-}
-
-/* Slow spinning dashed ring */
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.animate-spin-slow {
-  animation: spin-slow 30s linear infinite;
+/* Navy hero/CTA backdrop: brand-blue glow top-right, faint cyan bottom-left */
+.hero-glow {
+  background-image:
+    radial-gradient(60% 50% at 85% 0%, rgb(37 99 235 / 0.22), transparent),
+    radial-gradient(40% 40% at 0% 100%, rgb(34 211 238 / 0.10), transparent);
 }
 
 /* Entrance animations */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-up {
-  animation: fadeUp 0.7s ease-out both;
+  animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .animate-fade-up-delayed {
-  animation: fadeUp 0.7s ease-out 0.2s both;
+  animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
 }
 
 /* Marquee banners */
@@ -65,6 +41,38 @@
   animation-play-state: paused;
 }
 
-html {
-  scroll-behavior: smooth;
+/* Navbar top bar (maroon). Own keyframe name so it no longer overrides `marquee` above. */
+@keyframes marquee-half {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-half 30s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+.marquee-group {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding-right: 2rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .marquee-track,
+  .marquee-track-slow,
+  .animate-fade-up,
+  .animate-fade-up-delayed {
+    animation: none;
+  }
 }
