@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -22,27 +22,31 @@ code {
 }
 
 @layer base {
-    /* Paper zone (light reading sections). HEX in comments is the source of truth. */
+    /* Light (default): slate-50 page, white cards, slate-900 text. HEX in comments is the source of truth. */
     :root {
-        --background: 0 0% 100%; /* #FFFFFF */
-        --foreground: 220 55.1% 9.6%; /* #0B1426 */
-        --card: 0 0% 100%;
-        --card-foreground: 220 55.1% 9.6%;
+        --background: 210 40% 98%; /* #F8FAFC slate-50 */
+        --foreground: 222.2 47.4% 11.2%; /* #0F172A slate-900 */
+        --card: 0 0% 100%; /* #FFFFFF */
+        --card-foreground: 222.2 47.4% 11.2%;
         --popover: 0 0% 100%;
-        --popover-foreground: 220 55.1% 9.6%;
+        --popover-foreground: 222.2 47.4% 11.2%;
         --primary: 221 83.2% 53.3%; /* #2563EB */
         --primary-foreground: 0 0% 100%;
-        --secondary: 216 38.5% 97.5%; /* #F6F8FB */
-        --secondary-foreground: 220 55.1% 9.6%;
-        --muted: 216 38.5% 97.5%;
-        --muted-foreground: 215 19.3% 34.5%; /* #475569 */
+        --secondary: 210 40% 96.1%; /* #F1F5F9 slate-100 */
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215 19.3% 34.5%; /* #475569 slate-600, 7.2:1 on slate-50 */
         --accent: 220 78.9% 96.3%; /* #EEF3FD */
         --accent-foreground: 224 76.3% 48%; /* #1D4ED8 */
         --destructive: 0 72.2% 50.6%; /* #DC2626 */
         --destructive-foreground: 0 0% 100%;
-        --border: 215 27.3% 91.4%; /* #E3E8EF */
-        --input: 215 27.3% 91.4%;
+        --border: 214.3 31.8% 91.4%; /* #E2E8F0 slate-200 */
+        --input: 214.3 31.8% 91.4%;
         --ring: 221 83.2% 53.3%;
+        /* Glass: .8 keeps slate-600 text >= 4.5:1 even when the glass floats over a navy hero */
+        --glass-alpha: 0.8;
+        --glass-border: 15 23 42 / 0.08;
+        --glass-shadow: 0 1px 0 rgb(255 255 255 / 0.7) inset, 0 12px 40px -12px rgb(15 23 42 / 0.18);
         --chart-1: 12 76% 61%;
         --chart-2: 173 58% 39%;
         --chart-3: 197 37% 24%;
@@ -71,6 +75,10 @@ code {
         --border: 218 48.9% 26.1%; /* #223A63 */
         --input: 218 48.9% 26.1%;
         --ring: 188 85.7% 53.3%; /* #22D3EE */
+        /* .85, not lower: light text must stay >= 4.5:1 when navy glass sits over white sections */
+        --glass-alpha: 0.85;
+        --glass-border: 255 255 255 / 0.08;
+        --glass-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 24px 48px -12px rgb(0 0 0 / 0.5);
         --chart-1: 220 70% 50%;
         --chart-2: 160 60% 45%;
         --chart-3: 30 80% 55%;
@@ -101,15 +109,20 @@ code {
 }
 
 @layer components {
-    /* The one glass recipe: nav, mega menu, mobile drawer, popup, chat panel. */
+    /* The one glass recipe; its tint, edge and shadow follow the zone (light :root or .dark). */
     .glass {
-        background: hsl(var(--popover) / 0.72);
+        background: hsl(var(--popover) / var(--glass-alpha));
         -webkit-backdrop-filter: blur(16px) saturate(150%);
         backdrop-filter: blur(16px) saturate(150%);
-        border: 1px solid rgb(255 255 255 / 0.08);
-        box-shadow:
-            0 1px 0 rgb(255 255 255 / 0.04) inset,
-            0 24px 48px -12px rgb(0 0 0 / 0.5);
+        border: 1px solid rgb(var(--glass-border));
+        box-shadow: var(--glass-shadow);
+    }
+    /* Shows only a 1px ring of the element's background (used for the cursor-following card border). */
+    .spotlight-ring {
+        padding: 1px;
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     }
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
         .glass {

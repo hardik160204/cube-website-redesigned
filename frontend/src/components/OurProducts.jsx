@@ -1,7 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Button } from "./ui/button";
+import { ArrowRight } from "lucide-react";
+import { BentoGrid, BentoCard } from "./ui/bento";
+import { SectionLabel, SectionTitle } from "./HomeSections2";
+import { fadeUp, slideUp, stagger, inView } from "../lib/motion";
+
+const MotionBentoGrid = motion.create(BentoGrid);
+const MotionBentoCard = motion.create(BentoCard);
 
 const PRODUCTS = [
   {
@@ -42,62 +48,61 @@ const PRODUCTS = [
   },
 ];
 
+// Bento recipe for 6 products: [4 tall][2][2] / [2][2][2]. The flagship gets the big tile.
+const LAYOUT = [{ span: 4, tall: true }, { span: 2 }, { span: 2 }, { span: 2 }, { span: 2 }, { span: 2 }];
+
 export default function OurProducts() {
   return (
-    <section className="py-24 bg-white overflow-hidden border-t border-slate-200">
+    <section id="products" className="scroll-mt-28 py-24 lg:py-28 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="text-center mb-14"
-        >
-          <h2 className="font-heading font-black text-4xl sm:text-5xl tracking-tight text-slate-900">
-            Our Products
-          </h2>
+
+        <motion.div {...inView} variants={stagger} className="text-center max-w-2xl mx-auto mb-14">
+          <motion.div variants={fadeUp}><SectionLabel>Products</SectionLabel></motion.div>
+          <motion.div variants={fadeUp}><SectionTitle>Our Products</SectionTitle></motion.div>
+          <motion.p variants={fadeUp} className="mt-4 text-lg text-muted-foreground leading-relaxed">
+            Contact center, recording and billing software, built in-house for 35+ years.
+          </motion.p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {PRODUCTS.map((srv, i) => (
-            <motion.div
-              key={srv.key}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
-              className="bg-white rounded-[20px] border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5 flex flex-col justify-between group hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:-translate-y-2 transition-all duration-500 cursor-pointer"
-            >
-              <div>
-                <div className="w-full h-[200px] overflow-hidden rounded-xl mb-6 relative border border-slate-50">
-                  <img 
-                    src={srv.heroImage} 
-                    alt={srv.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  />
-                </div>
-                
-                <div className="flex flex-col items-center text-center px-2">
-                  <h3 className="font-heading font-bold text-xl text-slate-900 mb-3 transition-colors group-hover:text-[#1f638b]">
-                    {srv.title}
-                  </h3>
-                  <p className="text-sm text-slate-600 mb-6 line-clamp-3 leading-relaxed text-justify">
-                    {srv.tagline}
-                  </p>
-                </div>
-              </div>
+        <MotionBentoGrid {...inView} variants={stagger}>
+          {PRODUCTS.map((product, i) => {
+            const flagship = i === 0;
+            return (
+              <MotionBentoCard
+                key={product.key}
+                variants={slideUp}
+                {...LAYOUT[i]}
+                className={`rounded-3xl p-0 shadow-card transition-[translate,box-shadow,border-color] hover:shadow-elevated ${flagship ? "sm:col-span-2" : ""}`}
+              >
+                <Link
+                  to={`/services/${product.key}`}
+                  className="group flex h-full flex-col p-5 rounded-3xl focus-visible:-outline-offset-2"
+                >
+                  <div className={`overflow-hidden rounded-2xl ring-1 ring-slate-900/5 bg-secondary ${flagship ? "aspect-[16/9] lg:aspect-auto lg:flex-1 lg:min-h-[260px]" : "aspect-[16/9]"}`}>
+                    <img
+                      src={product.heroImage}
+                      alt=""
+                      className="h-full w-full object-cover transition-transform duration-500 ease-out-expo group-hover:scale-[1.03]"
+                    />
+                  </div>
 
-              <div className="w-full flex justify-center pt-2">
-                <Link to={`/services/${srv.key}`}>
-                  <Button className="bg-[#1f638b] hover:bg-[#13425e] text-white px-8 h-10 rounded-lg shadow-sm transition-colors font-medium">
-                    Learn More
-                  </Button>
+                  <div className={flagship ? "mt-6" : "mt-5"}>
+                    <h3 className={`font-heading font-semibold text-foreground ${flagship ? "text-2xl" : "text-lg"}`}>
+                      {product.title}
+                    </h3>
+                    <p className={`mt-2 text-muted-foreground leading-relaxed ${flagship ? "text-base max-w-xl" : "text-sm line-clamp-2"}`}>
+                      {product.tagline}
+                    </p>
+                    <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
+                      Learn more
+                      <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </span>
+                  </div>
                 </Link>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </MotionBentoCard>
+            );
+          })}
+        </MotionBentoGrid>
       </div>
     </section>
   );

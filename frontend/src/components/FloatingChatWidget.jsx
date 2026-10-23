@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { X, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ease } from "../lib/motion";
+
+const BUBBLE_CLASS = "bg-white/[0.06] border border-white/10 p-3 rounded-tr-xl rounded-bl-xl rounded-br-xl text-sm text-foreground/90 max-w-[90%]";
 
 const FAQS = [
   {
@@ -44,44 +47,43 @@ export default function FloatingChatWidget() {
       <AnimatePresence>
         {isChatOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95, originX: 1, originY: 1 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="bg-white w-80 sm:w-96 rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col origin-bottom-right"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.18, ease } }}
+            exit={{ opacity: 0, y: 8, transition: { duration: 0.12, ease } }}
+            className="dark glass bg-popover/95 w-80 sm:w-96 rounded-2xl overflow-hidden flex flex-col"
           >
             {/* Chat Header */}
-            <div className="bg-[#0A1F44] text-white p-4 flex items-center justify-between">
+            <div className="bg-white/[0.03] border-b border-white/10 text-foreground p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {selectedFaq && (
-                  <button onClick={() => setSelectedFaq(null)} className="hover:bg-white/20 p-1 rounded-md transition-colors">
+                  <button onClick={() => setSelectedFaq(null)} aria-label="Back to topics" className="hover:bg-white/10 p-1 rounded-md transition-colors">
                     <ChevronLeft size={20} />
                   </button>
                 )}
                 <div>
-                  <h3 className="font-bold text-sm">Cube Support</h3>
-                  <p className="text-[11px] text-blue-200">Typically replies instantly</p>
+                  <h3 className="font-semibold text-sm">Cube Support</h3>
+                  <p className="text-[11px] text-muted-foreground">Typically replies instantly</p>
                 </div>
               </div>
-              <button onClick={toggleChat} className="text-blue-200 hover:text-white transition-colors">
+              <button onClick={toggleChat} aria-label="Close chat" className="text-muted-foreground hover:text-foreground transition-colors rounded-md">
                 <X size={20} />
               </button>
             </div>
 
             {/* Chat Body */}
-            <div className="p-4 bg-slate-50 min-h-[300px] max-h-[450px] overflow-y-auto flex flex-col">
+            <div className="p-4 min-h-[300px] max-h-[450px] overflow-y-auto flex flex-col">
               {!selectedFaq ? (
                 <div className="space-y-4 flex-1">
-                  <div className="bg-white border border-slate-200 p-3 rounded-tr-xl rounded-bl-xl rounded-br-xl shadow-sm text-sm text-slate-700 max-w-[90%]">
+                  <div className={BUBBLE_CLASS}>
                     Hi there! 👋 Choose a topic below or reach out to our team directly.
                   </div>
-                  
+
                   <div className="flex flex-col gap-2 mt-4">
                     {FAQS.map((faq, index) => (
                       <button
                         key={index}
                         onClick={() => setSelectedFaq(faq)}
-                        className="text-left bg-white border border-blue-100 hover:border-blue-400 hover:bg-blue-50 text-blue-700 text-sm p-3 rounded-xl transition-colors shadow-sm"
+                        className="text-left bg-white/[0.03] border border-white/10 hover:border-primary/50 hover:bg-primary/10 text-blue-400 hover:text-foreground text-sm p-3 rounded-xl transition-colors"
                       >
                         {faq.question}
                       </button>
@@ -89,7 +91,7 @@ export default function FloatingChatWidget() {
                   </div>
 
                   {/* Integrated WhatsApp Button */}
-                  <div className="mt-6 pt-4 border-t border-slate-200">
+                  <div className="mt-6 pt-4 border-t border-white/10">
                     <button
                       onClick={handleWhatsAppClick}
                       className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold py-3 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
@@ -104,12 +106,12 @@ export default function FloatingChatWidget() {
               ) : (
                 <div className="space-y-4">
                   <div className="flex justify-end">
-                    <div className="bg-blue-600 text-white p-3 rounded-tl-xl rounded-bl-xl rounded-br-xl shadow-sm text-sm max-w-[90%]">
+                    <div className="bg-primary text-primary-foreground p-3 rounded-tl-xl rounded-bl-xl rounded-br-xl text-sm max-w-[90%]">
                       {selectedFaq.question}
                     </div>
                   </div>
                   <div className="flex justify-start">
-                    <div className="bg-white border border-slate-200 p-3 rounded-tr-xl rounded-bl-xl rounded-br-xl shadow-sm text-sm text-slate-700 max-w-[90%] leading-relaxed">
+                    <div className={`${BUBBLE_CLASS} leading-relaxed`}>
                       {selectedFaq.answer}
                     </div>
                   </div>

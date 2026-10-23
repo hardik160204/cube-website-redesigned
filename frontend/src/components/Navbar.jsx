@@ -1,33 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  Phone, ChevronDown, Menu, X, LogIn, ArrowRight, CheckCircle2, 
-  Bot, PhoneCall, Building, MessageSquare, Headset, BrainCircuit, 
-  ShieldCheck, AudioLines, PhoneOutgoing, Radio, Headphones, 
-  LayoutDashboard, Landmark, Activity, Megaphone, MonitorPlay,
+import { Link, useLocation } from "react-router-dom";
+import {
+  Phone, ChevronDown, Menu, X, LogIn, ArrowRight, CheckCircle2,
+  Bot, PhoneCall, Building, MessageSquare, Headset,
+  ShieldCheck, PhoneOutgoing, Radio, Headphones,
+  Landmark, Megaphone, MonitorPlay,
   Mic, Database, Receipt, Cloud, HeartPulse, TowerControl,
   Plane, Target, Heart, Flag, GraduationCap
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "./ui/button";
-
-// --- NAVIGATION DATA ---
-const MENU_ITEMS = [
-  { label: "Home", href: "#home" },
-  {
-    label: "Services", // <-- TRIGGERS SERVICES MEGA MENU
-    children: [], 
-  },
-  {
-    label: "Products", // <-- TRIGGERS PRODUCTS MEGA MENU
-    children: [],
-  },
-  { label: "About", href: "/about" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Industries", href: "#industries" },
-  { label: "FAQ", href: "#faq" },
-  { label: "Contact Us", href: "/contact" },
-];
+import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { MotionButton } from "./ui/button";
+import { MagneticLink } from "./ui/magnetic-link";
+import { ease, springHover } from "../lib/motion";
 
 // =========================================================================
 // MEGA MENU DATA: SERVICES
@@ -44,7 +28,7 @@ const SERVICES_MEGA_DATA = [
       { icon: Headphones, title: "Conference Bridge", desc: "Full-featured secure audio conferencing", href: "/services/conference-bridge" }
     ]
   },
-{
+  {
     id: "industry-solutions",
     label: "Industry Solutions",
     icon: Building,
@@ -112,6 +96,18 @@ const PRODUCTS_MEGA_DATA = [
   }
 ];
 
+const MEGA_MENUS = [
+  { label: "Services", data: SERVICES_MEGA_DATA, railTitle: "Solutions" },
+  { label: "Products", data: PRODUCTS_MEGA_DATA, railTitle: "Categories" },
+];
+
+const NAV_LINKS = [
+  { label: "Industries", href: "/#industries" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
+];
+
 const QUICK_LINKS = [
   { label: "Click to Call", href: "/services/click-to-call" },
   { label: "Omni-channel Solution", href: "/#contact" },
@@ -121,396 +117,335 @@ const CONTACT_INFO = {
   expertLine: "+91 806 869 4440",
 };
 
-const Navbar = ({ onBookDemo }) => {
-  // 'transparent' | 'glass' | 'solid'
-  const [navState, setNavState] = useState("transparent");
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [hoveredMenu, setHoveredMenu] = useState(null);
-  const [activeMegaTab, setActiveMegaTab] = useState(0); 
-  
-  const navigate = useNavigate();
-  const location = useLocation();
+// Route prefixes that light up each mega-menu trigger.
+const ACTIVE_PREFIXES = {
+  Services: ["/services/cloud-contact-center", "/services/auto-dialer", "/services/ivrs", "/industries/"],
+  Products: ["/services/voice-logger", "/services/call-billing", "/services/screen-logger", "/services/voice-mail", "/services/conference-bridge", "/services/voice-logger-insync", "/billing/"],
+};
 
-  useEffect(() => {
-    const onScroll = () => {
-      const scrollY = window.scrollY;
-      const isHome = location.pathname === "/";
 
-      // FORCE SOLID STATE FOR SPECIFIC PAGES (WHITE BACKGROUND, DARK TEXT)
-      if (location.pathname === "/contact" || location.pathname === "/careers" || location.pathname === "/career") {
-        setNavState("solid");
-        return;
-      }
+// Hover indicators are hit tens of times a session: fast and without bounce.
+const INDICATOR_SPRING = { type: "spring", duration: 0.25, bounce: 0 };
+// Apple-style spring from Emil Kowalski's tables for the one-time dock entrance.
+const ENTRANCE_SPRING = { type: "spring", duration: 0.5, bounce: 0.2 };
 
-      const vh = window.innerHeight;
-      // Keep glass over the entire hero video (85% of screen height) before snapping to solid white
-      const solidThreshold = isHome ? vh * 1.6 : vh * 0.85; 
-      
-      if (scrollY <= 20) {
-        setNavState("transparent");
-      } else if (scrollY > 20 && scrollY < solidThreshold) {
-        setNavState("glass");
-      } else {
-        setNavState("solid");
-      }
-    };
-    
-    window.addEventListener("scroll", onScroll);
-    onScroll(); 
-    
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [location.pathname]);
+// The dock drops in once per page load, not on every route change (each page mounts its own Navbar).
+let dockHasEntered = false;
 
-  const go = (href) => {
-    setMobileOpen(false);
-    setHoveredMenu(null);
-    if (!href) return; 
-    if (href.startsWith("/")) {
-      navigate(href);
-      return;
-    }
-    if (location.pathname === "/") {
-      const el = document.querySelector(href);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    } else {
-      navigate("/" + href);
-    }
-  };
+// Soft pill that glides between nav items via a shared layoutId.
+const NavHighlight = () => (
+  <motion.span
+    layoutId="nav-highlight"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0, transition: { duration: 0.12 } }}
+    transition={INDICATOR_SPRING}
+    className="absolute inset-0 rounded-full bg-foreground/[0.06]"
+  />
+);
 
-  const bookDemo = () => {
-    setMobileOpen(false);
-    if (onBookDemo && location.pathname === "/") onBookDemo();
-    else go("#contact");
-  };
+const itemText = (highlighted) =>
+  `relative flex items-center gap-1 transition-colors duration-150 ${highlighted ? "text-foreground" : "text-muted-foreground"}`;
 
-  const isActive = (link) => {
-    if (link.href === "/about") return location.pathname === "/about";
-    if (link.href === "/pricing") return location.pathname === "/pricing";
-    
-    // Exact path matching for active states
-    if (link.label === "Services") {
-      return ["/services/cloud-contact-center", "/services/auto-dialer", "/services/ivrs", "/industries/"].some(path => location.pathname.includes(path));
-    }
-    if (link.label === "Products") {
-      return ["/services/voice-logger", "/services/call-billing", "/services/screen-logger", "/services/voice-mail", "/services/conference-bridge", "/services/voice-logger-insync"].some(path => location.pathname.includes(path));
-    }
-    
-    if (link.href === "#home") return location.pathname === "/";
-    return false;
-  };
+// ---------------------------------------------------------------------------
+// Desktop mega menu: opens on hover or click/Enter, closes on mouse-out, Escape,
+// or focus leaving it. The panel is positioned against the pill (the nearest
+// positioned ancestor), so it stays centered under the whole dock.
+// ---------------------------------------------------------------------------
+const MegaMenu = ({ menu, isOpen, highlighted, onHover, onOpen, onClose }) => {
+  const [activeTab, setActiveTab] = useState(0);
+  const tab = menu.data[activeTab];
 
-  const getNavClasses = () => {
-    if (navState === "solid") return "bg-white/95 backdrop-blur-md shadow-md border-b border-slate-100";
-    if (navState === "glass") return "bg-[#0A1F44]/50 backdrop-blur-md border-b border-white/10 shadow-sm";
-    return "bg-transparent border-b-transparent";
+  const open = () => {
+    if (isOpen) return;
+    setActiveTab(0);
+    onOpen();
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
+    <div
+      onMouseEnter={() => {
+        onHover();
+        open();
+      }}
+      onMouseLeave={onClose}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key !== "Escape") return;
+        onClose();
+        e.currentTarget.querySelector("button")?.focus();
+      }}
+    >
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-haspopup="true"
+        onClick={open}
+        onFocus={onHover}
+        className="relative rounded-full px-3 py-2 text-sm font-medium"
+      >
+        <AnimatePresence>{highlighted && <NavHighlight />}</AnimatePresence>
+        <span className={itemText(highlighted)}>
+          {menu.label}
+          <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        </span>
+      </button>
 
-      {/* Top utility bar (marquee styles live in App.css) */}
-      <div className="bg-[#84081b] text-white text-xs sm:text-sm h-10 flex items-center overflow-hidden">
-        <div className="animate-marquee">
-          {[1, 2, 3, 4].map((index) => (
-            <span key={index} className="marquee-group">
-              <span className="font-semibold tracking-wide whitespace-nowrap">Voice Without Limits.</span>
-              <span className="text-yellow-400 text-lg leading-none">•</span>
-              <span className="font-semibold tracking-wide whitespace-nowrap">Connect More. Pay Less.</span>
-              <span className="text-yellow-400 text-lg leading-none">•</span>
-              <span className="font-semibold tracking-wide whitespace-nowrap">35+ Years of Telephony Excellence</span>
-              <span className="text-yellow-400 text-lg leading-none">•</span>
-              <span className="font-semibold tracking-wide whitespace-nowrap">Enterprise Features. Small Business Pricing.</span>
-              <span className="text-yellow-400 text-lg leading-none">•</span>
-            </span>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            // Scales from the dock it hangs off; exits faster than it enters.
+            style={{ transformOrigin: "top center" }}
+            initial={{ opacity: 0, transform: "translateY(-4px) scale(0.97)" }}
+            animate={{ opacity: 1, transform: "translateY(0px) scale(1)", transition: { duration: 0.2, ease } }}
+            exit={{ opacity: 0, transform: "translateY(-4px) scale(0.97)", transition: { duration: 0.12, ease } }}
+            // pt-3 bridges the gap under the pill so the pointer can travel into the panel
+            className="absolute inset-x-0 top-full mx-auto w-full max-w-[920px] pt-3"
+          >
+            <div className="glass bg-popover/95 overflow-hidden rounded-3xl">
+              <div className="flex h-[400px]">
+                <div className="flex w-[260px] flex-col gap-1 overflow-y-auto border-r border-border/70 bg-secondary/60 p-3">
+                  <div className="px-3 pb-2 pt-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {menu.railTitle}
+                  </div>
+                  {menu.data.map((item, index) => {
+                    const selected = index === activeTab;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onMouseEnter={() => setActiveTab(index)}
+                        onFocus={() => setActiveTab(index)}
+                        className="relative w-full rounded-2xl px-3.5 py-3 text-sm"
+                      >
+                        {/* Selected card slides between categories instead of blinking */}
+                        {selected && (
+                          <motion.span
+                            layoutId={`rail-${menu.label}`}
+                            transition={INDICATOR_SPRING}
+                            className="absolute inset-0 rounded-2xl bg-card shadow-card"
+                          />
+                        )}
+                        <span
+                          className={`relative flex items-center justify-between transition-colors duration-150 ${
+                            selected ? "font-semibold text-foreground" : "font-medium text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <span className="flex items-center gap-3">
+                            <item.icon size={17} className={selected ? "text-primary" : "text-muted-foreground"} />
+                            {item.label}
+                          </span>
+                          {selected && <ArrowRight size={15} className="text-primary" />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-7">
+                  <h3 className="mb-5 font-heading text-lg font-semibold text-foreground">{tab.label}</h3>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                    {tab.items.map((item) => (
+                      <Link key={item.title} to={item.href} onClick={onClose} className="group flex items-start gap-3.5 rounded-2xl">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground ring-1 ring-inset ring-primary/10 transition-colors duration-200 group-hover:bg-primary group-hover:text-white">
+                          <item.icon size={18} />
+                        </span>
+                        <span>
+                          <span className="block text-sm font-semibold text-foreground transition-colors group-hover:text-primary">{item.title}</span>
+                          <span className="mt-0.5 block text-[13px] leading-snug text-muted-foreground">{item.desc}</span>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6 border-t border-border/70 bg-secondary/60 px-7 py-4">
+                {QUICK_LINKS.map((q) => (
+                  <Link key={q.label} to={q.href} onClick={onClose} className="flex items-center gap-2 rounded-md text-[13px] font-semibold text-muted-foreground transition-colors hover:text-foreground">
+                    <CheckCircle2 size={14} className="text-primary" />
+                    {q.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Mobile sheet: drops below the pill with every link flattened.
+// ---------------------------------------------------------------------------
+const MobileSheet = ({ onClose }) => (
+  <motion.div
+    style={{ transformOrigin: "top center" }}
+    initial={{ opacity: 0, transform: "translateY(-6px) scale(0.98)" }}
+    animate={{ opacity: 1, transform: "translateY(0px) scale(1)", transition: { duration: 0.2, ease } }}
+    exit={{ opacity: 0, transform: "translateY(-6px) scale(0.98)", transition: { duration: 0.12, ease } }}
+    className="absolute inset-x-0 top-full mt-3 lg:hidden"
+  >
+    <div className="glass bg-popover/95 max-h-[75vh] overflow-y-auto rounded-3xl p-3">
+      {MEGA_MENUS.map((menu) => (
+        <div key={menu.label} className="mb-2">
+          <div className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-primary">{menu.label}</div>
+          {menu.data.map((group) => (
+            <div key={group.id} className="mt-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-foreground">
+                <group.icon size={15} className="text-primary" /> {group.label}
+              </div>
+              <div className="ml-4 border-l border-border pl-2">
+                {group.items.map((item) => (
+                  <Link key={item.title} to={item.href} onClick={onClose} className="block rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground">
+                    {item.title}
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
-      </div>
+      ))}
 
-      {/* Main nav */}
-      <nav className={`transition-all duration-500 ease-in-out ${getNavClasses()}`}>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 flex items-center justify-between h-20">
-          
-          {/* LOGO */}
-          <span onClick={() => go("/")} className="cursor-pointer shrink-0 flex items-center group mr-2 xl:mr-4">
-            <img 
-              // Uses 75 for dark text (solid state), 77 for white text (glass/transparent state)
-              src={navState === "solid" ? "/logo75.png" : "/logo-77.png"} 
-              alt="Cube Software Logo" 
-              className="h-10 sm:h-12 w-auto object-contain transition-all duration-300 group-hover:scale-105"
+      <div className="my-2 h-px bg-border" />
+
+      {NAV_LINKS.map((link) => (
+        <Link key={link.label} to={link.href} onClick={onClose} className="block rounded-xl px-3 py-2.5 text-[15px] font-medium text-foreground transition-colors hover:bg-foreground/[0.04]">
+          {link.label}
+        </Link>
+      ))}
+
+      <div className="my-2 h-px bg-border" />
+
+      <a href={`tel:${CONTACT_INFO.expertLine.replace(/\s/g, "")}`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium text-foreground transition-colors hover:bg-foreground/[0.04]">
+        <Phone size={16} className="text-primary" /> {CONTACT_INFO.expertLine}
+      </a>
+      <Link to="/login" onClick={onClose} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium text-foreground transition-colors hover:bg-foreground/[0.04]">
+        <LogIn size={16} className="text-muted-foreground" /> Customer Portal Login
+      </Link>
+
+      <MotionButton asChild {...springHover} className="mt-3 h-12 w-full rounded-full text-[15px] shadow-glow">
+        <Link to="/contact" onClick={onClose}>Book a Demo</Link>
+      </MotionButton>
+    </div>
+  </motion.div>
+);
+
+const Navbar = () => {
+  const [openMenu, setOpenMenu] = useState(null);
+  const [hovered, setHovered] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+  const reduce = useReducedMotion();
+
+  // Elevation grows with scroll: the dock's extra shadow fades in over the first 120px.
+  const { scrollY, scrollYProgress } = useScroll();
+  const elevation = useTransform(scrollY, [0, 120], [0, 1]);
+
+  useEffect(() => {
+    dockHasEntered = true;
+  }, []);
+
+  // Any navigation (including /#hash jumps) closes whatever is open.
+  useEffect(() => {
+    setOpenMenu(null);
+    setMobileOpen(false);
+  }, [location.pathname, location.hash]);
+
+  const activeItem =
+    MEGA_MENUS.find((m) => ACTIVE_PREFIXES[m.label].some((p) => location.pathname.includes(p)))?.label ??
+    NAV_LINKS.find((l) => l.href === location.pathname)?.label ??
+    null;
+  // The highlight follows the pointer/focus, then an open menu, then rests on the current page.
+  const highlight = hovered ?? openMenu ?? activeItem;
+
+  return (
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-4 sm:pt-4">
+      <motion.nav
+        aria-label="Main"
+        initial={dockHasEntered ? false : reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(-16px) scale(0.98)" }}
+        animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+        transition={ENTRANCE_SPRING}
+        className="pointer-events-auto relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 rounded-full pl-4 pr-2 sm:h-16 sm:pl-6"
+      >
+        {/* Background layers sit behind the content. The glass lives on a sibling layer because
+            backdrop-filter on <nav> itself would stop the dropdowns inside it from blurring the page. */}
+        <motion.div aria-hidden="true" style={{ opacity: elevation }} className="absolute inset-0 -z-10 rounded-full shadow-elevated" />
+        <div aria-hidden="true" className="glass absolute inset-0 -z-10 rounded-full" />
+        {/* Reading progress: a hairline along the dock's bottom edge, inset to stay inside the pill's curve */}
+        <motion.div aria-hidden="true" style={{ scaleX: scrollYProgress }} className="absolute inset-x-8 bottom-0 h-px origin-left bg-primary/60" />
+
+        <Link to="/" className="flex shrink-0 items-center rounded-full">
+          <img src="/logo75.png" alt="Cube Software home" className="h-8 w-auto object-contain sm:h-9" />
+        </Link>
+
+        <div
+          className="hidden items-center gap-0.5 lg:flex"
+          onMouseLeave={() => setHovered(null)}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget)) setHovered(null);
+          }}
+        >
+          {MEGA_MENUS.map((menu) => (
+            <MegaMenu
+              key={menu.label}
+              menu={menu}
+              isOpen={openMenu === menu.label}
+              highlighted={highlight === menu.label}
+              onHover={() => setHovered(menu.label)}
+              onOpen={() => setOpenMenu(menu.label)}
+              onClose={() => setOpenMenu(null)}
             />
-          </span>
-
-          {/* CENTER LINKS */}
-          <div className="hidden lg:flex flex-1 justify-center items-center gap-1 xl:gap-4 h-full">
-            {MENU_ITEMS.map((link) => {
-
-              // -------------------------------------------------------------
-              // MEGA MENU FOR BOTH "SERVICES" AND "PRODUCTS"
-              // -------------------------------------------------------------
-              if (link.label === "Services" || link.label === "Products") {
-                const megaData = link.label === "Services" ? SERVICES_MEGA_DATA : PRODUCTS_MEGA_DATA;
-
-                return (
-                  <div
-                    key={link.label}
-                    className="relative h-20 flex items-center"
-                    onMouseEnter={() => {
-                      setHoveredMenu(link.label);
-                      setActiveMegaTab(0); // Reset tab when hovering a new menu
-                    }}
-                    onMouseLeave={() => setHoveredMenu(null)}
-                  >
-                    <button
-                      type="button"
-                      className={`px-2 xl:px-3 py-2 text-[13px] xl:text-[14px] font-bold rounded-md flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
-                        navState === "solid"
-                          ? (isActive(link) || hoveredMenu === link.label ? "text-blue-700" : "text-slate-800 hover:text-blue-700")
-                          : (isActive(link) || hoveredMenu === link.label ? "text-blue-300" : "text-white/90 hover:text-white")
-                      }`}
-                    >
-                      {link.label} 
-                      <ChevronDown 
-                        size={14} 
-                        className={`mt-0.5 transition-transform duration-300 ${hoveredMenu === link.label ? "rotate-180" : ""}`} 
-                      />
-                    </button>
-
-                    <AnimatePresence>
-                      {hoveredMenu === link.label && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 15 }}
-                          transition={{ duration: 0.2, ease: "easeOut" }}
-                          className="fixed top-[120px] left-0 right-0 mx-auto w-full max-w-[950px] bg-white border border-slate-100 shadow-[0_30px_60px_rgba(0,0,0,0.15)] rounded-2xl overflow-hidden flex flex-col z-50 cursor-default"
-                        >
-                          <div className="flex h-[420px]">
-                            {/* Left Sidebar (Categories) */}
-                            <div className="w-[300px] bg-slate-50 p-4 border-r border-slate-100 flex flex-col gap-1.5 overflow-y-auto">
-                              <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase px-3 mb-2 mt-2">
-                                {link.label === "Services" ? "Solutions" : "Categories"}
-                              </div>
-                              {megaData.map((tab, index) => (
-                                <button
-                                  key={tab.id}
-                                  onMouseEnter={() => setActiveMegaTab(index)}
-                                  className={`flex items-center justify-between w-full px-4 py-3.5 rounded-xl transition-all duration-200 ${
-                                    activeMegaTab === index 
-                                      ? "bg-white shadow-sm text-blue-700 font-bold border border-slate-100" 
-                                      : "text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 font-medium border border-transparent"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <tab.icon size={18} className={activeMegaTab === index ? "text-blue-600" : "text-slate-400"} />
-                                    <span className="text-[14px]">{tab.label}</span>
-                                  </div>
-                                  {activeMegaTab === index && <ArrowRight size={16} className="text-blue-600" />}
-                                </button>
-                              ))}
-                            </div>
-
-                            {/* Right Content Area */}
-                            <div className="flex-1 bg-white p-8 overflow-y-auto">
-                              <div className="flex items-center justify-between mb-6">
-                                <h3 className="font-heading font-black text-xl text-slate-800">
-                                  {megaData[activeMegaTab].label}
-                                </h3>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-x-8 gap-y-8">
-                                {megaData[activeMegaTab].items.map((item, i) => (
-                                  <div key={i} onClick={() => go(item.href)} className="flex items-start gap-4 group/item cursor-pointer">
-                                    <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover/item:bg-blue-600 group-hover/item:text-white transition-colors duration-300 shadow-sm border border-blue-100">
-                                      <item.icon size={20} />
-                                    </div>
-                                    <div>
-                                      <h4 className="font-bold text-slate-900 group-hover/item:text-blue-600 text-[14px] mb-1 transition-colors">
-                                        {item.title}
-                                      </h4>
-                                      <p className="text-[13px] text-slate-500 leading-snug">
-                                        {item.desc}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Bottom Quick Links Bar */}
-                          <div className="bg-[#F8FAFC] px-8 py-5 border-t border-slate-100 flex items-center gap-6">
-                            {QUICK_LINKS.map((qLink, i) => (
-                              <button key={i} onClick={() => go(qLink.href)} className="flex items-center gap-2 text-[13px] font-bold text-slate-600 hover:text-blue-700 transition-colors">
-                                <div className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                                  <CheckCircle2 size={10} strokeWidth={3} />
-                                </div>
-                                {qLink.label}
-                              </button>
-                            ))}
-                          </div>
-
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              }
-
-              // -------------------------------------------------------------
-              // STANDARD LINKS (e.g. About, Pricing, etc)
-              // -------------------------------------------------------------
-              return (
-                <button
-                  key={link.label}
-                  type="button"
-                  onClick={() => go(link.href)}
-                  className={`px-2 xl:px-3 py-2 text-[13px] xl:text-[14px] font-bold rounded-md transition-colors whitespace-nowrap ${
-                    navState === "solid"
-                      ? (isActive(link) ? "text-blue-700" : "text-slate-800 hover:text-blue-700")
-                      : (isActive(link) ? "text-blue-300" : "text-white/90 hover:text-white")
-                  }`}
-                >
-                  {link.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* RIGHT: CTA & ACTIONS */}
-          <div className="hidden lg:flex items-center shrink-0 gap-3 xl:gap-5 ml-2">
-            <a 
-              href={`tel:${CONTACT_INFO.expertLine.replace(/\s/g, "")}`} 
-              className={`flex items-center gap-2 text-[13px] xl:text-[14px] font-bold transition-colors whitespace-nowrap ${
-                navState === "solid" ? "text-slate-800 hover:text-blue-700" : "text-white/90 hover:text-white"
-              }`}
+          ))}
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.label}
+              to={link.href}
+              onMouseEnter={() => setHovered(link.label)}
+              onFocus={() => setHovered(link.label)}
+              className="relative rounded-full px-3 py-2 text-sm font-medium"
             >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                navState === "solid" ? "bg-blue-50 text-blue-600" : "bg-white/20 text-white"
-              }`}>
-                <Phone size={14} />
-              </div>
-              <span className="hidden xl:inline">{CONTACT_INFO.expertLine}</span>
-            </a>
+              <AnimatePresence>{highlight === link.label && <NavHighlight />}</AnimatePresence>
+              <span className={itemText(highlight === link.label)}>{link.label}</span>
+            </Link>
+          ))}
+        </div>
 
-            <div className={`w-px h-5 transition-colors ${navState === "solid" ? "bg-slate-300" : "bg-white/30"}`}></div>
-
-            <button 
-              type="button"
-              onClick={() => go("/login")}
-              className={`flex items-center gap-1.5 text-[13px] xl:text-[14px] font-bold transition-colors outline-none whitespace-nowrap ${
-                navState === "solid" ? "text-slate-800 hover:text-blue-700" : "text-white/90 hover:text-white"
-              }`}
-            >
-              <LogIn size={16} className={navState === "solid" ? "text-blue-600" : "text-white"} />
-              Login
-            </button>
-
-            <Button
-              onClick={bookDemo}
-              className={`ml-1 xl:ml-2 rounded-lg px-5 xl:px-6 py-4 xl:py-5 text-[13px] xl:text-[14px] font-bold transition-transform hover:-translate-y-0.5 whitespace-nowrap ${
-                navState === "solid" 
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20" 
-                  : "bg-white text-blue-700 hover:bg-blue-50 shadow-lg"
-              }`}
-            >
-              Book Demo
-            </Button>
-          </div>
-
-          {/* Mobile Menu Toggle */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Link to="/login" className="hidden rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground lg:inline-flex">
+            Log in
+          </Link>
+          <MagneticLink to="/contact" className="hidden h-10 rounded-full px-5 shadow-glow sm:inline-flex">
+            Book a Demo <ArrowRight />
+          </MagneticLink>
           <button
             type="button"
-            className={`lg:hidden p-2 shrink-0 transition-colors ${navState === "solid" ? "text-slate-800" : "text-white"}`}
-            onClick={() => setMobileOpen(!mobileOpen)}
+            onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            className="rounded-full p-2.5 text-foreground transition-colors hover:bg-foreground/[0.06] lg:hidden"
           >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            {/* Icon morphs between menu and close so the toggle reads as one control */}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={mobileOpen ? "close" : "open"}
+                initial={{ opacity: 0, transform: "rotate(-90deg)" }}
+                animate={{ opacity: 1, transform: "rotate(0deg)" }}
+                exit={{ opacity: 0, transform: "rotate(90deg)" }}
+                transition={{ duration: 0.1, ease }}
+                className="block"
+              >
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+              </motion.span>
+            </AnimatePresence>
           </button>
         </div>
 
-        {/* --- MOBILE DROPDOWN --- */}
-        {mobileOpen && (
-          <div className="lg:hidden bg-white border-t border-slate-100 shadow-2xl max-h-[85vh] overflow-y-auto">
-            <div className="px-4 py-4 flex flex-col gap-2">
-              
-              {MENU_ITEMS.map((link) => {
-                
-                // MOBILE MEGA MENU FOR "SERVICES" AND "PRODUCTS"
-                if (link.label === "Services" || link.label === "Products") {
-                  const megaData = link.label === "Services" ? SERVICES_MEGA_DATA : PRODUCTS_MEGA_DATA;
-
-                  return (
-                    <div key={`mobile-mega-${link.label}`} className="mb-2">
-                      <div className="px-3 pt-2 pb-2 text-xs font-bold uppercase tracking-widest text-blue-600/70">
-                        {link.label}
-                      </div>
-                      <div className="space-y-4 px-2">
-                        {megaData.map((cat) => (
-                          <div key={cat.id}>
-                            <div className="flex items-center gap-2 text-[14px] font-bold text-slate-800 mb-2 mt-2 px-3">
-                              <cat.icon size={16} className="text-blue-600" /> {cat.label}
-                            </div>
-                            <div className="space-y-1 pl-4 border-l-2 border-slate-100 ml-4">
-                              {cat.items.map((item) => (
-                                <button
-                                  key={item.title}
-                                  onClick={() => go(item.href)}
-                                  className="w-full text-left px-4 py-2.5 text-[14px] font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
-                                >
-                                  {item.title}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                // STANDARD MOBILE LINKS
-                return (
-                  <button
-                    key={link.label}
-                    type="button"
-                    onClick={() => go(link.href)}
-                    className="w-full text-left px-3 py-3 text-[15px] font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
-                  >
-                    {link.label}
-                  </button>
-                );
-              })}
-
-              <div className="h-px bg-slate-100 my-2"></div>
-
-              <a 
-                href={`tel:${CONTACT_INFO.expertLine.replace(/\s/g, "")}`} 
-                className="flex items-center gap-3 text-left px-3 py-3 text-[15px] font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
-              >
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                  <Phone size={14} className="text-blue-600" />
-                </div>
-                {CONTACT_INFO.expertLine}
-              </a>
-
-              <button 
-                type="button"
-                onClick={() => go("/login")}
-                className="flex items-center gap-3 text-left px-3 py-3 text-[15px] font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
-              >
-                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-                  <LogIn size={14} className="text-slate-600" />
-                </div>
-                Customer Portal Login
-              </button>
-
-              <Button onClick={bookDemo} className="mt-4 mb-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl font-bold shadow-lg shadow-blue-600/20">
-                Book Demo
-              </Button>
-            </div>
-          </div>
-        )}
-      </nav>
+        <AnimatePresence>{mobileOpen && <MobileSheet onClose={() => setMobileOpen(false)} />}</AnimatePresence>
+      </motion.nav>
     </header>
   );
 };

@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Headset, Landmark, ConciergeBell, HeartPulse, TowerControl,
-  MapPin, Phone, Mail, Send, CircleDollarSign, Zap, Route, Settings2,
-  PhoneCall, Mic, Receipt, MonitorPlay, Voicemail, AudioLines, Radio, DatabaseZap, 
-  ArrowRight, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
-  Facebook, Linkedin, Instagram
-} from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { MapPin, Phone, Mail, Send, Facebook, Linkedin, Instagram } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { toast } from "sonner";
+import { fadeUp, inView, reveal } from "../lib/motion";
 
 // --- HARDCODED DATA ---
 const CONTACT_INFO = {
@@ -22,16 +16,7 @@ const CONTACT_INFO = {
   indiaOffice: "A-26, Ground Floor, Sector 63, Noida, Uttar Pradesh 201301, India",
 };
 
-const INDUSTRIES = [
-  { icon: "Headset", title: "BPO – KPO", description: "High-volume dialing, logging and monitoring built for outsourcing floors of every size." },
-  { icon: "Landmark", title: "Financial Services", description: "Compliant recording and secure telephony for banks, NBFCs and trading desks." },
-  { icon: "ConciergeBell", title: "Hospitality", description: "Innovative desk solutions for hotels, event centres, cruise lines and travel brands." },
-  { icon: "HeartPulse", title: "Healthcare", description: "Affordable patient-first communication suites for hospitals, labs and clinics." },
-  { icon: "Building2", title: "Real Estate", description: "Dialer, voice logger and CRM bundles tuned for property sales teams." },
-  { icon: "TowerControl", title: "Telecom", description: "Pioneers in telecom solutions since 1990 with home-grown software trusted worldwide." },
-];
-
-const CLIENT_LOGOS = [
+export const CLIENT_LOGOS = [
   '/1.jpg', '/2.png', '/4.png', '/5.jpeg', 
   '/6.png', '/7.png', '/upsc.png', '/cars24.png', '/Yatra.png'
 ];
@@ -41,400 +26,27 @@ const PARTNER_LOGOS = [
   '/Fusion.png', '/Mitel.png', '/ABSIndia.png'
 ];
 
-const FAQS = [
-  { q: "What services does Cube Software provide?", a: "We offer a complete range of communication solutions including Cloud PBX, dialers (inbound/outbound/blended), voice loggers, screen loggers, IVRS, conference bridges, call billing software, voice mail systems, SIP trunking and CRM integrations." },
-  { q: "Which Citys do you support?", a: "We provide numbers and voice solutions across the India Bangaluru, Mumbai, Delhi, Gurugram, Noida, Ahemdabad, Puna in India and many more regions. along with 140 & 160 Lines as well." },
-  { q: "Can I get local and toll-free numbers?", a: "We provide local, national, international DID, toll-free, and vanity numbers to meet your business and market requirements." },
-  { q: "How quickly can numbers be activated?", a: "Most numbers are activated within minutes after verification and payment. Some states may require documentation based on local telecom regulations." },
-  { q: "Do you support call forwarding and IVR?", a: "Yes. Our platform supports IVR menus, smart call routing, call forwarding, time-based routing, ring groups, voicemail, call recording and auto attendants." },
-  { q: "Can your services work with my existing dialers or PBX?", a: "Yes. Our SIP trunking and VoIP solutions are compatible with most major PBX platforms including Asterisk, FreePBX, 3CX, Grandstream and Cisco systems." },
-  { q: "Do you provide CRM integrations?", a: "Yes. We integrate with popular CRMs and tools including custimized CRM, Salesforce, Freshdesk and custom applications through our APIs & CTI Connectors." },
-  { q: "Is your platform suitable for call centers?", a: "Yes. Our platform is built for BPOs, call centers, support teams, sales teams, and remote workforces, delivering high-quality calls, intelligent routing, and enterprise-grade scalability" },
-  { q: "How do I get started?", a: "Getting started is easy. Contact our sales team or request a demo through our website. Our experts will help you choose the right solution based on your business needs, call volume, and future growth." },
-];
-
-const MARQUEE_ITEMS = [
-  "Voice Without Limits.", "Connect More. Pay Less.", "35+ Years of Telephony Excellence.",
-  "Enterprise Features. Small Business Pricing.", "Simply Better Telephony.",
-];
-
-// Fallback dummy icon for Building2 
-const Building2 = ({ size, className }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>;
-
-const ICONS = {
-  Headset, Landmark, ConciergeBell, HeartPulse, Building2, TowerControl,
-  CircleDollarSign, Zap, Route, Settings2, PhoneCall, Mic, Receipt, MonitorPlay, 
-  Voicemail, AudioLines, Radio, DatabaseZap
-};
-
-// --- NEW DATA: INDUSTRY CAROUSEL & STATS ---
-const INDUSTRY_CAROUSEL_DATA = [
-  {
-    id: "bpo",
-    title: "BPO & Call Centers",
-    desc: "Handle massive call volumes efficiently with advanced predictive dialers, voice logging, and real-time monitoring.",
-    image: "https://images.unsplash.com/photo-1596524430615-b46475ddff6e?auto=format&fit=crop&w=1200&q=80",
-    href: "/industries/bpo"
-  },
-  {
-    id: "finance",
-    title: "Banks & Financial",
-    desc: "Ensure 100% compliance with secure voice recording, automated debt collection IVRs, and secure trunking.",
-    image: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&q=80",
-    href: "/industries/finance"
-  },
-  {
-    id: "hospitality",
-    title: "Hotels & Accommodations",
-    desc: "Handle bookings, guest inquiries, and internal communications effortlessly with an intelligent business phone system.",
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
-    href: "/industries/hospitality"
-  },
-  {
-    id: "healthcare",
-    title: "Healthcare Solutions",
-    desc: "Automate patient reminders, handle emergency routing, and manage clinic helpdesks seamlessly 24/7.",
-    image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80",
-    href: "/industries/healthcare"
-  }
-];
-
-const INDUSTRY_STATS = [
-  {
-    value: "14%",
-    trend: "up",
-    title: "Increased Issue Resolution",
-    desc: "Cube's cloud platform drastically increases the number of client queries resolved per hour."
-  },
-  {
-    value: "25%",
-    trend: "up",
-    title: "Faster System Setup Speed",
-    desc: "Reduces the time to deploy telephony infrastructure and set up new remote users."
-  },
-  {
-    value: "41%",
-    trend: "down",
-    title: "Reduction in Telephony Expenses",
-    desc: "Monthly telecom bills drop significantly after switching from legacy landlines to Cube's SIP."
-  }
-];
-
-const CAROUSEL_DATA = [
-  {
-    id: "cloud-contact-center",
-    title: "Contact Center Solution",
-    desc: "Get results with a powerful inbound, outbound and blended cloud contact center solution with full call disposition.",
-    image: "https://images.unsplash.com/photo-1560264280-88b68371db39?auto=format&fit=crop&w=800&q=80"
-  },
-  {
-    id: "voice-logger",
-    title: "Callisto Voice Logger",
-    desc: "The ideal call recording solution — every conversation captured, compressed and searchable.",
-    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80"
-  },
-  {
-    id: "call-billing",
-    title: "Call Billing Software",
-    desc: "Take command of telecom resources and costs across every office, hotel and facility.",
-    image: "https://images.unsplash.com/photo-1611125832047-1d7ad1e8e48f?auto=format&fit=crop&w=800&q=80"
-  },
-  {
-    id: "screen-logger",
-    title: "Screen Logger",
-    desc: "Next-generation multi-PC screen recording over the network — see what your customers experienced.",
-    image: "https://images.unsplash.com/photo-1551739440-5dd934d3a94a?auto=format&fit=crop&w=800&q=80"
-  },
-  {
-    id: "ivrs",
-    title: "IVRS Services",
-    desc: "Custom IVR solutions built from scratch with the latest software, database and telecom technologies.",
-    image: "https://images.unsplash.com/photo-1525598912003-663126343e1f?auto=format&fit=crop&w=800&q=80"
-  }
-];
-
 export const SectionLabel = ({ children }) => (
-  <div className="text-blue-700 text-xs font-bold tracking-[0.2em] uppercase mb-3">— {children}</div>
+  <div className="text-blue-700 dark:text-blue-400 text-xs font-semibold tracking-[0.18em] uppercase mb-3">{children}</div>
 );
 
 export const SectionTitle = ({ children, className = "" }) => (
-  <h2 className={`font-heading font-black text-3xl sm:text-4xl lg:text-5xl tracking-tight text-slate-900 leading-tight ${className}`}>
+  <h2 className={`font-heading font-bold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-foreground leading-tight ${className}`}>
     {children}
   </h2>
 );
 
-
-// =========================================================
-// NEW: INDUSTRY CAROUSEL SECTION (Replaces "Why Cube")
-// =========================================================
-export const IndustryCarouselSection = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev === INDUSTRY_CAROUSEL_DATA.length - 1 ? 0 : prev + 1));
-  };
-
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev === 0 ? INDUSTRY_CAROUSEL_DATA.length - 1 : prev - 1));
-  };
-
-  const activeSlide = INDUSTRY_CAROUSEL_DATA[currentIndex];
-
-  return (
-    <section className="py-24 bg-white overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        
-        {/* Top Header & Navigation Container */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
-          <div className="max-w-2xl">
-            <div className="text-blue-600 text-xs font-bold tracking-[0.15em] uppercase mb-3">
-              TAILORED TO YOUR NEED
-            </div>
-            <h2 className="font-heading font-black text-4xl sm:text-5xl text-[#0A1F44] leading-tight">
-              A Virtual Phone System for Businesses of All Types & Sizes
-            </h2>
-          </div>
-
-          {/* Carousel Controls */}
-          <div className="flex items-center gap-4 shrink-0 bg-slate-50 p-2 rounded-full border border-slate-100">
-            <button 
-              onClick={prevSlide}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-[#0A1F44] text-white hover:bg-blue-600 transition-colors"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <div className="font-bold text-sm text-slate-700 min-w-[3rem] text-center">
-              {currentIndex + 1} / {INDUSTRY_CAROUSEL_DATA.length}
-            </div>
-            <button 
-              onClick={nextSlide}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-[#0A1F44] text-white hover:bg-blue-600 transition-colors"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        </div>
-
-        {/* Large Image Card */}
-        <div className="relative w-full h-[400px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl group">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="absolute inset-0 w-full h-full"
-            >
-              {/* Background Image */}
-              <img 
-                src={activeSlide.image} 
-                alt={activeSlide.title} 
-                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              />
-              
-              {/* Dark Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A1F44]/90 via-[#0A1F44]/40 to-transparent"></div>
-              
-              {/* Card Content (Bottom Left) */}
-              <div className="absolute bottom-0 left-0 right-0 p-8 lg:p-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="max-w-xl">
-                  <h3 className="font-heading font-black text-3xl sm:text-4xl text-white mb-4">
-                    {activeSlide.title}
-                  </h3>
-                  <p className="text-lg text-blue-100/90 leading-relaxed">
-                    {activeSlide.desc}
-                  </p>
-                </div>
-                
-                {/* Explore Button */}
-                <Link to={activeSlide.href} className="shrink-0">
-                  <button className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg transition-transform hover:-translate-y-1">
-                    <ArrowRight size={24} />
-                  </button>
-                </Link>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Bottom Statistics */}
-        <div className="grid md:grid-cols-3 gap-10 mt-16 pt-10 border-t border-slate-100">
-          {INDUSTRY_STATS.map((stat, i) => (
-            <div key={i} className="flex flex-col">
-              <div className="flex items-end gap-2 mb-3">
-                <span className="font-heading font-black text-4xl text-[#0A1F44] leading-none">
-                  {stat.value}
-                </span>
-                {stat.trend === "up" ? (
-                  <ArrowUpRight size={28} className="text-emerald-500 stroke-[3px]" />
-                ) : (
-                  <ArrowDownRight size={28} className="text-red-500 stroke-[3px]" />
-                )}
-              </div>
-              <h4 className="font-bold text-slate-900 text-lg mb-2">{stat.title}</h4>
-              <p className="text-sm text-slate-600 leading-relaxed">{stat.desc}</p>
-            </div>
-          ))}
-        </div>
-
-      </div>
-    </section>
-  );
-};
-
-
-export const ProductsSection = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [cardsToShow, setCardsToShow] = useState(3);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 640) setCardsToShow(1);
-      else if (window.innerWidth < 1024) setCardsToShow(2);
-      else setCardsToShow(3);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const maxIndex = Math.max(0, CAROUSEL_DATA.length - cardsToShow);
-
-  const prevSlide = () => setCurrentIndex((prev) => Math.max(prev - 1, 0));
-  const nextSlide = () => setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
-
-  return (
-    <section id="services" className="py-20 lg:py-28 bg-slate-50 overflow-hidden">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-        
-        <div className="text-center mb-16">
-          <h2 className="font-heading font-black text-4xl sm:text-5xl text-slate-900 tracking-tight">
-            Our Services
-          </h2>
-        </div>
-
-        <div className="relative">
-          <button
-            onClick={prevSlide}
-            disabled={currentIndex === 0}
-            className={`absolute -left-2 sm:-left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-              currentIndex === 0 
-                ? "bg-white text-slate-300 shadow-sm cursor-not-allowed opacity-50" 
-                : "bg-white text-[#1f638b] hover:bg-[#1f638b] hover:text-white shadow-xl cursor-pointer"
-            }`}
-            aria-label="Previous"
-          >
-            <ChevronLeft size={24} strokeWidth={2.5} />
-          </button>
-
-          <button
-            onClick={nextSlide}
-            disabled={currentIndex === maxIndex}
-            className={`absolute -right-2 sm:-right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-              currentIndex === maxIndex 
-                ? "bg-white text-slate-300 shadow-sm cursor-not-allowed opacity-50" 
-                : "bg-white text-[#1f638b] hover:bg-[#1f638b] hover:text-white shadow-xl cursor-pointer"
-            }`}
-            aria-label="Next"
-          >
-            <ChevronRight size={24} strokeWidth={2.5} />
-          </button>
-
-          <div className="overflow-hidden px-4 py-8 mx-6 sm:mx-10">
-            <div 
-              className="flex transition-transform duration-500 ease-out"
-              style={{ transform: `translateX(-${currentIndex * (100 / cardsToShow)}%)` }}
-            >
-              {CAROUSEL_DATA.map((item) => (
-                <div 
-                  key={item.id}
-                  className="shrink-0 px-4 transition-all duration-500"
-                  style={{ width: `${100 / cardsToShow}%` }}
-                >
-                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] hover:-translate-y-2 transition-all duration-300 flex flex-col h-full overflow-hidden group">
-                    
-                    <div className="w-full h-56 overflow-hidden relative">
-                      <img 
-                        src={item.image} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                      />
-                    </div>
-                    
-                    <div className="p-8 flex flex-col flex-grow items-center text-center">
-                      <h3 className="font-heading font-bold text-xl text-slate-900 mb-4 group-hover:text-[#1f638b] transition-colors">
-                        {item.title}
-                      </h3>
-                      <p className="text-[14px] text-slate-500 leading-relaxed mb-8 flex-grow">
-                        {item.desc}
-                      </p>
-                      <Link to={`/services/${item.id}`} className="w-full mt-auto">
-                        <button className="w-full bg-[#1f638b] hover:bg-[#13425e] text-white py-3.5 rounded-xl font-bold shadow-md transition-colors text-[15px]">
-                          Learn More
-                        </button>
-                      </Link>
-                    </div>
-
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-        </div>
-      </div>
-    </section>
-  );
-};
-
-export const MarqueeBanner = () => (
-  <section className="py-10 bg-[#0A1F44] overflow-hidden">
-    <div className="marquee-track flex items-center gap-16 whitespace-nowrap">
-      {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-        <span key={i} className="flex items-center gap-16">
-          <span className="font-heading font-black text-2xl sm:text-3xl text-white/90">{item}</span>
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
-        </span>
-      ))}
-    </div>
-  </section>
-);
-
-export const IndustriesSection = () => (
-  <section id="industries" className="py-20 lg:py-28 bg-white">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6">
-      <SectionLabel>Industries We Serve</SectionLabel>
-      <SectionTitle className="max-w-3xl">Our products are designed to perform at every arena</SectionTitle>
-      <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {INDUSTRIES.map((ind, i) => {
-          const Icon = ICONS[ind.icon];
-          const colors = ["text-blue-700 bg-blue-50", "text-red-600 bg-red-50", "text-amber-500 bg-amber-50"];
-          return (
-            <div key={ind.title} className="group flex gap-5 p-6 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center ${colors[i % 3]}`}>
-                {Icon && <Icon size={22} />}
-              </div>
-              <div>
-                <h3 className="font-heading font-bold text-lg text-slate-900">{ind.title}</h3>
-                <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">{ind.description}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  </section>
-);
+// Logos sit grayscale and multiply away their white backgrounds; full color on hover.
+const LOGO_IMG = "max-w-full max-h-full object-contain mix-blend-multiply grayscale opacity-70 transition-[filter,opacity] duration-300 hover:grayscale-0 hover:opacity-100";
 
 export const ClientsSection = () => (
-  <section className="py-16 lg:py-24 border-y border-slate-100 bg-[#FAFAFA] overflow-hidden relative">
-    <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#FAFAFA] to-transparent z-10 pointer-events-none" />
-    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#FAFAFA] to-transparent z-10 pointer-events-none" />
-    
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 text-center">
-      <h2 className="font-heading font-bold text-3xl sm:text-4xl text-slate-900">Trusted By</h2>
-    </div>
+  <section className="py-16 lg:py-24 border-y border-border bg-secondary overflow-hidden relative">
+    <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-secondary to-transparent z-10 pointer-events-none" />
+    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-secondary to-transparent z-10 pointer-events-none" />
+
+    <motion.div {...inView} variants={fadeUp} className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 text-center">
+      <h2 className="text-xs font-semibold tracking-[0.18em] uppercase text-muted-foreground">Trusted By</h2>
+    </motion.div>
 
     <div className="flex flex-col gap-12 sm:gap-16">
       <div className="flex w-max">
@@ -444,8 +56,8 @@ export const ClientsSection = () => (
           className="flex items-center gap-16 sm:gap-24 px-8"
         >
           {[...CLIENT_LOGOS, ...CLIENT_LOGOS, ...CLIENT_LOGOS].map((logoPath, idx) => (
-            <div key={idx} className="w-32 h-14 sm:w-40 sm:h-16 relative flex items-center justify-center shrink-0 hover:scale-105 transition-transform duration-300 cursor-pointer">
-              <img src={logoPath} alt="Client Logo" className="max-w-full max-h-full object-contain" />
+            <div key={idx} className="w-32 h-14 sm:w-40 sm:h-16 relative flex items-center justify-center shrink-0">
+              <img src={logoPath} alt="Client Logo" className={LOGO_IMG} />
             </div>
           ))}
         </motion.div>
@@ -458,29 +70,12 @@ export const ClientsSection = () => (
           className="flex items-center gap-16 sm:gap-24 px-8"
         >
           {[...PARTNER_LOGOS, ...PARTNER_LOGOS, ...PARTNER_LOGOS].map((logoPath, idx) => (
-            <div key={idx} className="w-32 h-14 sm:w-40 sm:h-16 relative flex items-center justify-center shrink-0 hover:scale-105 transition-transform duration-300 cursor-pointer">
-              <img src={logoPath} alt="Partner Logo" className="max-w-full max-h-full object-contain" />
+            <div key={idx} className="w-32 h-14 sm:w-40 sm:h-16 relative flex items-center justify-center shrink-0">
+              <img src={logoPath} alt="Partner Logo" className={LOGO_IMG} />
             </div>
           ))}
         </motion.div>
       </div>
-    </div>
-  </section>
-);
-
-export const FAQSection = () => (
-  <section id="faq" className="py-20 lg:py-28 bg-slate-50">
-    <div className="max-w-4xl mx-auto px-4 sm:px-6">
-      <SectionLabel>FAQ</SectionLabel>
-      <SectionTitle>Frequently Asked Questions</SectionTitle>
-      <Accordion type="single" collapsible className="mt-10">
-        {FAQS.map((f, i) => (
-          <AccordionItem key={i} value={`faq-${i}`} className="bg-white rounded-xl border border-slate-100 mb-3 px-6 shadow-sm data-[state=open]:shadow-md transition-shadow">
-            <AccordionTrigger className="text-left font-heading font-bold text-slate-900 hover:text-blue-700 hover:no-underline py-5">{f.q}</AccordionTrigger>
-            <AccordionContent className="text-slate-600 leading-relaxed pb-5">{f.a}</AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
     </div>
   </section>
 );
@@ -553,73 +148,119 @@ export const ContactSection = () => {
   );
 };
 
-export const Footer = () => (
-  <footer className="bg-[#0A1F44] text-slate-300">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
-      <div>
-        <Link to="/" className="cursor-pointer shrink-0 flex items-center group">
-          <img src="/logo-77.png" alt="Cube Software Logo" className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
-        </Link>
-        <p className="mt-5 text-sm leading-relaxed text-slate-400 text-justify">
-          Designing Computer Telephony Integration software for 35+ years — trusted by enterprises
-          across the globe for dialers, voice logging, Screen recording, IVR with our cloud telephony.
-        </p>
-        
-        <div className="flex items-center gap-4 mt-6">
-          <a href="https://www.facebook.com/CSPLNOIDA/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all duration-300">
-            <Facebook size={18} />
-          </a>
-          <a href="https://www.linkedin.com/company/cube-software-private-limited-cspl-/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-blue-500 hover:text-white transition-all duration-300">
-            <Linkedin size={18} />
-          </a>
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-pink-600 hover:text-white transition-all duration-300">
-            <Instagram size={18} />
-          </a>
+// Shared footer styles: high-contrast headings, muted links that brighten on hover.
+const FOOTER_HEADING = "font-mono text-[11px] uppercase tracking-[0.2em] text-foreground mb-5";
+// Text links get an underline that sweeps in from the left (scaling text itself would look jittery).
+const FOOTER_LINK =
+  "relative rounded-sm transition-colors duration-150 hover:text-foreground after:pointer-events-none after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-current after:transition-transform after:duration-300 after:ease-out-expo hover:after:scale-x-100";
+const SOCIAL_LINK = "w-9 h-9 rounded-full bg-white/[0.04] ring-1 ring-inset ring-white/10 flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-white hover:ring-primary hover:[scale:1.1] transition-[background-color,color,box-shadow,scale] duration-200 ease-out-expo";
+
+const FOOTER_COLUMNS = [
+  {
+    title: "Products",
+    links: [
+      { label: "Quick Call Dialer", to: "/services/auto-dialer" },
+      { label: "Callisto Voice Logger", to: "/services/callisto-voice-logger" },
+      { label: "IVRS Services", to: "/services/ivrs" },
+      { label: "Conference Bridge", to: "/services/conference-bridge" },
+      { label: "Call Billing Software", to: "/services/call-billing" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "About Us", to: "/about" },
+      { label: "Client Voices", to: "/client-voices" },
+      { label: "Industries", to: "/#industries" },
+      { label: "FAQ", to: "/#faq" },
+      { label: "Contact", to: "/contact" },
+    ],
+  },
+];
+
+export const Footer = () => {
+  const reduce = useReducedMotion();
+  // Columns rise in left to right, 80ms apart.
+  const column = reveal(reduce, "translateY(24px)", "translateY(0px)", 0.08);
+
+  // The giant wordmark rises out of the bottom edge as the footer scrolls into view.
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] });
+  const markY = useTransform(scrollYProgress, [0, 1], ["45%", "0%"]);
+
+  return (
+    <footer ref={ref} className="dark relative overflow-hidden bg-background text-muted-foreground">
+      <div aria-hidden="true" className="h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+      <motion.div {...inView} className="mx-auto grid max-w-7xl gap-12 px-4 pb-12 pt-20 sm:grid-cols-2 sm:px-6 lg:grid-cols-12 lg:gap-8">
+        <motion.div variants={column} custom={0} className="sm:col-span-2 lg:col-span-5">
+          <Link to="/" className="group inline-flex items-center rounded-md">
+            <img src="/logo-77.png" alt="Cube Software home" className="h-10 w-auto object-contain transition-[scale] duration-300 ease-out-expo group-hover:[scale:1.05] sm:h-12" />
+          </Link>
+          <p className="mt-5 max-w-sm text-sm leading-relaxed">
+            Computer telephony integration software for 35+ years — dialers, voice logging, screen recording,
+            IVR and cloud telephony, trusted by enterprises across the globe.
+          </p>
+          <div className="mt-6 flex items-center gap-3">
+            <a href="https://www.facebook.com/CSPLNOIDA/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className={SOCIAL_LINK}>
+              <Facebook size={16} />
+            </a>
+            <a href="https://www.linkedin.com/company/cube-software-private-limited-cspl-/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className={SOCIAL_LINK}>
+              <Linkedin size={16} />
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className={SOCIAL_LINK}>
+              <Instagram size={16} />
+            </a>
+          </div>
+        </motion.div>
+
+        {FOOTER_COLUMNS.map((col, i) => (
+          <motion.div key={col.title} variants={column} custom={i + 1} className="lg:col-span-2">
+            <p className={FOOTER_HEADING}>{col.title}</p>
+            <ul className="space-y-3 text-sm">
+              {col.links.map((l) => (
+                <li key={l.label}>
+                  <Link to={l.to} className={FOOTER_LINK}>
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        ))}
+
+        <motion.div variants={column} custom={3} className="lg:col-span-3">
+          <p className={FOOTER_HEADING}>Reach us</p>
+          <ul className="space-y-3.5 text-sm">
+            <li className="flex gap-2.5"><MapPin size={15} className="mt-0.5 shrink-0 text-blue-400" /> {CONTACT_INFO.indiaOffice}</li>
+            <li className="flex gap-2.5">
+              <Phone size={15} className="mt-0.5 shrink-0 text-blue-400" />
+              <a href={`tel:${CONTACT_INFO.india.replace(/\s/g, "")}`} className={FOOTER_LINK}>{CONTACT_INFO.india}</a>
+            </li>
+            <li className="flex gap-2.5">
+              <Mail size={15} className="mt-0.5 shrink-0 text-blue-400" />
+              <a href={`mailto:${CONTACT_INFO.email}`} className={FOOTER_LINK}>{CONTACT_INFO.email}</a>
+            </li>
+          </ul>
+        </motion.div>
+      </motion.div>
+
+      {/* Giant wordmark, clipped at the bottom edge */}
+      <div aria-hidden="true" className="pointer-events-none mx-auto max-w-7xl overflow-hidden px-4 sm:px-6">
+        <motion.p
+          style={reduce ? undefined : { y: markY }}
+          className="select-none bg-gradient-to-b from-white/[0.16] to-white/0 bg-clip-text text-center font-heading text-[26vw] font-extrabold leading-[0.78] tracking-[-0.07em] text-transparent lg:text-[21rem]"
+        >
+          cube
+        </motion.p>
+      </div>
+
+      <div className="border-t border-white/[0.07]">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 font-mono text-[11px] uppercase tracking-[0.14em] sm:flex-row sm:px-6">
+          <span>© {new Date().getFullYear()} Cube Software Pvt. Ltd.</span>
+          <span>Smart. Scalable. Secure cloud telephony.</span>
         </div>
       </div>
-      
-      <div>
-        <div className="font-heading font-bold text-white text-sm tracking-wider uppercase mb-4">Products</div>
-        <ul className="space-y-2.5 text-sm">
-          {[
-            { l: "Quick Call Dialer", s: "auto-dialer" },
-            { l: "Callisto Voice Logger", s: "callisto-voice-logger" },
-            { l: "IVRS Services", s: "ivrs" },
-            { l: "Conference Bridge", s: "conference-bridge" },
-            { l: "Call Billing Software", s: "call-billing" },
-          ].map((x) => (
-            <li key={x.l}><Link to={`/services/${x.s}`} className="hover:text-white transition-colors">{x.l}</Link></li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <div className="font-heading font-bold text-white text-sm tracking-wider uppercase mb-4">Company</div>
-        <ul className="space-y-2.5 text-sm">
-          <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
-          <li><Link to="/client-voices" className="hover:text-white transition-colors">Client Voices</Link></li>
-          {[
-            { l: "Industries", h: "/#industries" },
-            { l: "FAQ", h: "/#faq" },
-            { l: "Contact", h: "/contact" },
-          ].map((x) => (
-            <li key={x.l}><a href={x.h} className="hover:text-white transition-colors">{x.l}</a></li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <div className="font-heading font-bold text-white text-sm tracking-wider uppercase mb-4">Reach Us</div>
-        <ul className="space-y-3 text-sm text-slate-400">
-          <li className="flex gap-2"><MapPin size={15} className="mt-0.5 shrink-0 text-blue-400" /> {CONTACT_INFO.indiaOffice}</li>
-          <li className="flex gap-2"><Phone size={15} className="mt-0.5 shrink-0 text-blue-400" /> {CONTACT_INFO.india}</li>
-          <li className="flex gap-2"><Mail size={15} className="mt-0.5 shrink-0 text-blue-400" /> {CONTACT_INFO.email}</li>
-        </ul>
-      </div>
-    </div>
-    <div className="border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-        <span>© {new Date().getFullYear()} Cube Software Pvt. Ltd. All rights reserved.</span>
-        <span>Smart. Scalable. Secure Cloud Telephony.</span>
-      </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};

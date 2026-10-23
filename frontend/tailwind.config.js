@@ -2,6 +2,8 @@ const defaultTheme = require("tailwindcss/defaultTheme");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    // Touch screens fire false hovers on tap; hover styles only apply where a real cursor exists.
+    future: { hoverOnlyWhenSupported: true },
     darkMode: ["class"],
     content: [
     "./src/**/*.{js,jsx,ts,tsx}",
@@ -11,14 +13,19 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
-        heading: ['Archivo', 'Inter', 'sans-serif']
+        heading: ['Archivo', 'Inter', 'sans-serif'],
+        // Telemetry voice for timestamps, call IDs and labels
+        mono: ['"JetBrains Mono"', ...defaultTheme.fontFamily.mono]
       },
       boxShadow: {
-        card: '0 1px 2px rgb(11 20 38 / 0.04), 0 4px 16px -4px rgb(11 20 38 / 0.08)',
+        // Soft, diffused depth for white cards on slate-50
+        card: '0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -8px rgb(15 23 42 / 0.08)',
+        elevated: '0 2px 4px rgb(15 23 42 / 0.04), 0 24px 48px -16px rgb(15 23 42 / 0.18)',
         glow: '0 0 0 1px hsl(var(--primary) / 0.35), 0 8px 24px -8px hsl(var(--primary) / 0.55)'
       },
       transitionTimingFunction: {
-        'out-expo': 'cubic-bezier(0.22, 1, 0.36, 1)'
+        // Emil Kowalski's strong ease-out for UI (same value as `ease` in src/lib/motion.js)
+        'out-expo': 'cubic-bezier(0.23, 1, 0.32, 1)'
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -87,11 +94,42 @@ module.exports = {
           to: {
             height: '0'
           }
+        },
+        // Idle bob for the hero's floating cards
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-6px)' }
+        },
+        // One grid cell (56px) per loop, so the pan repeats seamlessly
+        'grid-pan': {
+          from: { transform: 'translateY(0)' },
+          to: { transform: 'translateY(56px)' }
+        },
+        // Voice bars breathing (hero waveform, live call)
+        wave: {
+          '0%, 100%': { transform: 'scaleY(1)' },
+          '50%': { transform: 'scaleY(0.55)' }
+        },
+        // A ringing phone: rings leave the CTA and fade
+        ripple: {
+          from: { transform: 'scale(1)', opacity: '0.5' },
+          to: { transform: 'scale(1.9)', opacity: '0' }
+        },
+        // Packets flowing along a dashed connector
+        dash: {
+          to: { strokeDashoffset: '-20' }
         }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out'
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        // CSS (not JS) so predetermined loops stay smooth while the page is busy; easeInOutSine from easings.co
+        float: 'float 7s cubic-bezier(0.37, 0, 0.63, 1) infinite',
+        'grid-pan': 'grid-pan 8s linear infinite',
+        wave: 'wave 1.8s cubic-bezier(0.37, 0, 0.63, 1) infinite',
+        // Emil's ease-out: the ring leaves fast and settles as it fades
+        ripple: 'ripple 2.4s cubic-bezier(0.23, 1, 0.32, 1) infinite',
+        dash: 'dash 1s linear infinite'
       }
     }
   },

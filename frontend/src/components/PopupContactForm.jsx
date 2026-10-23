@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import { Button } from "./ui/button";
+import { ease } from "../lib/motion";
+
+const INPUT_CLASS = "w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-ring transition-colors";
 
 export default function PopupContactForm() {
   const [isOpen, setIsOpen] = useState(false);
@@ -77,37 +81,37 @@ export default function PopupContactForm() {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 pointer-events-auto">
-          
+        <div className="dark fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 pointer-events-auto">
+
           {/* Frosted Glass Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease }}
             onClick={() => setIsOpen(false)}
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-background/70 backdrop-blur-sm"
           />
 
           {/* Popup Card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl z-10 flex flex-col overflow-hidden"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.18, ease } }}
+            exit={{ opacity: 0, y: 8, transition: { duration: 0.12, ease } }}
+            className="glass bg-popover/95 relative w-full max-w-4xl rounded-3xl z-10 flex flex-col overflow-hidden"
           >
             {/* Floating Close Button */}
             <button
               onClick={() => setIsOpen(false)}
-              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-700 transition-colors shadow-md"
+              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 ring-1 ring-inset ring-white/10 text-foreground hover:bg-white/20 transition-colors"
               aria-label="Close modal"
             >
               <X size={18} strokeWidth={2.5} />
             </button>
 
             {/* Header */}
-            <div className="pt-8 pb-6 px-8 text-center bg-white z-10">
-              <h2 className="font-heading font-black text-2xl sm:text-3xl text-slate-900 tracking-tight">
+            <div className="pt-8 pb-6 px-8 text-center z-10">
+              <h2 className="font-heading font-bold text-2xl sm:text-3xl text-foreground tracking-tight">
                 "Stop Juggling Tools—Switch to Cube's Cloud Telephony"
               </h2>
             </div>
@@ -139,7 +143,7 @@ export default function PopupContactForm() {
                       value={form.name}
                       onChange={handleChange}
                       placeholder="Name"
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all shadow-sm"
+                      className={INPUT_CLASS}
                     />
                     <input
                       type="tel"
@@ -148,7 +152,7 @@ export default function PopupContactForm() {
                       value={form.phone}
                       onChange={handleChange}
                       placeholder="Phone Number"
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all shadow-sm"
+                      className={INPUT_CLASS}
                     />
                     <input
                       type="email"
@@ -157,7 +161,7 @@ export default function PopupContactForm() {
                       value={form.email}
                       onChange={handleChange}
                       placeholder="Business Email"
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all shadow-sm"
+                      className={INPUT_CLASS}
                     />
                     <input
                       type="text"
@@ -166,7 +170,7 @@ export default function PopupContactForm() {
                       value={form.company}
                       onChange={handleChange}
                       placeholder="Company Name"
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all shadow-sm"
+                      className={INPUT_CLASS}
                     />
                     <input
                       type="url"
@@ -174,7 +178,7 @@ export default function PopupContactForm() {
                       value={form.website}
                       onChange={handleChange}
                       placeholder="Website URL"
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all shadow-sm"
+                      className={INPUT_CLASS}
                     />
                     <input
                       type="text"
@@ -182,18 +186,14 @@ export default function PopupContactForm() {
                       value={form.designation}
                       onChange={handleChange}
                       placeholder="Designation"
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all shadow-sm"
+                      className={INPUT_CLASS}
                     />
                   </div>
 
                   {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 rounded-lg shadow-md shadow-blue-600/20 transition-transform hover:-translate-y-0.5 mt-4 disabled:opacity-70 disabled:hover:translate-y-0"
-                  >
+                  <Button type="submit" disabled={isSubmitting} className="w-full h-14 text-lg mt-4">
                     {isSubmitting ? "Sending Request..." : "Get in Touch"}
-                  </button>
+                  </Button>
 
                 </form>
               </div>
