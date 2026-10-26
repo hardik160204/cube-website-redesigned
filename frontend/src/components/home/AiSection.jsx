@@ -1,7 +1,7 @@
 import React from "react";
 import { Check } from "lucide-react";
 import { CONTACT, tel } from "./catalog";
-import { DIAMONDS } from "./logo-assembly";
+import { DIAMONDS } from "./cube-diamonds";
 import { ENTERPRISE_FEATURES, MODULES_DATA } from "../../pages/CloudContactCenter";
 
 // Cube's dark AI band. Copy is Cube's own: the "AI Call Management" pitch and the contact center's
@@ -91,7 +91,7 @@ export default function AiSection() {
               href={tel(CONTACT.expert)}
               className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-lg bg-white px-[22px] text-base font-semibold text-primary transition-colors hover:bg-[#E6EEFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B8FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0626]"
             >
-              Talk to an expert
+              Talk to an expert<span className="hidden lg:inline">&nbsp;· {CONTACT.expert}</span>
             </a>
             <span className="text-sm text-[#9FB0D6]">Hosted or on-premise</span>
           </div>

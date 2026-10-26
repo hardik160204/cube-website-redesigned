@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 import Hero from "../components/home/Hero";
-import LogoAssembly from "../components/home/LogoAssembly";
+import PlatformOrbit from "../components/home/PlatformOrbit";
 import Products from "../components/home/Products";
 import FeatureTabs from "../components/home/FeatureTabs";
 import AiSection from "../components/home/AiSection";
@@ -35,7 +35,7 @@ const Home = () => {
   return (
     <>
         <Hero />
-        <LogoAssembly />
+        <PlatformOrbit />
         <Products />
         <FeatureTabs />
         <AiSection />

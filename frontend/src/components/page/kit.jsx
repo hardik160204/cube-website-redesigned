@@ -5,8 +5,9 @@ import { ArrowRight, Check, ChevronRight, Phone } from "lucide-react";
 import { useSpotlight } from "../../hooks/use-pointer-motion";
 import { CONTACT, tel } from "../home/catalog";
 import SectionIntro from "../home/SectionIntro";
-import { DIAMONDS } from "../home/logo-assembly";
+import { DIAMONDS } from "../home/cube-diamonds";
 import { CLIENT_LOGOS, PARTNER_LOGOS } from "../clients-and-partners";
+import { openDemo } from "../demo";
 
 // The inner pages' building blocks, in the homepage's language: logo palette, Outfit type, dark ink
 // (#0A0626) bands, 28px radii, Emil's ease-out, and reveal-on-scroll that reduced motion turns off.
@@ -36,12 +37,13 @@ export function Reveal({ as = "div", delay = 0, y = 24, className = "", children
 export function CtaButtons({ primary = "Book a demo", secondary = "Talk to an expert", phone = CONTACT.expert, dark = false, className = "" }) {
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className}`}>
-      <Link
-        to="/contact"
+      <button
+        type="button"
+        onClick={openDemo}
         className="group inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-7 font-medium text-white shadow-[0_14px_30px_-14px_rgb(0_71_255/0.9)] transition-[background-color,transform] duration-200 hover:bg-[#2300DC] active:scale-[0.97]"
       >
         {primary} <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-      </Link>
+      </button>
       {secondary && (
         <a
           href={tel(phone)}
@@ -49,7 +51,7 @@ export function CtaButtons({ primary = "Book a demo", secondary = "Talk to an ex
             dark ? "border-white/25 text-white hover:bg-white/10" : "border-[#0A0626] bg-[#0A0626] text-white hover:bg-white hover:text-[#0A0626]"
           }`}
         >
-          <Phone size={16} /> {secondary}
+          <Phone size={16} /> {secondary}<span className="hidden lg:inline">&nbsp;· {phone}</span>
         </a>
       )}
     </div>

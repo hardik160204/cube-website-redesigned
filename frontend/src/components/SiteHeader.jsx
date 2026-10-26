@@ -5,6 +5,7 @@ import { ArrowUpRight, ChevronDown, ChevronRight, Factory, Layers, Mail, Menu, P
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { PARTNER_LOGOS } from "./clients-and-partners";
 import { CITIES, CONTACT, INDUSTRIES, PLATFORM, RESOURCES, SOLUTIONS, tel } from "./home/catalog";
+import { openDemo } from "./demo";
 
 // Site header on every page (App.js), a sticky navy announcement bar whose messages ripple
 // in letter by letter, over a white bar with full-width mega panels.
@@ -330,9 +331,9 @@ function MobileSheet({ onNavigate }) {
         </Link>
       ))}
       <div className="mt-6 grid gap-3">
-        <Link to="/contact" onClick={onNavigate} className="rounded-lg bg-primary py-3 text-center font-medium text-white">
+        <button type="button" onClick={() => { onNavigate(); openDemo(); }} className="rounded-lg bg-primary py-3 text-center font-medium text-white">
           Book a demo
-        </Link>
+        </button>
         <a href={tel(CONTACT.expert)} className="rounded-lg border border-[#EDEEEF] py-3 text-center font-medium text-primary">
           Talk to an expert
         </a>
@@ -435,11 +436,11 @@ export default function SiteHeader() {
               href={tel(CONTACT.expert)}
               className="hidden rounded-lg border border-[#EDEEEF] bg-white px-4 py-1.5 font-medium text-primary transition-colors hover:border-primary/40 xl:inline-flex"
             >
-              Talk to an expert
+              Talk to an expert<span className="hidden 2xl:inline">&nbsp;· {CONTACT.expert}</span>
             </a>
-            <Link to="/contact" className="hidden rounded-lg border border-primary bg-primary px-4 py-1.5 font-medium text-white transition-colors hover:bg-[#2300DC] sm:inline-flex">
+            <button type="button" onClick={openDemo} className="hidden rounded-lg border border-primary bg-primary px-4 py-1.5 font-medium text-white transition-colors hover:bg-[#2300DC] sm:inline-flex">
               Book a demo
-            </Link>
+            </button>
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}

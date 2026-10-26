@@ -4,9 +4,10 @@ import { useReducedMotion } from "framer-motion";
 import { Check, Mic, Phone, Receipt } from "lucide-react";
 import { CONTACT, tel } from "./catalog";
 import { initialType, typeDelay, typeStep } from "./typewriter";
+import { openDemo } from "../demo";
 
 // Cube hero, centred: proof badge, gradient headline with a typed audience, checks and two CTAs.
-// The brand moment below it (LogoAssembly) takes the place of Cube product frame.
+// The brand moment below it (PlatformOrbit) shows every Cube product around the mark.
 
 const AUDIENCES = ["Contact Center & BPO's", "Banks & NBFC's", "Hotels & Hospitals", "OBD & SMS Campaigns"];
 const LONGEST = AUDIENCES.reduce((a, b) => (b.length > a.length ? b : a));
@@ -88,17 +89,18 @@ export default function Hero() {
         </ul>
 
         <div style={delay(320)} className="cl-fade-up flex w-full max-w-[260px] flex-col gap-2 lg:w-auto lg:max-w-none lg:flex-row lg:gap-5">
-          <Link
-            to="/contact"
+          <button
+            type="button"
+            onClick={openDemo}
             className="flex h-[52px] min-w-[197px] items-center justify-center rounded-lg border border-primary bg-primary px-14 font-medium text-white transition-[background-color,transform] duration-200 hover:scale-105 hover:bg-[#2300DC] motion-reduce:hover:scale-100"
           >
             Book a demo
-          </Link>
+          </button>
           <a
             href={tel(CONTACT.expert)}
             className="flex h-[52px] items-center justify-center gap-2.5 whitespace-nowrap rounded-lg border border-[#0A0626] bg-[#0A0626] px-14 font-medium text-white transition-[background-color,color,border-color,transform] duration-200 hover:scale-105 hover:border-[#E5EAF5] hover:bg-white hover:text-[#0A0626] motion-reduce:hover:scale-100"
           >
-            <Phone size={18} /> Talk to an expert
+            <Phone size={18} /> Talk to an expert<span className="hidden lg:inline">&nbsp;· {CONTACT.expert}</span>
           </a>
         </div>
         <p style={delay(500)} className="cl-fade-up mt-4 text-center text-sm text-[#a1080d]">

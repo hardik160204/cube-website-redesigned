@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
 import { CLIENTS } from "../clients-and-partners";
 import SectionIntro from "./SectionIntro";
 
@@ -34,23 +33,19 @@ const SECTOR_STORY = {
   Travel: {
     line: "Seamless communication for travel agencies, tour operators, and transport networks. Handle high booking volumes and deliver instant travel updates.",
     points: ["24/7 Booking Support", "Automated Itinerary Updates", "International Toll-Free"],
-    href: "/industries/travel",
   },
   Lending: {
     line: "Deliver flawless customer experiences while maintaining absolute regulatory compliance. Cube Software provides encrypted logging, automated collections, and secure cloud PBX for modern financial institutions.",
     points: ["100% Regulatory Compliance", "Automated Debt Collection", "Secure SIP Trunking"],
-    href: "/industries/finance",
   },
   Telecom: {
     line: "Powering the backbone of modern communication. We provide telecom operators and ISPs with high-capacity routing, SIP trunking, and advanced billing software.",
     points: ["Carrier-Grade SIP Trunking", "Advanced Call Billing", "Custom IVRS Solutions"],
-    href: "/industries/telecom",
   },
 };
 const PLATFORM_STORY = {
   line: "One software platform, one provider, and every communication function you need, fully integrated in the cloud.",
   points: ["Cloud Contact Center", "Call Recording", "IVRS Services"],
-  href: "/services/cloud-contact-center",
 };
 
 // Shared by every card: the same lift, glow and top sweep on hover.
@@ -58,7 +53,7 @@ function Sweep() {
   return <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-[linear-gradient(90deg,#00B8FF,#0047FF,#2300DC)] transition-transform duration-500 ease-out-expo group-hover:scale-x-100" />;
 }
 
-function Footer({ name, sub, href }) {
+function Footer({ name, sub }) {
   return (
     <div className="relative mt-auto flex items-center gap-3 border-t border-[#E9ECF3] pt-5">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#00B8FF,#0047FF)] text-[15px] font-semibold text-white">{initials(name)}</span>
@@ -66,11 +61,6 @@ function Footer({ name, sub, href }) {
         <span className="truncate text-[15px] font-medium text-[#2B2F3A]">{name}</span>
         <span className="truncate text-sm text-[#6C6C6C]">{sub}</span>
       </div>
-      {href && (
-        <Link to={href} aria-label="See how Cube serves this sector" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#E5EAF4] text-primary transition-[background-color,color,border-color] duration-200 hover:border-primary hover:bg-primary hover:text-white">
-          <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-        </Link>
-      )}
     </div>
   );
 }
@@ -91,7 +81,7 @@ function StoryCard({ c }) {
             </li>
           ))}
         </ul>
-        <Footer name={c.name} sub={c.sector ? `Cube client · ${c.sector}` : "Cube client"} href={st.href} />
+        <Footer name={c.name} sub={c.sector ? `Cube client · ${c.sector}` : "Cube client"} />
       </article>
     );
   }
@@ -118,6 +108,7 @@ export function ClientStories({ className = "" }) {
   const dragged = useRef(false);
   const reduce = useReducedMotion();
   const [edge, setEdge] = useState({ start: true, end: false });
+  const [paused, setPaused] = useState(false);
   const stories = [...CLIENTS].sort((a, b) => Boolean(b.review) - Boolean(a.review));
 
   const update = () => {
@@ -126,8 +117,19 @@ export function ClientStories({ className = "" }) {
   };
   useEffect(update, []);
 
+  // Cards move on by themselves every few seconds; hovering or focusing the row holds them still.
+  useEffect(() => {
+    if (reduce || paused) return undefined;
+    const t = setInterval(() => step(1), 4500);
+    return () => clearInterval(t);
+  });
+
   const step = (dir) => {
     const el = ref.current;
+    if (dir > 0 && el.scrollLeft + el.clientWidth > el.scrollWidth - 8) {
+      el.scrollTo({ left: 0, behavior: reduce ? "auto" : "smooth" });
+      return;
+    }
     const card = el.querySelector("li");
     el.scrollBy({ left: dir * (card ? card.offsetWidth + 20 : el.clientWidth), behavior: reduce ? "auto" : "smooth" });
   };
@@ -156,7 +158,13 @@ export function ClientStories({ className = "" }) {
   };
 
   return (
-    <div className={className}>
+    <div
+      className={className}
+      onPointerEnter={() => setPaused(true)}
+      onPointerLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
       <ul
         ref={ref}
         onScroll={update}
@@ -177,7 +185,7 @@ export function ClientStories({ className = "" }) {
       <div className="mt-2 flex items-center justify-end gap-3">
         {[
           { dir: -1, Icon: ChevronLeft, off: edge.start, label: "Previous client stories" },
-          { dir: 1, Icon: ChevronRight, off: edge.end, label: "Next client stories" },
+          { dir: 1, Icon: ChevronRight, off: false, label: "Next client stories" },
         ].map(({ dir, Icon, off, label }) => (
           <button
             key={dir}

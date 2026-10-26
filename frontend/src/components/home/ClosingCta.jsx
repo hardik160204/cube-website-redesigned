@@ -1,9 +1,10 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Phone } from "lucide-react";
 import { CONTACT, tel } from "./catalog";
+import { openDemo } from "../demo";
 
-// Cube closing band: a rounded diagonal-blue panel set in from the page edges, so it never runs into the
-// footer; one line, a white and a ghost button.
+// Cube closing band: a rounded logo-blue panel set in from the page edges (so it never runs into the footer).
+// Kept simple and large: one line, two buttons, then the sales number big enough to read across a room.
 // Inner pages pass their own closing line; the homepage uses the defaults.
 export default function ClosingCta({
   label = "Book a demo",
@@ -14,24 +15,32 @@ export default function ClosingCta({
 }) {
   return (
     <section className="w-full bg-white px-4 pb-16 pt-12 md:pb-24 md:pt-16">
-      <div className="relative isolate mx-auto flex max-w-[1228px] flex-col items-center overflow-hidden rounded-[32px] bg-[linear-gradient(110deg,#2300DC_0%,#0047FF_55%,#0091FF_100%)] px-6 py-14 text-center shadow-[0_40px_80px_-40px_rgb(35_0_220/0.7)] md:py-[72px]">
+      <div className="relative isolate mx-auto flex max-w-[1228px] flex-col items-center overflow-hidden rounded-[32px] bg-[linear-gradient(110deg,#2300DC_0%,#0047FF_55%,#0091FF_100%)] px-6 py-16 text-center shadow-[0_40px_80px_-40px_rgb(35_0_220/0.7)] md:py-20">
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-white/10 blur-[90px]" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -left-20 -z-10 h-72 w-72 rounded-full bg-[#00B8FF]/25 blur-[90px]" />
-        <span className="text-[13px] font-semibold uppercase tracking-wide text-[#00B8FF] md:text-sm">{label}</span>
-        <h2 className="mt-3 text-[28px] font-medium leading-[1.2] text-white md:text-[40px] xl:text-[48px]">{title}</h2>
-        <p className="mt-5 relative max-w-[880px] text-[15px] leading-7 text-[#DCE6FF] md:text-[17px]">
-          {body}
-        </p>
+        <span className="text-sm font-semibold uppercase tracking-[0.12em] text-[#7FD8FF]">{label}</span>
+        <h2 className="mt-4 max-w-[1000px] text-[34px] font-medium leading-[1.12] text-white md:text-[52px] xl:text-[60px]">{title}</h2>
+        <p className="mt-5 max-w-[820px] text-[17px] leading-8 text-[#DCE6FF] md:text-xl">{body}</p>
         {children}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-          <Link to="/contact" className="inline-flex h-12 min-w-[176px] items-center px-6 justify-center rounded-lg border border-white bg-white font-semibold text-primary transition-colors hover:bg-[#E6EEFF]">
+        <div className="mt-10 flex w-full max-w-[560px] flex-col items-stretch justify-center gap-4 sm:flex-row">
+          <button
+            type="button"
+            onClick={openDemo}
+            className="inline-flex h-14 flex-1 items-center justify-center rounded-xl bg-white px-8 text-lg font-semibold text-primary shadow-[0_16px_30px_-16px_rgb(10_6_38/0.7)] transition-[background-color,transform] duration-200 hover:bg-[#E6EEFF] active:scale-[0.97]"
+          >
             {primary}
-          </Link>
-          <a href={tel(CONTACT.expert)} className="inline-flex h-12 w-[196px] items-center justify-center rounded-lg border border-white/30 font-semibold text-white transition-colors hover:bg-white/10">
-            Talk to an expert
+          </button>
+          <a
+            href={tel(CONTACT.expert)}
+            className="inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl border border-white/40 px-8 text-lg font-semibold text-white transition-[background-color,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
+          >
+            <Phone size={18} /> Talk to an expert
           </a>
         </div>
-        <p className="mt-5 text-[14px] text-[#9DB6EE]">Or call sales on {CONTACT.sales}</p>
+        <p className="mt-10 text-2xl font-medium text-white/80 md:text-3xl">Or</p>
+        <a href={tel(CONTACT.sales)} className="group mt-3 text-[30px] font-medium leading-tight text-white md:text-[44px]">
+          Call Us <span className="whitespace-nowrap underline decoration-white/30 underline-offset-8 transition-[text-decoration-color] group-hover:decoration-white">{CONTACT.sales}</span>
+        </a>
       </div>
     </section>
   );

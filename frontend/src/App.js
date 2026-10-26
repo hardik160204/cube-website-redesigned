@@ -86,16 +86,14 @@ const GlobalLayout = () => {
     "/career"
   ];
 
-  // If the current path is in the hiddenPaths array, do not render the widgets
-  if (hiddenPaths.includes(currentPath)) {
-    return null;
-  }
+  // On these paths the chat widget is hidden and the demo form only opens from a "Book a demo" button.
+  const hidden = hiddenPaths.includes(currentPath);
 
   return (
     <>
       {/* ContactSection completely removed from here to stop the double-rendering on Home and other pages */}
-      <FloatingChatWidget />
-      <PopupContactForm />
+      {!hidden && <FloatingChatWidget />}
+      <PopupContactForm auto={!hidden} />
     </>
   );
 };

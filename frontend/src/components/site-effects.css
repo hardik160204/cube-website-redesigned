@@ -176,6 +176,13 @@
 @keyframes cl-float { 50% { transform: translateY(-10px); } }
 .cl-float { animation: cl-float 7s ease-in-out infinite; }
 
+/* --- Homepage platform orbit: product chips circle the mark and stay upright --------------- */
+.cl-orbit-ring { position: absolute; inset: 0; animation: cl-rotate var(--cl-orbit, 60s) linear infinite; }
+.cl-orbit-upright { animation: cl-rotate var(--cl-orbit, 60s) linear infinite; }
+.cl-orbit .cl-rev { animation-direction: reverse; }
+.cl-orbit:hover .cl-orbit-ring,
+.cl-orbit:hover .cl-orbit-upright { animation-play-state: paused; }
+
 /* --- Reduced motion: everything above holds still; marquees become scrollable rows ----------- */
 @media (prefers-reduced-motion: reduce) {
   .cl-glint { animation: none; }
