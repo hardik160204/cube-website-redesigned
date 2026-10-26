@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { 
-  Check, ArrowRight, ShieldCheck, Zap, Building2, 
-  PhoneCall, Sparkles, HelpCircle, ChevronRight 
-} from "lucide-react";
-import { Button } from "../components/ui/button";
-import Navbar from "../components/Navbar";
-import { Footer } from "../components/HomeSections2";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, Building2, Check, ChevronRight, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
+import { CONTACT, tel } from "../components/home/catalog";
+import { TrustBand } from "../components/page/kit";
 
-const PRICING_TIERS = [
+export const PRICING_TIERS = [
   {
     name: "Starter / Basic",
     description: "Ideal for small support teams and growing office desks looking for reliable cloud telephony.",
@@ -65,7 +62,7 @@ const PRICING_TIERS = [
 const PRICING_FAQS = [
   {
     q: "Can we switch between monthly and annual plans?",
-    a: "Yes! You can upgrade, downgrade, or switch from monthly to annual billing at any time through your customer portal.",
+    a: "Yes! You can upgrade, downgrade, or switch from monthly to annual billing at any time — just ask your Cube account team.",
   },
   {
     q: "Are there any hidden setup or license fees?",
@@ -81,220 +78,238 @@ const PRICING_FAQS = [
   },
 ];
 
+const TRUST = [
+  { icon: ShieldCheck, title: "100% Encrypted & Compliant", text: "Enterprise security standards protecting sensitive banking, healthcare, and corporate call archives." },
+  { icon: Zap, title: "Zero Downtime Migration", text: "Our telephony experts assist in porting numbers and configuring agent trunks with no system interruption." },
+  { icon: Building2, title: "On-Premise or Cloud", text: "Flexible hosting options tailored directly to your IT team's architecture requirements." },
+];
+const rupees = (n) => `Rs. ${n.toLocaleString("en-IN")}`;
+// Hero pieces and plan cards rise in one after another
+const delay = (ms) => ({ animationDelay: `${ms}ms` });
+
+// The price rolls out and the new one rolls in when the billing interval changes.
+function Price({ tier, isYearly, dark }) {
+  if (typeof tier.monthlyPrice !== "number") {
+    return <p className={`text-[40px] font-medium leading-[52px] ${dark ? "text-white" : "text-[#0A0626]"}`}>Custom Quote</p>;
+  }
+  const price = isYearly ? tier.yearlyPrice : tier.monthlyPrice;
+  return (
+    <div>
+      <div className="flex flex-wrap items-baseline gap-x-2">
+        <span className="relative inline-flex overflow-hidden">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={price}
+              initial={{ opacity: 0, transform: "translateY(60%)" }}
+              animate={{ opacity: 1, transform: "translateY(0%)", transition: { type: "spring", duration: 0.45, bounce: 0.2 } }}
+              exit={{ opacity: 0, transform: "translateY(-60%)", transition: { duration: 0.15 } }}
+              className={`text-[44px] font-medium leading-[52px] tracking-[-0.02em] ${dark ? "text-white" : "text-[#0A0626]"}`}
+            >
+              {rupees(price)}
+            </motion.span>
+          </AnimatePresence>
+        </span>
+        <span className={`text-base ${dark ? "text-[#A9B3CC]" : "text-[#5F6062]"}`}>/ seat / month</span>
+      </div>
+      <p className={`mt-1 h-5 text-sm ${dark ? "text-[#A9B3CC]" : "text-[#6B6E75]"}`}>
+        {isYearly && (
+          <>
+            <span className="mr-1.5 line-through opacity-70">{rupees(tier.monthlyPrice)}</span>
+            billed annually
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(true);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   return (
-    <div className="bg-white text-slate-900 min-h-screen flex flex-col justify-between">
-      <Navbar />
+    <>
+        {/* --- HERO --- */}
+        <section className="relative overflow-hidden bg-white bg-[radial-gradient(60%_55%_at_50%_0%,#EEF3FF,transparent)] px-4 pb-16 pt-16 text-center sm:pt-20">
+          <nav style={delay(0)} className="cl-fade-up mb-6 flex items-center justify-center gap-1.5 text-xs text-[#6B6E75]">
+            <Link className="transition-colors hover:text-primary" to="/">
+              Home
+            </Link>
+            <ChevronRight size={13} />
+            <span className="font-semibold text-[#31343A]">Pricing</span>
+          </nav>
 
-      <main>
-        {/* --- HERO SECTION --- */}
-        <section className="relative overflow-hidden bg-[#0A1F44] pt-44 pb-20 text-white">
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0A1F44]/95 via-[#0A1F44]/85 to-[#0A1F44]/70 z-10" />
-          
-          <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 text-center">
-            <nav className="flex items-center justify-center gap-1.5 text-xs text-blue-200 mb-6">
-              <Link className="hover:text-white transition-colors" to="/">Home</Link>
-              <ChevronRight size={13} />
-              <span className="text-white font-semibold">Pricing</span>
-            </nav>
+          <span
+            style={delay(60)}
+            className="cl-fade-up inline-flex h-10 items-center gap-2 rounded-full border border-[#e5e7eb] bg-white px-4 text-sm font-semibold text-[#31343a] shadow-[0_6px_16px_-10px_rgb(0_30_90/0.25)]"
+          >
+            <Sparkles size={15} className="text-[#F59E0B]" />
+            Simple, Predictable Telephony Plans
+          </span>
 
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-blue-400/30 bg-blue-500/10 text-blue-200 text-xs font-bold tracking-widest uppercase mb-6 backdrop-blur-md">
-              <Sparkles size={14} className="text-amber-400" />
-              Simple, Predictable Telephony Plans
-            </span>
+          <h1
+            style={delay(120)}
+            className="cl-fade-up mx-auto mt-6 max-w-4xl bg-gradient-to-r from-[#00B8FF] via-[#0047FF] to-[#2300DC] bg-clip-text text-[34px] font-medium leading-[1.15] text-transparent sm:text-5xl lg:text-[56px] lg:leading-[62px]"
+          >
+            Enterprise Telephony Sized for Your Scale
+          </h1>
+          <p style={delay(180)} className="cl-fade-up mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#404348]">
+            Choose the plan that fits your business needs. Upgrade or scale your agent seats seamlessly with zero operational downtime.
+          </p>
 
-            <h1 className="font-heading font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight max-w-4xl mx-auto leading-tight">
-              Enterprise Telephony Sized for Your Scale
-            </h1>
-
-            <p className="mt-5 text-lg text-blue-100 max-w-2xl mx-auto leading-relaxed text-center">
-              Choose the plan that fits your business needs. Upgrade or scale your agent seats seamlessly with zero operational downtime.
-            </p>
-
-            {/* Billing Toggle */}
-            <div className="mt-10 flex items-center justify-center gap-4">
-              <span className={`text-sm font-semibold ${!isYearly ? "text-white" : "text-slate-400"}`}>
-                Monthly Billing
-              </span>
-              <button
-                onClick={() => setIsYearly(!isYearly)}
-                className="w-14 h-8 bg-blue-600 rounded-full p-1 transition-colors duration-300 relative focus:outline-none shadow-inner"
-                aria-label="Toggle Billing Interval"
-              >
-                <motion.div
-                  animate={{ x: isYearly ? 24 : 0 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  className="w-6 h-6 bg-white rounded-full shadow-md"
-                />
-              </button>
-              <span className={`text-sm font-semibold flex items-center gap-2 ${isYearly ? "text-white" : "text-slate-400"}`}>
-                Annual Billing
-                <span className="bg-amber-400 text-slate-900 text-[11px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  Save 20%
-                </span>
-              </span>
+          {/* Billing toggle: a pill slides between the two intervals */}
+          <div style={delay(240)} className="cl-fade-up mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div role="group" aria-label="Billing interval" className="relative inline-flex rounded-full border border-[#E5EAF4] bg-[#F0F3FA] p-1">
+              {[
+                ["Monthly Billing", false],
+                ["Annual Billing", true],
+              ].map(([label, yearly]) => (
+                <button
+                  key={label}
+                  type="button"
+                  aria-pressed={isYearly === yearly}
+                  onClick={() => setIsYearly(yearly)}
+                  className={`relative rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${isYearly === yearly ? "text-white" : "text-[#0A2A7A] hover:text-primary"}`}
+                >
+                  {isYearly === yearly && (
+                    <motion.span
+                      layoutId="billing-pill"
+                      transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
+                      className="absolute inset-0 rounded-full bg-primary shadow-[0_6px_16px_-6px_rgb(0_51_153/0.6)]"
+                    />
+                  )}
+                  <span className="relative">{label}</span>
+                </button>
+              ))}
             </div>
+            <span className="rounded-full bg-[#E3F5EC] px-3 py-1 text-xs font-semibold uppercase tracking-[0.04em] text-[#0F7A4A]">Save 20%</span>
           </div>
         </section>
 
-        {/* --- PRICING CARDS --- */}
-        <section className="py-20 bg-slate-50 relative -mt-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="grid lg:grid-cols-3 gap-8 items-stretch">
-              {PRICING_TIERS.map((tier) => {
-                const price = typeof tier.monthlyPrice === "number"
-                  ? isYearly ? tier.yearlyPrice : tier.monthlyPrice
-                  : tier.monthlyPrice;
-
-                return (
-                  <div
-                    key={tier.name}
-                    className={`relative rounded-3xl p-8 transition-all duration-300 flex flex-col justify-between ${
-                      tier.highlight
-                        ? "bg-white border-2 border-blue-600 shadow-2xl scale-105 z-20"
-                        : "bg-white border border-slate-200 shadow-sm hover:shadow-xl z-10"
-                    }`}
-                  >
+        {/* --- PLANS --- */}
+        <section className="px-4 pb-20 pt-4 sm:px-6">
+          <div className="mx-auto grid max-w-[1228px] items-stretch gap-6 lg:grid-cols-3">
+            {PRICING_TIERS.map((tier, i) => {
+              const dark = tier.highlight;
+              const priced = typeof tier.monthlyPrice === "number";
+              return (
+                <div
+                  key={tier.name}
+                  style={delay(300 + i * 80)}
+                  className={`cl-fade-up relative flex flex-col rounded-3xl p-8 transition-[box-shadow,border-color,translate] duration-300 hover:[translate:0_-4px] ${
+                    dark
+                      ? "bg-[#0A0626] text-white shadow-[0_30px_60px_-24px_rgb(0_51_153/0.6)] ring-1 ring-[#26366B] lg:-my-4 lg:py-12"
+                      : "border border-[#E5E7EB] bg-white hover:border-primary/40 hover:shadow-[0_18px_40px_-20px_rgb(0_51_153/0.25)]"
+                  }`}
+                >
+                  {dark && (
+                    <div aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(70%_50%_at_80%_0%,rgb(33_68_206/0.45),transparent)]" />
+                  )}
+                  <div className="relative flex items-start justify-between gap-3">
+                    <h2 className={`text-xl font-medium ${dark ? "text-white" : "text-[#31343A]"}`}>{tier.name}</h2>
                     {tier.badge && (
-                      <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider shadow-md">
+                      <span
+                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.04em] ${
+                          dark ? "bg-[#8FB0FF] text-[#0B1330]" : "bg-[#EEF2FB] text-primary"
+                        }`}
+                      >
                         {tier.badge}
                       </span>
                     )}
+                  </div>
+                  <p className={`relative mt-3 text-[15px] leading-6 ${dark ? "text-[#B8C4E0]" : "text-[#4A4D53]"}`}>{tier.description}</p>
 
-                    <div>
-                      <h3 className="font-heading font-bold text-2xl text-slate-900">{tier.name}</h3>
-                      <p className="mt-3 text-sm text-slate-600 leading-relaxed text-justify">
-                        {tier.description}
-                      </p>
+                  <div className={`relative my-7 border-y py-6 ${dark ? "border-white/10" : "border-[#EDEEEF]"}`}>
+                    <Price tier={tier} isYearly={isYearly} dark={dark} />
+                  </div>
 
-                      <div className="mt-6 mb-8 pb-6 border-b border-slate-100">
-                        {typeof price === "number" ? (
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-4xl font-black text-slate-900">Rs. {price}</span>
-                            <span className="text-sm font-semibold text-slate-500">/ seat / month</span>
-                          </div>
-                        ) : (
-                          <div className="text-3xl font-black text-slate-900">Custom Quote</div>
-                        )}
-                      </div>
-
-                      <div className="space-y-3.5">
-                        <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Included Capabilities</div>
-                        {tier.features.map((feature) => (
-                          <div key={feature} className="flex items-start gap-3 text-sm text-slate-700 text-justify">
-                            <div className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-                              <Check size={13} strokeWidth={3} />
-                            </div>
-                            <span>{feature}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mt-10 pt-4">
-                      <Link to="/#contact">
-                        <Button
-                          className={`w-full h-12 text-base rounded-xl font-bold transition-transform hover:-translate-y-0.5 ${
-                            tier.highlight
-                              ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30"
-                              : "bg-slate-900 hover:bg-slate-800 text-white"
+                  <p className={`relative mb-4 text-xs font-semibold uppercase tracking-[0.08em] ${dark ? "text-[#8FB0FF]" : "text-[#183cbe]"}`}>
+                    Included Capabilities
+                  </p>
+                  <ul className="relative flex-1 space-y-3.5">
+                    {tier.features.map((feature) => (
+                      <li key={feature} className={`flex items-start gap-3 text-[15px] ${dark ? "text-[#D5DEF5]" : "text-[#31343A]"}`}>
+                        <span
+                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                            dark ? "bg-[rgb(95_150_255/0.18)] text-[#8FB0FF]" : "bg-[#CFEDE3] text-[#0F7A4A]"
                           }`}
                         >
-                          {typeof price === "number" ? "Get Started" : "Contact Sales"}
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+                          <Check size={12} strokeWidth={3} />
+                        </span>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
 
-        {/* --- ENTERPRISE TRUST BANNER --- */}
-        <section className="py-16 bg-white border-y border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-3 gap-8 text-center">
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
-                <ShieldCheck size={24} />
-              </div>
-              <h4 className="font-heading font-bold text-lg text-slate-900">100% Encrypted & Compliant</h4>
-              <p className="mt-2 text-sm text-slate-600 text-justify">
-                Enterprise security standards protecting sensitive banking, healthcare, and corporate call archives.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-4">
-                <Zap size={24} />
-              </div>
-              <h4 className="font-heading font-bold text-lg text-slate-900">Zero Downtime Migration</h4>
-              <p className="mt-2 text-sm text-slate-600 text-justify">
-                Our telephony experts assist in porting numbers and configuring agent trunks with no system interruption.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-                <Building2 size={24} />
-              </div>
-              <h4 className="font-heading font-bold text-lg text-slate-900">On-Premise or Cloud</h4>
-              <p className="mt-2 text-sm text-slate-600 text-justify">
-                Flexible hosting options tailored directly to your IT team's architecture requirements.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* --- PRICING FAQ SECTION --- */}
-        <section className="py-20 bg-slate-50">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
-            <div className="text-center mb-12">
-              <span className="text-blue-700 text-xs font-bold tracking-widest uppercase mb-2 block">— Billing & Plans</span>
-              <h2 className="font-heading font-black text-3xl sm:text-4xl text-slate-900">Frequently Asked Questions</h2>
-            </div>
-
-            <div className="space-y-4">
-              {PRICING_FAQS.map((faq, i) => (
-                <div key={i} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                  <h3 className="font-heading font-bold text-lg text-slate-900 flex items-center gap-2 mb-2">
-                    <HelpCircle size={18} className="text-blue-600 shrink-0" />
-                    {faq.q}
-                  </h3>
-                  <p className="text-slate-600 text-sm leading-relaxed text-justify pl-6">
-                    {faq.a}
-                  </p>
+                  <Link
+                    to="/contact"
+                    className={`relative mt-10 flex h-12 items-center justify-center gap-2 rounded-lg font-semibold transition-[background-color,transform] duration-200 hover:scale-[1.02] motion-reduce:hover:scale-100 ${
+                      dark ? "bg-white text-primary hover:bg-[#EEF2FF]" : "bg-primary text-white hover:bg-[#001A4D]"
+                    }`}
+                  >
+                    {priced ? "Get Started" : "Contact Sales"} <ArrowRight size={16} />
+                  </Link>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </section>
 
-        {/* --- CTA BANNER --- */}
-        <section className="py-16 bg-[#0A1F44] text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div>
-              <h2 className="font-heading font-black text-3xl sm:text-4xl">Need a custom quote for your contact center?</h2>
-              <p className="mt-3 text-blue-200 max-w-xl text-justify">
-                Talk to our senior telephony architects for a customized breakdown according to your trunk lines and agent seats.
-              </p>
-            </div>
-            <Link to="/#contact" className="shrink-0">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white px-9 h-12 rounded-xl font-bold shadow-lg transition-transform hover:-translate-y-0.5">
-                Talk to Sales <ArrowRight size={16} className="ml-2" />
-              </Button>
-            </Link>
+        {/* --- TRUST --- */}
+        <section className="bg-[#F0F3FA] px-4 py-16 sm:px-6 md:py-20">
+          <div className="mx-auto grid max-w-[1228px] gap-5 md:grid-cols-3">
+            {TRUST.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="rounded-2xl border border-[#E5EAF4] bg-white p-7 transition-colors hover:border-[#B8C5EE]">
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EEF2FB] text-primary">
+                  <Icon size={24} />
+                </span>
+                <h3 className="mt-5 text-lg font-medium text-[#31343A]">{title}</h3>
+                <p className="mt-2 text-[15px] leading-6 text-[#4A4D53]">{text}</p>
+              </div>
+            ))}
           </div>
         </section>
-      </main>
 
-      <Footer />
-    </div>
+        <TrustBand />
+
+        {/* --- FAQ --- */}
+        <section className="flex flex-col items-center px-4 py-20 md:py-24">
+          <span className="text-sm font-semibold uppercase text-[#183CBE]">Billing & Plans</span>
+          <h2 className="mt-3 text-center text-[30px] font-medium text-[#2B2D36] xl:text-[45px]">
+            Frequently Asked <span className="text-primary">Questions</span>
+          </h2>
+          <Accordion type="single" collapsible defaultValue="faq-0" className="mx-auto mt-10 w-full max-w-[760px] space-y-3 md:mt-12">
+            {PRICING_FAQS.map((faq, i) => (
+              <AccordionItem
+                key={faq.q}
+                value={`faq-${i}`}
+                className="rounded-2xl border border-[#ECECEC] bg-white px-5 transition-colors duration-200 hover:border-[#D5D9E3] data-[state=open]:border-primary md:px-6"
+              >
+                <AccordionTrigger className="gap-4 py-4 text-[15px] font-medium leading-snug text-[#2B2D36] hover:no-underline md:text-[16px] [&>svg]:text-primary">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="pr-8 text-[14px] leading-6 text-[#404348] md:pr-10 md:text-[15px]">{faq.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </section>
+
+        {/* --- CTA --- */}
+        <section className="w-full bg-[linear-gradient(110deg,#2300DC_0%,#0047FF_55%,#0091FF_100%)]">
+          <div className="mx-auto flex max-w-[1100px] flex-col items-center px-4 py-14 text-center md:py-[72px]">
+            <h2 className="text-[28px] font-medium leading-[1.2] text-white md:text-[40px]">Need a custom quote for your contact center?</h2>
+            <p className="mt-5 max-w-[720px] text-[15px] leading-7 text-[#DCE6FF] md:text-[17px]">
+              Talk to our senior telephony architects for a customized breakdown according to your trunk lines and agent seats.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <Link to="/contact" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-white bg-white px-7 font-semibold text-primary transition-colors hover:bg-[#EEF2FF]">
+                Talk to Sales <ArrowRight size={16} />
+              </Link>
+              <a href={tel(CONTACT.sales)} className="inline-flex h-12 items-center justify-center rounded-lg border border-white/30 px-7 font-semibold text-white transition-colors hover:bg-white/10">
+                Call {CONTACT.sales}
+              </a>
+            </div>
+          </div>
+        </section>
+    </>
   );
 }

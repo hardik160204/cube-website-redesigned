@@ -1,149 +1,111 @@
-import React, { useRef } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { ArrowDown, ArrowRight } from "lucide-react";
-import { MagneticLink } from "../ui/magnetic-link";
-import { RevealText } from "../ui/reveal-text";
-import { ease, fadeUp, inView, reveal } from "../../lib/motion";
-import Waveform from "./Waveform";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useReducedMotion } from "framer-motion";
+import { Check, Mic, Phone, Receipt } from "lucide-react";
+import { CONTACT, tel } from "./catalog";
+import { initialType, typeDelay, typeStep } from "./typewriter";
 
-const STATS = [
-  { value: "35+", label: "Years in telephony" },
-  { value: "5,000+", label: "Active users" },
-  { value: "10+", label: "Countries" },
-  { value: "99.5%", label: "Uptime SLA" },
-];
+// Cube hero, centred: proof badge, gradient headline with a typed audience, checks and two CTAs.
+// The brand moment below it (LogoAssembly) takes the place of Cube product frame.
 
-// Apple-style springs from Emil Kowalski's tables; the CTA takes the top of the 0.1–0.3 bounce range.
-const LINE_SPRING = { type: "spring", duration: 0.9, bounce: 0.2 };
-const CTA_SPRING = { type: "spring", duration: 0.5, bounce: 0.3 };
+const AUDIENCES = ["Contact Center & BPO's", "Banks & NBFC's", "Hotels & Hospitals", "OBD & SMS Campaigns"];
+const LONGEST = AUDIENCES.reduce((a, b) => (b.length > a.length ? b : a));
+const TRUST = ["99.5% uptime SLA", "Ready. Set. Go Live!", "Voice without Limits"];
 
-// Orchestration: label → line 1 → line 2 → actions, 100ms apart. The waveform draws in under it all.
-const sequence = { hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } } };
-const lineStagger = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
-
-// A drawn "signal" under the payoff words; revealed with a clip so the stroke stays even at any width.
-function SignalUnderline({ children }) {
+function TypedAudience() {
   const reduce = useReducedMotion();
+  const [state, setState] = useState(initialType);
+  const [paused, setPaused] = useState(false);
+
+  // Holds while hovered (WCAG 2.2.2); reduced motion shows the first word, typed in full and still.
+  useEffect(() => {
+    if (reduce || paused) return;
+    const t = setTimeout(() => setState((s) => typeStep(s, AUDIENCES)), typeDelay(state, AUDIENCES));
+    return () => clearTimeout(t);
+  }, [state, paused, reduce]);
+
+  const text = reduce ? AUDIENCES[0] : AUDIENCES[state.word].slice(0, state.length);
   return (
-    <span className="relative inline-block">
-      {children}
-      <motion.svg
-        aria-hidden="true"
-        viewBox="0 0 300 20"
-        preserveAspectRatio="none"
-        initial={reduce ? { opacity: 0 } : { clipPath: "inset(0 100% 0 0)" }}
-        animate={reduce ? { opacity: 1 } : { clipPath: "inset(0 0% 0 0)" }}
-        transition={{ duration: 1, ease, delay: 1 }}
-        className="absolute -bottom-[0.06em] left-0 h-[0.16em] w-full overflow-visible text-primary"
-      >
-        <path
-          d="M2 10 C 20 2, 30 18, 48 10 S 76 2, 94 10 S 122 18, 140 10 S 168 2, 186 10 S 214 18, 232 10 S 260 2, 278 10 L 298 10"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="4"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      </motion.svg>
+    <span aria-hidden="true" onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} className="text-primary">
+      <br className="md:hidden" />
+      <span className="relative inline-block align-baseline">
+        <span className="invisible whitespace-pre">{LONGEST}</span>
+        <span className="absolute left-0 top-0 whitespace-pre">
+          {text}
+          {!reduce && <span className="cl-caret relative left-[3px] font-light">|</span>}
+        </span>
+      </span>
     </span>
   );
 }
 
 export default function Hero() {
-  const reduce = useReducedMotion();
-
-  // Scroll-linked exit: copy sinks slower than the page, the grid slower still, and the
-  // waveform flattens into a single line that hands off to the journey section below.
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const copyY = useTransform(scrollYProgress, [0, 1], [0, 110]);
-  const gridY = useTransform(scrollYProgress, [0, 1], [0, 180]);
-  const flatten = useTransform(scrollYProgress, [0, 0.85], [1, 0.08]);
-  const drift = (style) => (reduce ? undefined : style);
-
-  // Full transform strings so Motion can hardware-accelerate the reveal while the page loads.
-  const line = {
-    hidden: reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(50px)" },
-    show: reduce
-      ? { opacity: 1, transition: { duration: 0.4, ease } }
-      : { opacity: 1, transform: "translateY(0px)", transition: LINE_SPRING },
-  };
-  const ctaPop = {
-    hidden: { opacity: 0, scale: reduce ? 1 : 0.9 },
-    show: { opacity: 1, scale: 1, transition: CTA_SPRING },
-  };
-  const stat = reveal(reduce, "translateY(16px)", "translateY(0px)", 0.07);
-
+  // Hero pieces rise in one after another, 80ms apart
+  const delay = (ms) => ({ animationDelay: `${ms}ms` });
   return (
-    <section ref={ref} className="relative isolate overflow-hidden pb-16 pt-36 sm:pt-44">
-      {/* Faint grid: pans forward on its own (CSS) and sinks slower than the page on scroll (Motion) */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_75%_65%_at_30%_0%,black,transparent)]">
-        <motion.div style={drift({ y: gridY })} className="absolute inset-x-0 -top-56 bottom-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgb(15_23_42/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(15_23_42/0.05)_1px,transparent_1px)] bg-[size:56px_56px] motion-safe:animate-grid-pan" />
-        </motion.div>
-      </div>
-
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <motion.div variants={sequence} initial="hidden" animate="show" style={drift({ y: copyY })}>
-          <motion.p variants={fadeUp} className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            <span aria-hidden="true" className="h-px w-8 bg-foreground/30" />
-            Computer telephony since 1990
-          </motion.p>
-
-          <motion.h1
-            variants={lineStagger}
-            className="mt-8 font-heading text-[clamp(2.75rem,7.4vw,7.25rem)] font-extrabold leading-[0.95] tracking-[-0.045em] text-foreground"
-          >
-            {/* One mask per line; the padding keeps descenders and the underline inside it */}
-            <span className="-mb-[0.18em] block overflow-hidden pb-[0.18em]">
-              <motion.span variants={line} className="inline-block">
-                From first ring
-              </motion.span>
+    <section className="relative flex flex-col items-center overflow-hidden bg-white bg-[radial-gradient(60%_45%_at_50%_0%,#E3F6FF,transparent)] pb-20">
+      <div className="flex w-full flex-col items-center px-4">
+        <div style={delay(0)} className="cl-fade-up mt-16">
+          <div className="inline-flex h-10 items-center gap-3 whitespace-nowrap rounded-full border border-[#e5e7eb] bg-white pl-[7px] pr-[18px] shadow-[0_6px_16px_-10px_rgb(35_0_220/0.25)] transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-[0_10px_22px_-12px_rgb(0_71_255/0.45)]">
+            <span className="hidden items-center sm:inline-flex">
+              {[Phone, Mic, Receipt].map((Icon, i) => (
+                <span key={i} className={`inline-flex h-[26px] w-[26px] items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-primary ${i ? "-ml-2" : ""}`}>
+                  <Icon size={13} />
+                </span>
+              ))}
             </span>
-            <span className="-mb-[0.18em] block overflow-hidden pb-[0.18em]">
-              <motion.span variants={line} className="inline-block">
-                to <SignalUnderline>final invoice.</SignalUnderline>
-              </motion.span>
-            </span>
-          </motion.h1>
-
-          <div className="mt-10 grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
-            <RevealText
-              as="p"
-              delay={0.45}
-              className="block max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
-              text="Dialing, IVR, routing, recording and billing — the whole life of a business call on one platform, built in-house for 35 years."
-            />
-            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-3">
-              <MagneticLink
-                to="/contact"
-                variants={ctaPop}
-                className="h-12 rounded-full px-7 text-[15px] shadow-glow hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.5),0_14px_40px_-10px_hsl(var(--primary)/0.75)]"
-              >
-                Book a demo <ArrowRight />
-              </MagneticLink>
-              <MagneticLink
-                to="#journey"
-                variant="outline"
-                className="h-12 rounded-full bg-card px-6 text-[15px] text-foreground shadow-card hover:bg-card hover:text-foreground hover:shadow-elevated"
-              >
-                Follow a call <ArrowDown />
-              </MagneticLink>
-            </motion.div>
+            <span className="text-xs font-semibold text-[#31343a] sm:text-sm">Redefining Communication for the Modern World.</span>
           </div>
-        </motion.div>
+        </div>
+
+        <div className="relative mt-6 w-[90%] text-center md:w-[560px] lg:w-[847px]">
+          <svg aria-hidden="true" viewBox="0 0 30 30" className="absolute -top-4 left-0 h-7 w-7 -translate-x-1/2 text-[#FF0000] sm:left-6 lg:-top-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <path d="M14 3v7M5 9l5 4M22 9l-5 4" />
+          </svg>
+          <h1
+            className="cl-fade-up mx-auto max-w-[95%] [text-wrap:wrap] bg-black bg-gradient-to-r from-[#00B8FF] via-[#0047FF] to-[#2300DC] bg-clip-text bg-no-repeat text-center text-[32px] font-medium leading-[1.15] text-transparent lg:text-[52px] lg:leading-[56px]"
+            style={{ backgroundSize: "100% 1.2em", ...delay(80) }}
+          >
+            <span className="sr-only">Business Cloud Telephony System for contact centers & BPO's, Banks & NBFC's, Hotels & Hospitals, OBD & SMS campaigns.</span>
+            <span aria-hidden="true">Business Cloud Telephony System for </span>
+            <TypedAudience />
+          </h1>
+        </div>
+
+        <p style={delay(160)} className="cl-fade-up mb-7 mt-5 w-full max-w-[619px] text-center text-base text-[#31343A] xl:text-xl">
+          One software platform, one provider, and every communication function you need, fully integrated in the cloud.
+        </p>
+
+        <ul style={delay(240)} className="cl-fade-up mb-8 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8">
+          {TRUST.map((t) => (
+            <li key={t} className="flex items-center gap-1.5 text-sm font-medium text-[#31343A] md:text-base">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#D9F3FF] text-[#0047FF]">
+                <Check size={14} strokeWidth={3} />
+              </span>
+              {t}
+            </li>
+          ))}
+        </ul>
+
+        <div style={delay(320)} className="cl-fade-up flex w-full max-w-[260px] flex-col gap-2 lg:w-auto lg:max-w-none lg:flex-row lg:gap-5">
+          <Link
+            to="/contact"
+            className="flex h-[52px] min-w-[197px] items-center justify-center rounded-lg border border-primary bg-primary px-14 font-medium text-white transition-[background-color,transform] duration-200 hover:scale-105 hover:bg-[#2300DC] motion-reduce:hover:scale-100"
+          >
+            Book a demo
+          </Link>
+          <a
+            href={tel(CONTACT.expert)}
+            className="flex h-[52px] items-center justify-center gap-2.5 whitespace-nowrap rounded-lg border border-[#0A0626] bg-[#0A0626] px-14 font-medium text-white transition-[background-color,color,border-color,transform] duration-200 hover:scale-105 hover:border-[#E5EAF5] hover:bg-white hover:text-[#0A0626] motion-reduce:hover:scale-100"
+          >
+            <Phone size={18} /> Talk to an expert
+          </a>
+        </div>
+        <p style={delay(500)} className="cl-fade-up mt-4 text-center text-sm text-[#a1080d]">
+          Or call sales on {CONTACT.sales}
+        </p>
       </div>
 
-      <Waveform flatten={flatten} />
-
-      <motion.dl {...inView} className="mx-auto mt-12 grid max-w-7xl grid-cols-2 gap-y-8 px-4 sm:px-6 lg:grid-cols-4">
-        {STATS.map((s, i) => (
-          <motion.div key={s.label} variants={stat} custom={i} className="border-l border-border pl-5">
-            <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{s.label}</dt>
-            <dd className="mt-2 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{s.value}</dd>
-          </motion.div>
-        ))}
-      </motion.dl>
     </section>
   );
 }

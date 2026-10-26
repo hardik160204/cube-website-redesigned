@@ -1,16 +1,13 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { 
-  ChevronRight, Users, MessageCircle, BarChart,
-  ArrowRight, CheckCircle2, ShieldCheck, Zap, Globe, Clock, Network,
-  Database, Layers, PhoneMissed, PhoneForwarded, Megaphone, Bot,
-  Headphones, PhoneCall, Mic, ClipboardList, TrendingDown, TrendingUp, Monitor
+import {
+  ChevronRight, Users, MessageCircle, BarChart, CheckCircle2, ShieldCheck, Zap, Network, Database, PhoneMissed,
+  PhoneForwarded, Megaphone, Bot, Headphones, PhoneCall, Mic, ClipboardList, TrendingDown, TrendingUp, Monitor,
 } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
-import { Button } from "../components/ui/button";
-import Navbar from "../components/Navbar";
-import { Footer } from "../components/HomeSections2";
+import Faq from "../components/home/Faq";
+import ClosingCta from "../components/home/ClosingCta";
+import { CONTACT } from "../components/home/catalog";
+import { ACCENTS, CtaButtons, Heading, PageHero, Prose, Reveal, Section, Split, Title, TrustBand } from "../components/page/kit";
 
 // =========================================================================
 // PAGE CONTENT DATA
@@ -131,462 +128,154 @@ const FAQ_DATA = [
   { q: "Can my agents work remotely?", a: "Yes, our solution is designed for hybrid and remote work. Agents can log in via their web browser from anywhere in the world while supervisors monitor them in real-time." }
 ];
 
-// --- TRUSTED BY LOGOS ---
-const CLIENT_LOGOS = [
-  '/1.jpg', '/2.png', '/4.png', '/5.jpeg', 
-  '/6.png', '/7.png', '/upsc.png', '/cars24.png', '/Yatra.png'
-];
-const PARTNER_LOGOS = [
-  '/10.png', '/11.png', '/Avaya.jpeg', '/DigiCon.png', 
-  '/Fusion.png', '/Mitel.png', '/ABSIndia.png'
-];
 
 export default function CubeCloudCCS() {
-  
-  // Scroll to top when page loads
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   return (
-    <div className="bg-white text-slate-900 flex flex-col min-h-screen">
-      <Navbar />
+    <>
+      <PageHero
+        crumbs={["Services", "Cloud Contact Center"]}
+        label="Cloud Contact Center"
+        title="Transform Customer Experience"
+        highlight="with an All-in-One Cloud Solution"
+        body="Accelerate your team collaboration with powerful cloud dialing, comprehensive features, and SIP trunking solutions — engineered for high-performance enterprises."
+        video="/cube-main2.mp4"
+        stats={[
+          { value: "35+", label: "Years of Innovation" },
+          { value: "10+", label: "Countries" },
+          { value: "5000+", label: "Active Users" },
+          { value: "99.9%", label: "Uptime Guarantee" },
+        ]}
+        actions={<CtaButtons primary="Book Demo" secondary="Talk to Sales" phone={CONTACT.sales} dark />}
+      />
 
-      {/* =========================================================
-          HERO SECTION (Left Aligned Layout matching Image 1)
-          ========================================================= */}
-      <section className="relative w-full min-h-[100dvh] flex flex-col overflow-hidden bg-[#0A1F44]">
-        
-        {/* Video Background */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover z-0 opacity-80"
-        >
-          <source src="/cube-main2.mp4" type="video/mp4" />
-        </video>
+      <TrustBand />
 
-        {/* Gradient Overlay to ensure text readability (Left to Right) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0A1F44]/90 via-[#0A1F44]/40 to-[#0A1F44]/10 z-10 pointer-events-none" />
-        
-        {/* Invisible Spacer to clear the fixed Navbar */}
-        <div className="w-full h-24 lg:h-32 shrink-0 pointer-events-none z-10"></div>
-        
-        {/* Main Hero Content (Left-Aligned) */}
-        <div className="relative z-20 flex-grow flex flex-col justify-center w-full max-w-7xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16">
-          
-          <nav className="flex items-center gap-1.5 text-xs text-blue-200 mb-6 animate-fade-up">
-            <Link className="hover:text-white transition-colors" to="/">Home</Link>
-            <ChevronRight size={13} />
-            <span className="text-blue-300">Services</span>
-            <ChevronRight size={13} />
-            <span className="text-white font-semibold">Cloud Contact Center</span>
-          </nav>
-          
-          {/* Main Headline */}
-          <h1 className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white leading-tight mb-6">
-            Transform Customer Experience 
-            <br className="hidden sm:block" />
-            <span className="text-red-600">with an All-in-One Cloud Solution</span>
-          </h1>
-          <p className="mt-5 text-lg text-blue-100 max-w-2xl leading-relaxed animate-fade-up animate-delay-100 text-justify">
-            Accelerate your team collaboration with powerful cloud dialing, comprehensive features, 
-            and SIP trunking solutions — engineered for high-performance enterprises.
-          </p>
-          
-          <div className="mt-8 flex flex-wrap gap-4 animate-fade-up animate-delay-200">
-            <Link to="/#contact">
-              <Button className="bg-blue-600 hover:bg-blue-500 text-white px-8 h-12 rounded-md shadow-lg transition-transform hover:-translate-y-0.5" size="lg">
-                Book Demo
-              </Button>
-            </Link>
-            <Link to="/#contact">
-              <Button className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white px-8 h-12 rounded-md group" size="lg" variant="outline">
-                Talk to Sales
-                <ArrowRight className="ml-1 transition-transform group-hover:translate-x-1" size={16} />
-              </Button>
-            </Link>
-          </div>
-          
-        </div>
-
-        {/* --- BOTTOM STATS BAR --- */}
-        <div className="relative z-30 w-full shrink-0 border-t border-white/10 bg-[#0A1F44]/40 backdrop-blur-md py-6 mt-auto">
-          <div className="max-w-[1400px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-y-8 divide-x divide-white/10">
-            <div className="text-center px-2 sm:px-4">
-              <div className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white mb-1 md:mb-2 drop-shadow-md">
-                35+
-              </div>
-              <div className="font-bold tracking-[0.1em] sm:tracking-[0.15em] uppercase text-blue-200/80 text-[10px] sm:text-xs md:text-sm">
-                Years of Innovation
-              </div>
-            </div>
-            <div className="text-center px-2 sm:px-4">
-              <div className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white mb-1 md:mb-2 drop-shadow-md">
-                10+
-              </div>
-              <div className="font-bold tracking-[0.1em] sm:tracking-[0.15em] uppercase text-blue-200/80 text-[10px] sm:text-xs md:text-sm">
-                Countries
-              </div>
-            </div>
-            <div className="text-center px-2 sm:px-4 hidden md:block">
-              <div className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white mb-1 md:mb-2 drop-shadow-md">
-                5000+
-              </div>
-              <div className="font-bold tracking-[0.1em] sm:tracking-[0.15em] uppercase text-blue-200/80 text-[10px] sm:text-xs md:text-sm">
-                Active Users
-              </div>
-            </div>
-            <div className="text-center px-2 sm:px-4 hidden md:block">
-              <div className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white mb-1 md:mb-2 drop-shadow-md">
-                99.9%
-              </div>
-              <div className="font-bold tracking-[0.1em] sm:tracking-[0.15em] uppercase text-blue-200/80 text-[10px] sm:text-xs md:text-sm">
-                Uptime Guarantee
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          TWO-LINE TRUSTED BY MARQUEE SECTION
-          ========================================================= */}
-      <section className="py-16 bg-white border-b border-slate-100 overflow-hidden relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 text-center">
-          <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900">
-            Cloud Communications Trusted by Leading Businesses Across the Globe
-          </h2>
-        </div>
-        
-        {/* Side fade gradients for smooth sliding effect */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 sm:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-24 sm:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-        
-        <div className="flex flex-col gap-10 sm:gap-14">
-          {/* Row 1: Clients moving Left */}
-          <div className="flex w-max">
-            <motion.div 
-              animate={{ x: ["0%", "-50%"] }} 
-              transition={{ ease: "linear", duration: 35, repeat: Infinity }} 
-              className="flex items-center gap-16 sm:gap-24 px-8"
-            >
-              {[...CLIENT_LOGOS, ...CLIENT_LOGOS, ...CLIENT_LOGOS].map((logoPath, idx) => (
-                <div key={idx} className="w-28 h-12 sm:w-40 sm:h-16 relative flex items-center justify-center shrink-0 hover:scale-105 transition-transform duration-300 cursor-pointer">
-                  <img src={logoPath} alt="Client Logo" className="max-w-full max-h-full object-contain" />
+      <Section tone="tint">
+        <Split image="/ccsmain.jpeg" imageAlt="Cloud Call Center Analytics" reverse>
+          <Title>Why Choose Cube Cloud Telephony?</Title>
+          <Prose
+            className="mt-6"
+            paragraphs={[
+              "Experience. Ownership. Flexibility. Innovation., Best In Class Quality High-efficiency infrastructure with robust quality controls for reliable 24×7 operations.",
+              "End-to-End Communication Platform — From voice infrastructure and dialers to CRM, AI, analytics, WhatsApp/social channels and integrations, customers can build their communication ecosystem with one technology partner.",
+            ]}
+          />
+          <ul className="mt-8 grid gap-5 sm:grid-cols-2">
+            {BENEFITS_DATA.map((b, i) => (
+              <Reveal as="li" key={b.title} delay={i * 0.06} className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#D9F3FF] text-[#0047FF]">
+                  <CheckCircle2 size={16} />
+                </span>
+                <div>
+                  <h3 className="font-medium text-[#0A0626]">{b.title}</h3>
+                  <p className="mt-1 text-[14px] leading-6 text-[#4A4D53]">{b.desc}</p>
                 </div>
-              ))}
-            </motion.div>
-          </div>
+              </Reveal>
+            ))}
+          </ul>
+        </Split>
+      </Section>
 
-          {/* Row 2: Partners moving Right */}
-          <div className="flex w-max">
-            <motion.div 
-              animate={{ x: ["-50%", "0%"] }} 
-              transition={{ ease: "linear", duration: 40, repeat: Infinity }} 
-              className="flex items-center gap-16 sm:gap-24 px-8"
-            >
-              {[...PARTNER_LOGOS, ...PARTNER_LOGOS, ...PARTNER_LOGOS].map((logoPath, idx) => (
-                <div key={idx} className="w-28 h-12 sm:w-40 sm:h-16 relative flex items-center justify-center shrink-0 hover:scale-105 transition-transform duration-300 cursor-pointer">
-                  <img src={logoPath} alt="Partner Logo" className="max-w-full max-h-full object-contain" />
-                </div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          WHY CHOOSe CUBE CLOUD?
-          ========================================================= */}
-      <section className="pt-24 pb-10 bg-white border-b border-slate-100 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 grid lg:grid-cols-12 gap-12 lg:gap-20 items-center">
-          
-          <div className="lg:col-span-5">
-            <h2 className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 leading-tight mb-6">
-              Why Choose Cube Cloud Telephony?
-            </h2>
-            <p className="text-slate-600 text-lg leading-relaxed mb-10 text-justify">
-              Experience. Ownership. Flexibility. Innovation., Best In Class Quality High-efficiency infrastructure with robust quality controls for reliable 24×7 operations.
-
-End-to-End Communication Platform — From voice infrastructure and dialers to CRM, AI, analytics, WhatsApp/social channels and integrations, customers can build their communication ecosystem with one technology partner.
-            </p>
-            
-            <div className="space-y-6">
-              {BENEFITS_DATA.map((benefit, i) => (
-                <div key={i} className="flex gap-4 items-start">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 size={18} />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-lg mb-1 text-slate-900">{benefit.title}</h4>
-                    <p className="text-slate-600 text-sm leading-relaxed text-justify">{benefit.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="lg:col-span-7">
-            <img 
-              src="../ccsmain.jpeg" 
-              alt="Cloud Call Center Analytics" 
-              className="rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 w-full h-full object-cover"
-            />
-          </div>
-
-        </div>
-      </section>
-
-{/* =========================================================
-          15 SERVICES GRID SECTION (Small 5-Column Cards)
-          ========================================================= */}
-      <section className="pt-12 pb-24 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl tracking-tight text-slate-900 leading-tight mb-4">
-              Cloud Contact Center <span className="text-blue-600">Services</span>
-            </h2>
-            <p className="text-lg text-slate-500">We provide an end-to-end solution to our users.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {CLOUD_SERVICES.map((service, i) => {
-              const colorStyles = {
-                blue: { bg: "bg-blue-50", text: "text-blue-500", dash: "bg-blue-500" }
-              };
-
-              return (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.5, delay: (i % 5) * 0.1 }}
-                  className="bg-white p-7 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col h-full hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:-translate-y-2 transition-all duration-300 relative z-20 group"
+      <Section>
+        <Heading title="Cloud Contact Center" highlight="Services" body="We provide an end-to-end solution to our users." align="center" />
+        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {CLOUD_SERVICES.map((s, i) => {
+            const accent = ACCENTS[i % ACCENTS.length];
+            return (
+              <Reveal as="li" key={s.title} delay={(i % 5) * 0.06} className="h-full">
+                <Link
+                  to={s.path}
+                  className="group flex h-full flex-col rounded-[22px] border border-[#E5EAF4] bg-white p-6 transition-[translate,box-shadow,border-color] duration-300 ease-out-expo hover:border-[#99B5FF] hover:shadow-[0_24px_48px_-28px_rgb(0_71_255/0.5)] hover:[translate:0_-4px]"
                 >
-                  {/* Wrap the entire card inner content in a Link */}
-                  <Link to={service.path} className="flex flex-col h-full w-full outline-none">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shrink-0 transition-transform duration-300 group-hover:scale-110 ${colorStyles[service.color].bg} ${colorStyles[service.color].text}`}>
-                      <service.icon size={26} strokeWidth={2.5} />
-                    </div>
-                    
-                    <h3 className="font-heading font-bold text-[17px] text-slate-900 mb-4 leading-snug group-hover:text-blue-600 transition-colors">
-                      {service.title}
-                    </h3>
-                    
-                    <p className="text-[13.5px] text-slate-500 leading-relaxed mb-8 text-justify">
-                      {service.desc}
-                    </p>
-                    
-                    {/* Bottom Section: Blue Dash & View More Link */}
-                    <div className="mt-auto flex items-center justify-between w-full">
-                      <div className={`w-8 h-[3px] rounded-full transition-all duration-300 group-hover:w-12 ${colorStyles[service.color].dash}`} />
-                      
-                      <span className="text-[13px] font-bold text-blue-600 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                        View More <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl text-white transition-transform duration-300 ease-out-expo group-hover:[transform:rotate(-6deg)_scale(1.06)]" style={{ background: accent, boxShadow: `0 10px 20px -8px ${accent}` }}>
+                    <s.icon size={20} />
+                  </span>
+                  <h3 className="mt-5 text-[17px] font-medium leading-snug text-[#0A0626] transition-colors group-hover:text-primary">{s.title}</h3>
+                  <p className="mt-2 text-[13.5px] leading-6 text-[#4A4D53]">{s.desc}</p>
+                  <span className="mt-auto flex items-center gap-1 pt-5 text-[13px] font-medium text-primary">
+                    View More <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </Link>
+              </Reveal>
+            );
+          })}
+        </ul>
+      </Section>
 
-      {/* =========================================================
-          USP SECTION (Smart Features)
-          ========================================================= */}
-      <section className="pt-12 pb-24 bg-white border-b border-slate-200">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <h2 className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 mb-4">
-              Our <span className="text-blue-600">USP</span>
-            </h2>
-            <p className="text-lg text-slate-500 relative inline-block">
-              Here are few smart features
-              <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-8 h-1 bg-blue-600 rounded-full"></span>
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {USP_DATA.map((usp, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] hover:-translate-y-2 transition-all duration-300 flex flex-col h-full cursor-pointer"
-              >
-                <div className="flex items-center gap-3 text-blue-600 mb-6 pb-6 border-b border-slate-100">
-                  <usp.icon size={28} strokeWidth={2} />
-                  <h3 className="font-heading font-bold text-xl text-slate-900">{usp.title}</h3>
+      <Section tone="dark">
+        <Heading title="Our" highlight="USP" body="Here are few smart features" align="center" dark />
+        <ul className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          {USP_DATA.map((u, i) => {
+            const accent = ACCENTS[i % ACCENTS.length];
+            return (
+              <Reveal as="li" key={u.title} delay={i * 0.08} className="h-full">
+                <div className="flex h-full flex-col rounded-[24px] border border-white/10 bg-white/[0.04] p-7 transition-[border-color,translate] duration-300 ease-out-expo hover:border-[#00B8FF]/40 hover:[translate:0_-4px]">
+                  <div className="flex items-center gap-3 border-b border-white/10 pb-5">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl text-white" style={{ background: accent, boxShadow: `0 10px 20px -8px ${accent}` }}>
+                      <u.icon size={20} />
+                    </span>
+                    <h3 className="text-xl font-medium text-white">{u.title}</h3>
+                  </div>
+                  <ul className="mt-5 flex flex-col gap-3">
+                    {u.bullets.map((b) => (
+                      <li key={b} className="flex items-start gap-2.5 text-[14.5px] leading-6 text-[#C9D2EC]">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rotate-45 rounded-[1px] bg-[#00B8FF]" />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                
-                <ul className="space-y-4 flex-grow">
-                  {usp.bullets.map((bullet, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-[14.5px] text-slate-600">
-                      <span className="w-2 h-2 bg-blue-500 mt-1.5 shrink-0 rounded-sm"></span>
-                      <span className="leading-snug text-justify">{bullet}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+              </Reveal>
+            );
+          })}
+        </ul>
+      </Section>
 
-      {/* =========================================================
-          FACTS SECTION (Redesigned Business Security)
-          ========================================================= */}
-      <section className="pt-12 pb-24 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-          <div className="bg-blue-600 rounded-[2.5rem] p-8 sm:p-12 lg:p-16 shadow-2xl relative overflow-hidden">
-            
-            {/* Decorative background elements inside the blue container */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] pointer-events-none -mr-40 -mt-40" />
-            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-400/20 rounded-full blur-[80px] pointer-events-none -ml-20 -mb-20" />
-
-            <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center relative z-10">
-              
-              {/* Left Content (Text) */}
-              <div className="lg:col-span-4">
-                <div className="inline-block px-4 py-1.5 rounded-full bg-white/10 text-white text-xs font-bold tracking-widest uppercase mb-6 border border-white/20">
-                  Business Security
-                </div>
-                <h2 className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white leading-tight mb-6">
-                  Enhance Your <br/>Operations
-                </h2>
-                <p className="text-[16px] text-blue-100 leading-relaxed text-justify">
-                  94% of Managers state their business security and workflow efficiency have drastically improved after migrating to robust <strong className="text-white">cloud telephony services.</strong>
-                </p>
-              </div>
-
-              {/* Right Cards (Grid) */}
-              <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {FACTS_DATA.map((fact, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: i * 0.1 }}
-                    className="bg-white rounded-3xl overflow-hidden shadow-xl hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full cursor-pointer group border-0"
-                  >
-                    {/* Top colored header section of the card */}
-                    <div className="bg-blue-50 p-6 flex flex-col gap-4 border-b border-blue-100/50">
-                      <div className="w-12 h-12 rounded-xl bg-white text-blue-600 shadow-sm flex items-center justify-center transition-transform group-hover:scale-110 duration-300">
-                        <fact.icon size={26} strokeWidth={2.5} />
-                      </div>
-                      <h3 className="font-heading font-black text-4xl text-blue-600">
-                        {fact.stat}
-                      </h3>
-                    </div>
-                    
-                    {/* Bottom white body section of the card */}
-                    <div className="p-6 flex flex-col flex-grow">
-                      <h4 className="font-bold text-[16px] text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
-                        {fact.title}
-                      </h4>
-                      <p className="text-[13px] text-slate-500 leading-relaxed flex-grow text-justify">
-                        {fact.desc}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </section>
-
-{/* =========================================================
-          FAQ SECTION
-          ========================================================= */}
-      <section className="pt-12 pb-16 bg-white border-t border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <div className="text-blue-700 text-xs font-bold tracking-[0.2em] uppercase mb-4">— Knowledge Base</div>
-            <h2 className="font-heading font-black text-3xl sm:text-4xl text-slate-900">Frequently Asked Questions</h2>
-          </div>
-          <Accordion type="single" collapsible className="w-full">
-            {FAQ_DATA.map((f, i) => (
-              <AccordionItem key={i} value={`faq-${i}`} className="bg-slate-50 rounded-xl border border-slate-100 mb-3 px-6 shadow-sm data-[state=open]:shadow-md transition-shadow">
-                <AccordionTrigger className="text-left font-heading font-bold text-slate-900 hover:text-blue-700 hover:no-underline py-5 text-justify">
-                  {f.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-slate-600 leading-relaxed pb-5 text-justify">
-                  {f.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-      </section>
-
-{/* =========================================================
-          BOTTOM CTA (Redesigned with Spacing & Working Image)
-          ========================================================= */}
-      <section className="py-16 md:py-24 bg-[#0a3170] mt-16 mb-20 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-            
-            {/* Left Side: 3D Bot Illustration */}
-            <div className="w-full lg:w-1/2 flex justify-center relative">
-              {/* Optional glow effect behind the bot */}
-              <div className="absolute inset-0 bg-blue-400/20 blur-[80px] rounded-full w-[300px] h-[300px] m-auto pointer-events-none z-0"></div>
-              
-              {/* External Image URL added so it renders immediately */}
-              <img 
-                src="https://cdn-icons-png.flaticon.com/512/8649/8649605.png" 
-                alt="AI Cloud Bot Illustration" 
-                className="relative z-10 w-full max-w-[400px] object-contain drop-shadow-2xl hover:-translate-y-2 transition-transform duration-500"
-              />
-            </div>
-
-            {/* Right Side: Text, Tags, and Green Button */}
-            <div className="w-full lg:w-1/2 text-center lg:text-left relative z-10">
-              
-              <h2 className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight mb-4">
-                Ready to Upgrade Your <br className="hidden lg:block"/> Support Center?
-              </h2>
-              
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-6">
-                To All Your Customers
-              </h3>
-              
-              <p className="text-blue-100 text-lg leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0 text-justify">
-                Connect with our experts today. We will assess your call volume and set up a customized cloud environment for your team. Give your brand a better outlook by using professional cloud services.
+      <Section tone="tint">
+        <div className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(110deg,#2300DC_0%,#0047FF_55%,#0091FF_100%)] p-8 sm:p-12 lg:p-16">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-white/10 blur-[100px]" />
+          <div className="relative grid items-center gap-10 lg:grid-cols-12">
+            <Reveal className="lg:col-span-4">
+              <span className="inline-block rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white">Business Security</span>
+              <h2 className="mt-5 text-[32px] font-medium leading-[1.12] text-white md:text-[44px]">Enhance Your Operations</h2>
+              <p className="mt-5 text-[16px] leading-7 text-[#DCE6FF]">
+                94% of Managers state their business security and workflow efficiency have drastically improved after migrating to robust <strong className="font-semibold text-white">cloud telephony services.</strong>
               </p>
-
-              {/* Feature Tags matching the reference image */}
-              <div className="flex flex-wrap gap-2 justify-center lg:justify-start mb-8 max-w-xl mx-auto lg:mx-0">
-                <span className="bg-blue-600/80 hover:bg-blue-500 transition-colors border border-blue-400/30 text-white text-[13px] px-3 py-1.5 shadow-sm rounded-sm">Unlimited Channels</span>
-                <span className="bg-blue-600/80 hover:bg-blue-500 transition-colors border border-blue-400/30 text-white text-[13px] px-3 py-1.5 shadow-sm rounded-sm">Multi level IVR</span>
-                <span className="bg-blue-600/80 hover:bg-blue-500 transition-colors border border-blue-400/30 text-white text-[13px] px-3 py-1.5 shadow-sm rounded-sm">Unlimited Users</span>
-                <span className="bg-blue-600/80 hover:bg-blue-500 transition-colors border border-blue-400/30 text-white text-[13px] px-3 py-1.5 shadow-sm rounded-sm">API integration</span>
-                <span className="bg-blue-600/80 hover:bg-blue-500 transition-colors border border-blue-400/30 text-white text-[13px] px-3 py-1.5 shadow-sm rounded-sm">Real Time Notification</span>
-              </div>
-
-              {/* Green Button matching the reference */}
-              <Link to="/#contact" className="inline-block">
-                <Button className="bg-[#f5f6f8] hover:bg-[#1762a3] text-blue px-10 h-12 text-[15px] rounded-full shadow-[0_8px_20px_rgba(28,192,89,0.3)] transition-transform hover:-translate-y-1 font-bold tracking-wide">
-                  Book a Free Demo
-                </Button>
-              </Link>
-              
-            </div>
+            </Reveal>
+            <ul className="grid gap-5 sm:grid-cols-3 lg:col-span-8">
+              {FACTS_DATA.map((f, i) => (
+                <Reveal as="li" key={f.title} delay={0.1 + i * 0.1} className="h-full">
+                  <div className="flex h-full flex-col rounded-[24px] bg-white p-6 shadow-[0_30px_60px_-30px_rgb(10_6_38/0.6)] transition-[translate] duration-300 ease-out-expo hover:[translate:0_-4px]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#E6EEFF] text-primary">
+                      <f.icon size={22} />
+                    </span>
+                    <p className="mt-4 bg-gradient-to-r from-[#0047FF] to-[#2300DC] bg-clip-text text-[44px] font-medium leading-none text-transparent">{f.stat}</p>
+                    <h3 className="mt-4 font-medium text-[#0A0626]">{f.title}</h3>
+                    <p className="mt-2 text-[13.5px] leading-6 text-[#4A4D53]">{f.desc}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </ul>
           </div>
         </div>
-      </section>
+      </Section>
 
-      <Footer />
-    </div>
+      <Faq items={FAQ_DATA} label="Knowledge Base" title="Frequently Asked" highlight="Questions" />
+
+      <ClosingCta
+        label="To All Your Customers"
+        title="Ready to Upgrade Your Support Center?"
+        body="Connect with our experts today. We will assess your call volume and set up a customized cloud environment for your team. Give your brand a better outlook by using professional cloud services."
+        primary="Book a Free Demo"
+      >
+        <ul className="mt-7 flex max-w-[640px] flex-wrap justify-center gap-2">
+          {["Unlimited Channels", "Multi level IVR", "Unlimited Users", "API integration", "Real Time Notification"].map((t) => (
+            <li key={t} className="rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[13px] text-white">
+              {t}
+            </li>
+          ))}
+        </ul>
+      </ClosingCta>
+    </>
   );
 }

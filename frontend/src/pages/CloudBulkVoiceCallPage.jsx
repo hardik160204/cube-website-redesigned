@@ -1,336 +1,76 @@
-import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { 
-  Megaphone, Users, BarChart, Database, UploadCloud, 
-  Volume2, CheckCircle2, TrendingUp, Clock, PhoneCall, ShieldCheck,
-  Network, Mic, Globe, Maximize, Languages, ListChecks, Radio
-} from "lucide-react";
-import { Button } from "../components/ui/button";
-import Navbar from "../components/Navbar";
-import { Footer } from "../components/HomeSections2";
+import React from "react";
+import { BarChart, CheckCircle2, Clock, Database, Languages, ListChecks, Maximize, Megaphone, Mic, Network, PhoneCall, ShieldCheck, TrendingUp, Users } from "lucide-react";
+import FlexPage, { Hi } from "../components/page/FlexPage";
+
+// Page copy, section by section, exactly as it was; FlexPage lays it out in the site's style.
+const SECTIONS = [
+  {
+    kind: "hero",
+    scene: "bulk-voice",
+    title: <><Hi>Bulk Voice Calls</Hi></>,
+    body: [
+      "Reach thousands of customers instantly with pre-recorded voice messages. Automate your announcements, promotional offers, and reminders with just one click.",
+    ],
+    image: "/bulk-voice-call-hero.png", imageAlt: "Bulk Voice Calls Illustration",
+    button: "Start Free Trial",
+  },
+  {
+    title: <>{"Mass Communication "}<Hi>Made Simple</Hi></>,
+    body: [
+      "Bulk Voice Calling, also known as voice broadcasting, is a technology that allows you to send a pre-recorded voice message to hundreds or thousands of call recipients simultaneously.",
+      "It is the most cost-effective and rapid way to deliver alerts, promotional offers, political campaigns, and reminders, ensuring your message is heard in your own voice, adding a personal touch to your mass outreach.",
+    ],
+    image: "/mass-communication-illustration.svg", imageAlt: "Bulk Voice Call Broadcasting",
+  },
+  {
+    title: <>{"How do "}<Hi>businesses</Hi>{" use Voice Broadcasting?"}</>,
+    cards: [
+      { icon: Users, title: "Political & Social Campaigns", desc: "Reach thousands of voters or community members instantly with pre-recorded messages directly from candidates or leaders." },
+      { icon: Clock, title: "EMI & Bill Reminders", desc: "Automate your collection process by scheduling voice broadcasts to remind customers of upcoming or overdue payments." },
+      { icon: Megaphone, title: "Promotional Offers", desc: "Blast your latest deals, sales, and discount codes to your entire customer base via an engaging voice message." },
+      { icon: ShieldCheck, title: "Emergency Alerts", desc: "Quickly notify students, employees, or citizens of urgent updates, weather warnings, or security situations in real-time." },
+      { icon: Database, title: "Survey & Feedback", desc: "Combine voice broadcasts with IVR (Press 1) to conduct automated phone surveys and collect instant customer feedback." },
+      { icon: CheckCircle2, title: "Event Notifications", desc: "Send automated voice reminders to attendees regarding event timings, webinar links, or venue changes to maximize turnout." },
+    ],
+  },
+  {
+    title: "How It Works",
+    cards: [
+      { title: "Upload Contacts & Audio", desc: "Upload your customer database (CSV/Excel) and record or upload your voice message (MP3/WAV) to the dashboard." },
+      { title: "Schedule the Broadcast", desc: "Choose whether to blast the campaign immediately or schedule it for a specific date and time based on user availability." },
+      { title: "Calls are Dispatched", desc: "Our high-capacity cloud servers simultaneously dial the numbers. If picked up, your message is played instantly." },
+    ],
+    steps: true,
+  },
+  {
+    title: <>{"Why choose our "}<Hi>Bulk Voice Solution?</Hi></>,
+    cards: [
+      { icon: ListChecks, title: "DND Scrubbing", desc: "Ensure 100% compliance. Our system automatically filters out Do-Not-Disturb (DND) registered numbers before initiating the broadcast." },
+      { icon: PhoneCall, title: "Automated Retries", desc: "Maximize reach with auto-retry features. If a call is unanswered or busy, the system will automatically attempt to call back at a later interval." },
+      { icon: Languages, title: "Text-to-Speech (TTS)", desc: "Don't have pre-recorded audio? Simply type your message, and our advanced AI will convert your text into natural-sounding voice audio in regional languages." },
+      { icon: Maximize, title: "Unmatched Scalability", desc: "Whether sending 500 calls or 500,000 calls, our multi-tenant cloud architecture processes massive volumes simultaneously without lag." },
+      { icon: Mic, title: "Interactive Press 1 (IVR)", desc: "Convert one-way broadcasts into two-way communication. Allow users to \"Press 1\" during the message to instantly connect with a live sales agent." },
+      { icon: BarChart, title: "Real-Time Analytics", desc: "Track answered calls, failed calls, average listen durations, and key presses via a comprehensive real-time dashboard." },
+    ],
+  },
+  {
+    title: <>{"Types of "}<Hi>Voice Campaigns</Hi></>,
+    cards: [
+      { icon: TrendingUp, title: "Promotional Calls", desc: "Used purely for sales and marketing. Broadcast product launches, discounts, and offers to your opted-in customer base to drive immediate sales." },
+      { icon: ShieldCheck, title: "Transactional Calls", desc: "Used for essential notifications like OTP deliveries, order confirmations, and urgent alerts. These can bypass standard DND registries due to their critical nature." },
+      { icon: Network, title: "Interactive Broadcasts", desc: "Combine outbound voice calls with DTMF inputs. Play a message and ask the user to respond using their dialpad (e.g., \"Press 1 to renew your subscription\")." },
+    ],
+  },
+  {
+    kind: "cta",
+    title: "Amplify your reach today.",
+    body: [
+      "Connect with thousands of prospects in minutes. Sign up now and launch your first bulk voice campaign effortlessly.",
+    ],
+    button: "Start Broadcasting Now",
+  },
+];
 
 export default function CloudBulkVoiceCallPage() {
-  
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  return (
-    <div className="bg-white text-slate-900 flex flex-col min-h-screen">
-      
-      {/* =========================================================
-          SECTION 0: GLOBAL NAVBAR
-          ========================================================= */}
-      <Navbar />
-
-{/* =========================================================
-          SECTION 1: HERO SECTION 
-          Description: Dark blue background (#0A1F44) with main 
-          headlines and the custom Bulk Voice Calls vector illustration.
-          ========================================================= */}
-      {/* Reduced pb-20 and lg:pb-28 to pb-12 and lg:pb-16 to tighten the space below the hero */}
-      <section className="relative w-full pt-32 pb-12 lg:pt-40 lg:pb- overflow-hidden bg-[#0A1F44]">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0A1F44] via-[#0A1F44] to-blue-900/40 z-0" />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col lg:flex-row items-center gap-12">
-          
-          <div className="lg:w-1/2">
-            <h1 className="font-heading font-black text-4xl sm:text-5xl lg:text-6xl text-white leading-tight mb-6">
-              <br/><span className="text-blue-400">Bulk Voice Calls</span>
-            </h1>
-            <p className="text-lg text-blue-100 leading-relaxed mb-8 max-w-xl">
-              Reach thousands of customers instantly with pre-recorded voice messages. Automate your announcements, promotional offers, and reminders with just one click.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white px-8 h-12 rounded-md shadow-lg transition-transform hover:-translate-y-0.5">
-                Start Free Trial
-              </Button>
-            </div>
-          </div>
-
-          <div className="lg:w-1/2 flex justify-center lg:justify-end relative">
-             {/* 
-               IMAGE SIZING:
-               To change how big the image is, change 'max-w-[650px]' below.
-               (e.g., max-w-[500px] for smaller, max-w-[800px] for much larger)
-             */}
-             <div className="relative w-full max-w-[950px]">
-                <img 
-                  src="/bulk-voice-call-hero.png" // <-- UPDATE THIS to your actual image file path/name
-                  alt="Bulk Voice Calls Illustration" 
-                  className="w-full h-auto object-contain drop-shadow-2xl relative z-10"
-                />
-             </div>
-          </div>
-          
-        </div>
-      </section>
-{/* =========================================================
-          MASS COMMUNICATION SECTION
-          ========================================================= */}
-      <section className="py-20 lg:py-28 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-          
-          {/* LEFT SIDE: The new SVG Image */}
-          <div className="lg:w-1/2 flex justify-center w-full relative">
-            {/* Optional subtle background glow to make the SVG pop */}
-            <div className="absolute inset-0 bg-blue-50 rounded-full blur-3xl opacity-50 transform scale-75 pointer-events-none"></div>
-            
-            <img 
-              src="/mass-communication-illustration.svg" 
-              alt="Bulk Voice Call Broadcasting" 
-              className="w-full max-w-[550px] h-auto object-contain relative z-10 transition-transform duration-700 hover:scale-105"
-            />
-          </div>
-
-          {/* RIGHT SIDE: Text Content */}
-          <div className="lg:w-1/2 w-full text-left">
-            <h2 className="font-heading font-black text-4xl sm:text-5xl text-slate-900 leading-tight mb-8">
-              Mass Communication <br />
-              <span className="text-blue-600 relative inline-block">
-                Made Simple
-                {/* Green underline accent from your screenshot */}
-                <span className="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-emerald-500 rounded-full"></span>
-              </span>
-            </h2>
-            
-            <div className="space-y-6 text-[17px] text-slate-600 leading-relaxed">
-              <p>
-                Bulk Voice Calling, also known as voice broadcasting, is a technology that allows you to send a pre-recorded voice message to hundreds or thousands of call recipients simultaneously.
-              </p>
-              <p>
-                It is the most cost-effective and rapid way to deliver alerts, promotional offers, political campaigns, and reminders, ensuring your message is heard in your own voice, adding a personal touch to your mass outreach.
-              </p>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* =========================================================
-          SECTION 3: HOW DO BUSINESSES USE IT? 
-          Description: Light blue background grid with 6 cards
-          showing the main business use cases.
-          ========================================================= */}
-      <section className="py-20 bg-blue-50/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <h2 className="font-heading font-black text-3xl sm:text-4xl text-blue-900 mb-4">
-              How do <span className="text-blue-600">businesses</span> use Voice Broadcasting?
-            </h2>
-            <div className="w-12 h-1 bg-green-500 rounded-full mx-auto"></div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: Users, title: "Political & Social Campaigns", desc: "Reach thousands of voters or community members instantly with pre-recorded messages directly from candidates or leaders." },
-              { icon: Clock, title: "EMI & Bill Reminders", desc: "Automate your collection process by scheduling voice broadcasts to remind customers of upcoming or overdue payments." },
-              { icon: Megaphone, title: "Promotional Offers", desc: "Blast your latest deals, sales, and discount codes to your entire customer base via an engaging voice message." },
-              { icon: ShieldCheck, title: "Emergency Alerts", desc: "Quickly notify students, employees, or citizens of urgent updates, weather warnings, or security situations in real-time." },
-              { icon: Database, title: "Survey & Feedback", desc: "Combine voice broadcasts with IVR (Press 1) to conduct automated phone surveys and collect instant customer feedback." },
-              { icon: CheckCircle2, title: "Event Notifications", desc: "Send automated voice reminders to attendees regarding event timings, webinar links, or venue changes to maximize turnout." }
-            ].map((card, i) => (
-              <div key={i} className="bg-white p-8 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group cursor-pointer">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                    <card.icon size={24} />
-                  </div>
-                  <h3 className="font-bold text-lg text-slate-800">{card.title}</h3>
-                </div>
-                <p className="text-sm text-slate-500 leading-relaxed">{card.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          SECTION 4: HOW IT WORKS 
-          Description: Solid blue gradient background mapping the
-          3-step process of Voice Broadcasting.
-          ========================================================= */}
-      <section className="py-24 bg-gradient-to-r from-blue-600 to-blue-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <h2 className="font-heading font-black text-3xl sm:text-4xl text-white mb-4">
-              How It Works
-            </h2>
-            <div className="w-12 h-1 bg-green-400 rounded-full mx-auto"></div>
-          </div>
-
-          <div className="space-y-12">
-            {[
-              { step: 1, title: "Upload Contacts & Audio", desc: "Upload your customer database (CSV/Excel) and record or upload your voice message (MP3/WAV) to the dashboard." },
-              { step: 2, title: "Schedule the Broadcast", desc: "Choose whether to blast the campaign immediately or schedule it for a specific date and time based on user availability." },
-              { step: 3, title: "Calls are Dispatched", desc: "Our high-capacity cloud servers simultaneously dial the numbers. If picked up, your message is played instantly." }
-            ].map((item, i) => (
-              <div key={i} className={`flex flex-col ${i % 2 !== 0 ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-8 lg:gap-16`}>
-                <div className="w-full md:w-1/2 flex justify-center">
-                   <div className="w-48 h-48 bg-white/10 rounded-full flex items-center justify-center border-4 border-white/20 backdrop-blur-sm">
-                      <Radio size={64} className="text-white opacity-80" />
-                   </div>
-                </div>
-                <div className="w-full md:w-1/2">
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-10 h-10 bg-white text-blue-600 font-black rounded-full flex items-center justify-center text-xl shrink-0">
-                        {item.step}
-                      </div>
-                      <h3 className="font-bold text-xl text-white">{item.title}</h3>
-                    </div>
-                    <p className="text-blue-100 leading-relaxed ml-14">{item.desc}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          SECTION 5: KEY FEATURES
-          Description: White background grid with 6 borderless 
-          icons highlighting enterprise broadcasting features.
-          ========================================================= */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="font-heading font-black text-3xl sm:text-4xl text-slate-700 mb-4">
-            Why choose our <span className="text-blue-600">Bulk Voice Solution?</span>
-          </h2>
-          <div className="w-12 h-1 bg-green-500 rounded-full mx-auto mb-20"></div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-16 text-left">
-            <div className="flex flex-col items-start px-4 group">
-              <div className="w-20 h-20 mb-6 flex items-center justify-center group-hover:-translate-y-1 transition-transform">
-                <ListChecks size={70} className="text-blue-400 drop-shadow-md" strokeWidth={1.5} />
-              </div>
-              <h3 className="font-bold text-xl text-slate-900 mb-3">DND Scrubbing</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">
-                Ensure 100% compliance. Our system automatically filters out Do-Not-Disturb (DND) registered numbers before initiating the broadcast.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-start px-4 group">
-              <div className="w-20 h-20 mb-6 flex items-center justify-center group-hover:-translate-y-1 transition-transform">
-                <PhoneCall size={70} className="text-blue-400 drop-shadow-md" strokeWidth={1.5} />
-              </div>
-              <h3 className="font-bold text-xl text-slate-900 mb-3">Automated Retries</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">
-                Maximize reach with auto-retry features. If a call is unanswered or busy, the system will automatically attempt to call back at a later interval.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-start px-4 group">
-              <div className="w-20 h-20 mb-6 flex items-center justify-center group-hover:-translate-y-1 transition-transform">
-                <Languages size={70} className="text-blue-400 drop-shadow-md" strokeWidth={1.5} />
-              </div>
-              <h3 className="font-bold text-xl text-slate-900 mb-3">Text-to-Speech (TTS)</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">
-                Don't have pre-recorded audio? Simply type your message, and our advanced AI will convert your text into natural-sounding voice audio in regional languages.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-start px-4 group">
-              <div className="w-20 h-20 mb-6 flex items-center justify-center group-hover:-translate-y-1 transition-transform">
-                <Maximize size={70} className="text-blue-400 drop-shadow-md" strokeWidth={1.5} />
-              </div>
-              <h3 className="font-bold text-xl text-slate-900 mb-3">Unmatched Scalability</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">
-                Whether sending 500 calls or 500,000 calls, our multi-tenant cloud architecture processes massive volumes simultaneously without lag.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-start px-4 group">
-              <div className="w-20 h-20 mb-6 flex items-center justify-center group-hover:-translate-y-1 transition-transform">
-                <Mic size={70} className="text-blue-400 drop-shadow-md" strokeWidth={1.5} />
-              </div>
-              <h3 className="font-bold text-xl text-slate-900 mb-3">Interactive Press 1 (IVR)</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">
-                Convert one-way broadcasts into two-way communication. Allow users to "Press 1" during the message to instantly connect with a live sales agent.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-start px-4 group">
-              <div className="w-20 h-20 mb-6 flex items-center justify-center group-hover:-translate-y-1 transition-transform">
-                <BarChart size={70} className="text-blue-400 drop-shadow-md" strokeWidth={1.5} />
-              </div>
-              <h3 className="font-bold text-xl text-slate-900 mb-3">Real-Time Analytics</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">
-                Track answered calls, failed calls, average listen durations, and key presses via a comprehensive real-time dashboard.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          SECTION 6: CAMPAIGN TYPES
-          Description: Grey background featuring the core types 
-          of bulk voice campaigns.
-          ========================================================= */}
-      <section className="py-20 bg-slate-50 border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <h2 className="font-heading font-black text-3xl sm:text-4xl text-slate-800 mb-4">
-              Types of <span className="text-blue-600">Voice Campaigns</span>
-            </h2>
-            <div className="w-12 h-1 bg-green-500 rounded-full mx-auto"></div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-             <div className="bg-white p-8 rounded-3xl shadow-lg hover:-translate-y-2 transition-transform cursor-pointer border border-slate-100 group">
-                <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-                  <TrendingUp size={32} className="text-blue-600 group-hover:text-white" />
-                </div>
-                <h3 className="font-bold text-2xl text-slate-800 mb-4">Promotional Calls</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Used purely for sales and marketing. Broadcast product launches, discounts, and offers to your opted-in customer base to drive immediate sales.
-                </p>
-             </div>
-
-             <div className="bg-white p-8 rounded-3xl shadow-lg hover:-translate-y-2 transition-transform cursor-pointer border border-slate-100 group">
-                <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-500 transition-colors">
-                  <ShieldCheck size={32} className="text-green-600 group-hover:text-white" />
-                </div>
-                <h3 className="font-bold text-2xl text-slate-800 mb-4">Transactional Calls</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Used for essential notifications like OTP deliveries, order confirmations, and urgent alerts. These can bypass standard DND registries due to their critical nature.
-                </p>
-             </div>
-
-             <div className="bg-white p-8 rounded-3xl shadow-lg hover:-translate-y-2 transition-transform cursor-pointer border border-slate-100 group">
-                <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-600 transition-colors">
-                  <Network size={32} className="text-purple-600 group-hover:text-white" />
-                </div>
-                <h3 className="font-bold text-2xl text-slate-800 mb-4">Interactive Broadcasts</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Combine outbound voice calls with DTMF inputs. Play a message and ask the user to respond using their dialpad (e.g., "Press 1 to renew your subscription").
-                </p>
-             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          SECTION 7: CALL TO ACTION (CTA)
-          Description: Dark blue finishing block. End of Component.
-          ========================================================= */}
-      <section className="py-20 bg-[#0A1F44] text-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h2 className="font-heading font-black text-3xl sm:text-4xl text-white mb-6">
-            Amplify your reach today.
-          </h2>
-          <p className="text-blue-200 text-lg mb-10 max-w-2xl mx-auto">
-            Connect with thousands of prospects in minutes. Sign up now and launch your first bulk voice campaign effortlessly.
-          </p>
-          <Button className="bg-[#10b981] hover:bg-[#059669] text-white px-10 h-14 rounded-full shadow-lg text-lg font-bold">
-            Start Broadcasting Now
-          </Button>
-        </div>
-      </section>
-
-      <Footer />
-    </div>
-  );
+  return <FlexPage sections={SECTIONS} />;
 }

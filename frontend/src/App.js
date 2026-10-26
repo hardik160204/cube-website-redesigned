@@ -1,8 +1,12 @@
 import "./App.css";
+import "./components/site-effects.css";
+import { useLayoutEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
-import { motion, MotionConfig } from "framer-motion";
+import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { ease } from "./lib/motion";
+import SiteHeader from "./components/SiteHeader";
+import SiteFooter from "./components/SiteFooter";
 import Home from "./pages/Home";
 import AboutPage from "./pages/AboutPage";
 import ClientVoices from "./pages/ClientVoices";
@@ -29,16 +33,13 @@ import CloudSmartCallRoutingPage from "./pages/CloudSmartCallRoutingPage";
 import CloudNumberMaskingPage from "./pages/CloudNumberMaskingPage";
 import CloudLiveAnalyticsPage from "./pages/CloudLiveAnalyticsPage";
 import CloudQualityAnalysisPage from "./pages/CloudQualityAnalysisPage";
-import AutoDialer from "./pages/AutoDialer";
-import ServicePage from "./pages/ServicePage";
 import ConferenceBridge from "./pages/ConferenceBridge";
 import PricingPage from "./pages/PricingPage"; 
-import LoginPage from "./pages/LoginPage"; 
 import FloatingChatWidget from "./components/FloatingChatWidget";
 import PopupContactForm from "./components/PopupContactForm";
 import MeetOurTeamPage from "./pages/MeetOurTeamPage";
 import CareerPage from "./pages/CareerPage";
-import ContactPage from './components/ContactPage';
+import ContactPage from './pages/ContactPage';
 import FinanceIndustryPage from './pages/FinanceIndustryPage';
 import BPOIndustryPage from './pages/BPOIndustryPage';
 import HealthcareIndustryPage from './pages/HealthcareIndustryPage';
@@ -99,28 +100,48 @@ const GlobalLayout = () => {
   );
 };
 
-// Fades each page in on route change. Opacity only: a transform here would
-// break every page's position:fixed Navbar. No exit animation, so navigation never waits.
-const PageFade = ({ children }) => {
-  const { pathname } = useLocation();
+// Page-to-page transition. The header and footer stay put; the new page rises in while a logo-coloured
+// bar sweeps across the top. The transform is cleared once it lands, so nothing inside a page loses its
+// fixed or sticky positioning. New pages start at the top unless the link targets a section.
+const RouteTransition = ({ children }) => {
+  const { pathname, hash } = useLocation();
+  const reduce = useReducedMotion();
+  useLayoutEffect(() => {
+    if (!hash) window.scrollTo(0, 0);
+  }, [pathname, hash]);
   return (
-    <motion.div key={pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25, ease }}>
-      {children}
-    </motion.div>
+    <>
+      <motion.div
+        key={`bar-${pathname}`}
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-[3px] origin-left bg-[linear-gradient(90deg,#FF0000,#2300DC,#0047FF,#00B8FF)]"
+        initial={reduce ? false : { transform: "scaleX(0)", opacity: 1 }}
+        animate={{ transform: "scaleX(1)", opacity: 0 }}
+        transition={{ transform: { duration: 0.6, ease }, opacity: { duration: 0.3, delay: 0.55 } }}
+      />
+      <motion.main
+        key={pathname}
+        initial={reduce ? false : { opacity: 0, transform: "translateY(16px)" }}
+        animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+        transition={{ duration: 0.5, ease }}
+      >
+        {children}
+      </motion.main>
+    </>
   );
 };
 
 function App() {
   return (
-    <div className="App">
+    <div className="App cl-root cube-brand min-h-screen bg-white text-[#31343A]">
       <MotionConfig reducedMotion="user">
       <BrowserRouter>
-        <PageFade>
+        <SiteHeader />
+        <RouteTransition>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/pricing" element={<PricingPage />} /> 
-          <Route path="/login" element={<LoginPage />} /> 
           <Route path="/client-voices" element={<ClientVoices />} />
           
           {/* --- NAVBAR ROUTING FOR CONTACT CENTERS --- */}
@@ -154,7 +175,7 @@ function App() {
           <Route path="/services/quality-analysis" element={<CloudQualityAnalysisPage />} />
           
           <Route path="/services/conference-bridge" element={<ConferenceBridge />} />
-          <Route path="/services/:slug" element={<ServicePage />} />
+          <Route path="/services/:slug" element={<Navigate to="/" replace />} />
           <Route path="/meet-our-team" element={<MeetOurTeamPage />} />
           <Route path="/career" element={<CareerPage />} />
           <Route path="/contact" element={<ContactPage />} />
@@ -177,7 +198,8 @@ function App() {
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        </PageFade>
+        </RouteTransition>
+        <SiteFooter />
 
         {/* Render the forms conditionally based on the route */}
         <GlobalLayout />

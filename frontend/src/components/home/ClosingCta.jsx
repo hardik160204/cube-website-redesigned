@@ -1,66 +1,37 @@
 import React from "react";
-import { ArrowUpRight } from "lucide-react";
-import { MagneticLink } from "../ui/magnetic-link";
-import { RevealText } from "../ui/reveal-text";
+import { Link } from "react-router-dom";
+import { CONTACT, tel } from "./catalog";
 
-const EXPERT_LINE = "+91 806 869 4440";
-
-/**
- * The close: navy, a short line, and one big round CTA that rings. The ripples are the
- * page's last telephone gesture — rings leave the button and fade (static for reduced motion).
- */
-export default function ClosingCta() {
+// Cube closing band: a rounded diagonal-blue panel set in from the page edges, so it never runs into the
+// footer; one line, a white and a ghost button.
+// Inner pages pass their own closing line; the homepage uses the defaults.
+export default function ClosingCta({
+  label = "Book a demo",
+  title = "Ready when your phones are.",
+  body = "Tell us about your call volumes and our experts will help you choose the right setup.",
+  primary = "Book a demo",
+  children,
+}) {
   return (
-    <section className="dark relative isolate overflow-hidden bg-background py-28 text-foreground sm:py-40">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgb(255_255_255/0.035)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.035)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_60%,black,transparent)]" />
-        <div className="absolute bottom-[-20%] left-1/2 h-[480px] w-[720px] -translate-x-1/2 rounded-full bg-primary/25 blur-[140px]" />
-      </div>
-
-      <div className="mx-auto flex max-w-7xl flex-col items-center px-4 text-center sm:px-6">
-        <p className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.2em] text-blue-400">
-          <span aria-hidden="true" className="h-px w-6 bg-current opacity-60" />
-          Book a demo
-          <span aria-hidden="true" className="h-px w-6 bg-current opacity-60" />
+    <section className="w-full bg-white px-4 pb-16 pt-12 md:pb-24 md:pt-16">
+      <div className="relative isolate mx-auto flex max-w-[1228px] flex-col items-center overflow-hidden rounded-[32px] bg-[linear-gradient(110deg,#2300DC_0%,#0047FF_55%,#0091FF_100%)] px-6 py-14 text-center shadow-[0_40px_80px_-40px_rgb(35_0_220/0.7)] md:py-[72px]">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-white/10 blur-[90px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -left-20 -z-10 h-72 w-72 rounded-full bg-[#00B8FF]/25 blur-[90px]" />
+        <span className="text-[13px] font-semibold uppercase tracking-wide text-[#00B8FF] md:text-sm">{label}</span>
+        <h2 className="mt-3 text-[28px] font-medium leading-[1.2] text-white md:text-[40px] xl:text-[48px]">{title}</h2>
+        <p className="mt-5 relative max-w-[880px] text-[15px] leading-7 text-[#DCE6FF] md:text-[17px]">
+          {body}
         </p>
-        <h2 className="mt-6 font-heading text-[clamp(2.75rem,8vw,7rem)] font-extrabold leading-[0.95] tracking-[-0.045em]">
-          <RevealText text="Ready when your phones are." />
-        </h2>
-        <RevealText
-          as="p"
-          delay={0.2}
-          className="mt-6 block max-w-xl text-lg leading-relaxed text-muted-foreground"
-          text="Tell us about your call volumes and our experts will help you choose the right setup."
-        />
-
-        <div className="mt-16 flex flex-col items-center gap-10 sm:flex-row sm:gap-14">
-          <div className="relative grid place-items-center">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                aria-hidden="true"
-                className="absolute inset-0 rounded-full border border-primary/50 motion-safe:animate-ripple"
-                style={{ animationDelay: `${i * 0.8}s` }}
-              />
-            ))}
-            <MagneticLink
-              to="/contact"
-              pull={0.35}
-              className="relative h-36 w-36 flex-col gap-1 rounded-full text-base shadow-glow hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.5),0_20px_60px_-12px_hsl(var(--primary)/0.8)] sm:h-44 sm:w-44"
-            >
-              Book a demo
-              <ArrowUpRight />
-            </MagneticLink>
-          </div>
-
-          <a
-            href={`tel:${EXPERT_LINE.replace(/\s/g, "")}`}
-            className="group relative font-mono text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            or call {EXPERT_LINE}
-            <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-current transition-transform duration-300 ease-out-expo group-hover:scale-x-100" />
+        {children}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <Link to="/contact" className="inline-flex h-12 min-w-[176px] items-center px-6 justify-center rounded-lg border border-white bg-white font-semibold text-primary transition-colors hover:bg-[#E6EEFF]">
+            {primary}
+          </Link>
+          <a href={tel(CONTACT.expert)} className="inline-flex h-12 w-[196px] items-center justify-center rounded-lg border border-white/30 font-semibold text-white transition-colors hover:bg-white/10">
+            Talk to an expert
           </a>
         </div>
+        <p className="mt-5 text-[14px] text-[#9DB6EE]">Or call sales on {CONTACT.sales}</p>
       </div>
     </section>
   );

@@ -1,0 +1,188 @@
+/* Site-wide effects (imported once in App.js). Type, palette and motion durations and
+   distances were measured on the homepage. */
+
+.cl-root {
+  font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  /* Re-points the shared tokens (buttons, softphone, accordion) at #0047FF inside the homepage */
+  --primary: 220 100% 30%;
+  --ring: 220 100% 30%;
+}
+/* Homepage only: the primary token is the logo's royal blue (#0047FF, measured from public/logo75.png).
+   Logo palette: sky #00B8FF, royal #0047FF, indigo #2300DC, red #FF0000, ink #000000. */
+.cl-root.cube-brand {
+  --primary: 223 100% 50%;
+  --ring: 223 100% 50%;
+}
+.cl-root .font-heading {
+  font-family: inherit;
+}
+
+/* --- Announcement bar: each message slides in, then its letters ripple once ------------------ */
+@keyframes cl-slide-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cl-letter-wave {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { color: #FF0000; transform: translateY(-4px) scale(1.35); }
+}
+.cl-slide-in { animation: cl-slide-in 0.4s ease-out both; }
+.cl-wave-letter {
+  display: inline-block;
+  transform-origin: center bottom;
+  animation: cl-letter-wave 250ms ease-in-out both;
+}
+
+/* --- Hero ------------------------------------------------------------------------------------ */
+@keyframes cl-fade-up {
+  from { opacity: 0; transform: translateY(25px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cl-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.cl-fade-up { animation: cl-fade-up 0.8s ease-out both; }
+.cl-caret { animation: cl-blink 0.8s infinite; }
+
+/* --- Feature accordion: the open row's bar fills over 6s, then the next row opens ------------- */
+@keyframes cl-fill {
+  from { width: 0; }
+  to { width: 100%; }
+}
+@keyframes cl-slide-up-fade {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.cl-progress { animation: cl-fill 6s linear forwards; }
+.cl-features:hover .cl-progress,
+.cl-features:focus-within .cl-progress { animation-play-state: paused; }
+.cl-describe { animation: cl-slide-up-fade 0.35s ease-out both; }
+
+/* --- Marquees (integrations, logos, testimonials) -------------------------------------------- */
+@keyframes cl-marquee {
+  to { transform: translateX(-50%); }
+}
+.cl-marquee { overflow: hidden; }
+.cl-marquee-fade {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.cl-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: cl-marquee var(--cl-duration, 40s) linear infinite;
+}
+.cl-marquee:hover .cl-marquee-track,
+.cl-marquee:focus-within .cl-marquee-track { animation-play-state: paused; }
+
+/* --- AI section scene: drifting blobs, a breathing orb, ripples, orbits, rising particles ------ */
+.cl-ai-blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.55; }
+.cl-ai-b1 { width: 560px; height: 560px; left: -140px; top: -220px; background: radial-gradient(circle, rgb(0 71 255 / 0.55), transparent 70%); animation: cl-drift-1 18s ease-in-out infinite; }
+.cl-ai-b2 { width: 520px; height: 520px; right: -120px; bottom: -240px; background: radial-gradient(circle, rgb(0 184 255 / 0.35), transparent 70%); animation: cl-drift-2 22s ease-in-out infinite; }
+.cl-ai-b3 { width: 380px; height: 380px; left: 42%; top: 30%; background: radial-gradient(circle, rgb(35 0 220 / 0.28), transparent 70%); animation: cl-drift-3 26s ease-in-out infinite; }
+@keyframes cl-drift-1 { 50% { transform: translate(160px, 90px); } }
+@keyframes cl-drift-2 { 50% { transform: translate(-180px, -80px); } }
+@keyframes cl-drift-3 { 50% { transform: translate(-120px, 60px) scale(1.2); } }
+
+.cl-ai-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgb(0 184 255 / 0.07) 1px, transparent 1px), linear-gradient(90deg, rgb(0 184 255 / 0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(55% 75% at 76% 50%, #000, transparent);
+  mask-image: radial-gradient(55% 75% at 76% 50%, #000, transparent);
+  animation: cl-grid-move 20s linear infinite;
+}
+@keyframes cl-grid-move { to { background-position: 48px 48px; } }
+
+.cl-ai-scan { position: absolute; left: 0; right: 0; height: 180px; top: -200px; background: linear-gradient(180deg, transparent, rgb(0 184 255 / 0.06), transparent); animation: cl-scan 9s linear infinite; }
+@keyframes cl-scan { to { top: 110%; } }
+
+.cl-ai-orb { position: absolute; width: 520px; height: 520px; left: 76%; top: 50%; margin: -260px 0 0 -260px; }
+.cl-ai-orb.cl-orb-static { left: 0; top: 0; margin: 0; }
+.cl-ai-glow { position: absolute; inset: 150px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, rgb(224 242 254 / 0.55), rgb(0 184 255 / 0.45) 30%, rgb(35 0 220 / 0.35) 60%, transparent 75%); filter: blur(10px); animation: cl-breathe 4s ease-in-out infinite; }
+@keyframes cl-breathe { 50% { transform: scale(1.18); opacity: 1; } 0%, 100% { opacity: 0.8; } }
+.cl-ai-ring { position: absolute; inset: 170px; border-radius: 50%; border: 1.5px solid rgb(0 184 255 / 0.55); animation: cl-ripple 5s ease-out infinite; }
+@keyframes cl-ripple { from { transform: scale(0.6); opacity: 0.9; } to { transform: scale(2.6); opacity: 0; } }
+.cl-ai-orbit { position: absolute; inset: 0; border-radius: 50%; animation: cl-rotate 16s linear infinite; }
+.cl-ai-orbit::before { content: ""; position: absolute; inset: 80px; border-radius: 50%; border: 1px dashed rgb(0 184 255 / 0.25); }
+.cl-ai-orbit i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #00B8FF; box-shadow: 0 0 12px #00B8FF; }
+.cl-ai-orbit.cl-outer { animation-duration: 26s; animation-direction: reverse; }
+.cl-ai-orbit.cl-outer::before { inset: 30px; border-style: solid; border-color: rgb(0 184 255 / 0.12); }
+.cl-ai-orbit.cl-outer i { background: #FF0000; box-shadow: 0 0 12px #FF0000; }
+.cl-ai-swirl {
+  position: absolute;
+  inset: 120px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, rgb(0 184 255 / 0.35), transparent 35%, rgb(0 71 255 / 0.3), transparent 70%);
+  -webkit-mask: radial-gradient(circle, transparent 60%, #000 62%, #000 66%, transparent 68%);
+  mask: radial-gradient(circle, transparent 60%, #000 62%, #000 66%, transparent 68%);
+  animation: cl-rotate 7s linear infinite;
+}
+@keyframes cl-rotate { to { transform: rotate(360deg); } }
+
+/* The orb's core: a small Cube mark and the Cube AI wordmark, on a dark disc so the white type holds up */
+.cl-ai-core {
+  position: absolute;
+  inset: 165px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(10 6 38 / 0.82) 45%, rgb(10 6 38 / 0) 72%);
+}
+.cl-ai-wordmark {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  background: linear-gradient(180deg, #ffffff 30%, #00b8ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 14px rgb(0 184 255 / 0.65));
+}
+.cl-ai-particle { position: absolute; bottom: -10px; border-radius: 50%; background: #00B8FF; box-shadow: 0 0 6px #00B8FF; opacity: 0; animation: cl-rise linear infinite; }
+@keyframes cl-rise {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 0.8; }
+  100% { transform: translateY(-820px); opacity: 0; }
+}
+@media (max-width: 1023px) {
+  .cl-ai-orb { left: 50%; top: 78%; transform: scale(0.7); }
+}
+
+/* --- Brand mark: a light runs down the diamonds' rows every few seconds ------------------------ */
+@keyframes cl-glint {
+  0%, 72%, 100% { filter: brightness(1); }
+  82% { filter: brightness(1.45) saturate(1.1); }
+}
+.cl-glint { animation: cl-glint 3.6s ease-in-out infinite; }
+
+/* --- Inner pages: highlighted words in headings ------------------------------------------------ */
+.cl-hi { color: hsl(var(--primary)); }
+.cl-dark .cl-hi { color: #00B8FF; }
+.cl-hero h1 .cl-hi {
+  background: linear-gradient(90deg, #00B8FF, #3D7BFF, #8A7CFF);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --- Inner pages: hero art drifts gently ------------------------------------------------------ */
+@keyframes cl-float { 50% { transform: translateY(-10px); } }
+.cl-float { animation: cl-float 7s ease-in-out infinite; }
+
+/* --- Reduced motion: everything above holds still; marquees become scrollable rows ----------- */
+@media (prefers-reduced-motion: reduce) {
+  .cl-glint { animation: none; }
+  .cl-slide-in, .cl-wave-letter, .cl-fade-up, .cl-caret, .cl-describe { animation: none; }
+  .cl-progress { display: none; }
+  .cl-marquee-track { animation: none; }
+  .cl-marquee { overflow-x: auto; }
+  .cl-ai-scene * { animation: none !important; }
+  .cl-float, .cl-ai-blob, .cl-ai-grid { animation: none; }
+}
