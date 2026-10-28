@@ -1,27 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "frontend": {
-      "root": "frontend",
-      "framework": "create-react-app"
-    },
-    "server": {
-      "root": "server",
-      "framework": "express"
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && CI=false npm run build",
+  "outputDirectory": "frontend/build",
+  "functions": {
+    "api/[...path].js": {
+      "includeFiles": "frontend/src/seo/routes.json",
+      "maxDuration": 30
     }
   },
+  "crons": [{ "path": "/api/cron/retention", "schedule": "0 2 * * *" }],
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "server"
-      }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "frontend"
-      }
-    }
+    { "source": "/sitemap.xml", "destination": "/api/sitemap.xml" },
+    { "source": "/robots.txt", "destination": "/api/robots.txt" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -45,12 +45,22 @@ function createApp(db) {
   app.use(compression());
 
   app.use("/api", express.json({ limit: "20kb" }));
+
+  // Serverless has no long-running timer, so the daily deletion sweep is triggered by Vercel Cron, which
+  // sends CRON_SECRET as a bearer token. On a normal server the timer in retention.js does this instead.
+  app.get("/api/cron/retention", async (req, res) => {
+    if (!config.cronSecret || req.get("authorization") !== `Bearer ${config.cronSecret}`) return res.status(401).json({ error: "Unauthorized." });
+    res.json({ deleted: await require("./retention").sweep(db) });
+  });
+
+  // Both spellings: the plain paths a crawler asks for, and the /api/... ones Vercel's rewrite may pass on.
+  // Registered before the /api catch-all below, which would otherwise answer them with a 404.
+  app.get(["/robots.txt", "/api/robots.txt"], (req, res) => res.type("text/plain").send(seo.robots()));
+  app.get(["/sitemap.xml", "/api/sitemap.xml"], async (req, res) => res.type("application/xml").send(await seo.sitemap(db)));
+
   app.use("/api/admin", adminRoutes(db));
   app.use("/api", publicRoutes(db));
   app.use("/api", (req, res) => res.status(404).json({ error: "Not found." }));
-
-  app.get("/robots.txt", (req, res) => res.type("text/plain").send(seo.robots()));
-  app.get("/sitemap.xml", async (req, res) => res.type("application/xml").send(await seo.sitemap(db)));
 
   app.use(
     express.static(config.buildDir, {

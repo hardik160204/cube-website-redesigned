@@ -54,6 +54,96 @@ Lost phone / locked out: reset the authenticator and set it up again at the next
   reset their own).
 - From the server (if the owner can't get in): `npm run reset-authenticator -- info@cube-software.com`
 
+## Deploying on Vercel
+
+The same code runs on Vercel as a single project:
+
+| Part | Where it runs on Vercel |
+|---|---|
+| React site (`frontend/`) | Built to `frontend/build`, served from Vercel's CDN |
+| Express API (`server/`) | One Vercel Function: `api/[...path].js` |
+| Database, admin sign-in, images | Supabase, exactly as on your own server |
+
+`vercel.json` wires this together. The function's file name is Vercel's catch-all convention, so every
+`/api/...` path (including `/api/admin/login`) reaches Express with its original URL — no rewrite involved.
+The root `package.json` exists only so Vercel installs the API's dependencies.
+
+### Environment variables
+
+Set these in **Vercel → your project → Settings → Environment Variables**, for **Production** (and Preview
+if you use preview deployments). They are the same values as `server/.env`:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | Supabase **Connect → Transaction pooler** URI (port 6543), with your database password |
+| `DB_CA_CERT` | The **contents** of Supabase's certificate (Project Settings → Database → SSL Configuration → download, then paste the whole file). Required: Vercel has no disk to read a certificate file from, and Supabase's pooler uses a self-signed chain |
+| `SUPABASE_URL` | Project Settings → Data API |
+| `SUPABASE_ANON_KEY` | Project Settings → API Keys (anon / publishable) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API Keys (service_role / secret) |
+| `APP_SECRET` | The same long random string as in `server/.env`. If it differs, every admin has to set up their authenticator app again |
+| `SITE_URL` | `https://www.cube-software.com`, or the `*.vercel.app` URL until the domain is live |
+| `CRON_SECRET` | Any long random string; Vercel sends it to the nightly clean-up |
+| `SMTP_*`, `SALES_EMAILS` | Only needed for booking/enquiry emails |
+
+Vercel sets `NODE_ENV=production` itself — don't add it. Don't set `DB_CA_FILE` on Vercel; it's the
+file-path version of `DB_CA_CERT` and there's no file to point at.
+
+### The schema is not applied automatically on Vercel
+
+On your own server the schema runs at start-up. Serverless cold-starts constantly, so that is switched off
+there (`APPLY_SCHEMA`). After changing the schema, paste `server/supabase/schema.sql` into
+**Supabase → SQL Editor → Run**. It is safe to run again.
+
+### Nightly clean-up
+
+`vercel.json` runs a cron at 02:00 UTC that calls `/api/cron/retention`, which does the automatic deletion
+(old enquiries, consent records, analytics, security log). It only works once `CRON_SECRET` is set — without
+it the route answers 401 and nothing is deleted.
+
+### What behaves differently from your own server
+
+- **Link-preview tags.** Pages come from the CDN, so `<title>`, the description and the `og:` tags are set
+  in the browser rather than in the HTML. Google renders JavaScript and reads them; Facebook, LinkedIn and
+  WhatsApp previews do not. To render them on the server instead, change the last rewrite in `vercel.json`
+  to send pages to the function and add `frontend/build/index.html` to that function's `includeFiles`.
+- **Rate limits** are counted per function instance rather than across the whole site, so a determined
+  attacker gets somewhat more attempts. Account lockout (5 wrong passwords) is in the database and is exact.
+
+### Deploy
+
+Pushing to GitHub deploys automatically once the project is connected. From this folder you can also run:
+
+```bash
+npx vercel          # preview deployment
+npx vercel --prod   # production
+```
+
+## Pointing the site at cube-software.com
+
+Nothing in the code hardcodes the domain — it all comes from `SITE_URL`. When you're ready to go live:
+
+| # | Where | What to do |
+|---|---|---|
+| 1 | **Vercel → Settings → Domains** | Add `cube-software.com` and `www.cube-software.com`, and pick which one is primary. Vercel creates the redirect between them for you and issues the HTTPS certificate. Add the DNS records it shows you at your domain registrar |
+| 2 | **Vercel → Settings → Environment Variables** | Change `SITE_URL` to `https://www.cube-software.com` (match the primary you chose), then redeploy. This drives `sitemap.xml`, `robots.txt`, canonical links, the structured data and the links inside emails |
+| 3 | **`server/.env`** | Change `SITE_URL` there too, if you also run the site on your own server |
+| 4 | **`vercel.json` → `redirects`** | Your own page redirects: old URLs from the current site that no longer exist. See the example below |
+| 5 | **Supabase → Authentication → URL Configuration** | Set **Site URL** to the live domain (used by password-reset emails). Admin sign-in itself uses the authenticator app and needs no redirect URLs |
+| 6 | **Google Search Console** | Add the domain and submit `https://www.cube-software.com/sitemap.xml` |
+
+Page redirects go in `vercel.json`, next to the rewrites — use `redirects` (the visitor's address bar
+changes, which is what you want for old URLs) rather than `rewrites` (silent, used for internal routing):
+
+```json
+"redirects": [
+  { "source": "/old-services", "destination": "/services/cloud-contact-center", "permanent": true },
+  { "source": "/company/about-us", "destination": "/about", "permanent": true }
+]
+```
+
+`permanent: true` is a 301 and tells Google the move is final; use `false` (307) if it's temporary. The
+www↔apex redirect is **not** done here — Vercel's Domains screen handles that.
+
 ## First-time setup on Cube's server
 
 ```bash

@@ -17,6 +17,9 @@ const env = process.env;
 // "PASTE_..." placeholders in .env count as not set.
 const filled = (v) => (v && !v.startsWith("PASTE_") ? v.trim() : "");
 const production = env.NODE_ENV === "production";
+// On Vercel the app runs as a serverless function: one shared proxy in front, a read-only disk, and no
+// long-running process, so a few things below behave differently there.
+const serverless = Boolean(env.VERCEL);
 
 // A stable server secret used to encrypt data at rest (e.g. authenticator secrets). Set APP_SECRET in .env;
 // if it's missing we fall back to the Supabase service key so the app still runs, but then rotating that key
@@ -25,11 +28,20 @@ const appSecret = filled(env.APP_SECRET) || filled(env.SUPABASE_SERVICE_ROLE_KEY
 
 module.exports = {
   production,
+  serverless,
   appSecret,
   port: Number(env.PORT || 5000),
   siteUrl: (env.SITE_URL || "http://localhost:5000").replace(/\/$/, ""),
   databaseUrl: filled(env.DATABASE_URL),
   dbCaFile: env.DB_CA_FILE || "",
+  // The same certificate pasted straight into an environment variable, for hosts with no writable disk
+  // (Vercel). Either this or DB_CA_FILE satisfies the production TLS check.
+  dbCaCert: filled(env.DB_CA_CERT),
+  // The schema is created/updated on start-up. Serverless starts constantly, so there it is applied by
+  // running the SQL in supabase/schema.sql yourself (see the README) instead of on every cold start.
+  applySchema: env.APPLY_SCHEMA ? env.APPLY_SCHEMA === "true" : !serverless,
+  // Vercel Cron calls /api/cron/retention with this secret, since serverless has no long-running timer.
+  cronSecret: filled(env.CRON_SECRET),
   supabase: {
     url: filled(env.SUPABASE_URL).replace(/\/$/, ""),
     anonKey: filled(env.SUPABASE_ANON_KEY), // public key: used only to check admin passwords with Supabase Auth
@@ -37,8 +49,10 @@ module.exports = {
   },
   buildDir: env.BUILD_DIR || path.join(__dirname, "..", "..", "frontend", "build"),
   seoRoutesFile: env.SEO_ROUTES_FILE || path.join(__dirname, "..", "..", "frontend", "src", "seo", "routes.json"),
-  // Trust X-Forwarded-For only from a proxy on this same machine (Nginx/IIS, or the dev server).
-  trustProxy: env.TRUST_PROXY || "loopback",
+  // Trust X-Forwarded-For only from a proxy on this same machine (Nginx/IIS, or the dev server). On Vercel
+  // the only way in is Vercel's own proxy, which sets the visitor's IP one hop away — without this, every
+  // visitor looks like the same IP and they all share one rate-limit bucket.
+  trustProxy: env.TRUST_PROXY || (serverless ? 1 : "loopback"),
   smtp: {
     host: filled(env.SMTP_HOST),
     port: Number(env.SMTP_PORT || 587),

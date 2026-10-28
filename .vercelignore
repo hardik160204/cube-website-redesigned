@@ -1,0 +1,11 @@
+# Never upload secrets, local databases or uploads to Vercel.
+server/.env
+server/data
+*.env.local
+
+# Not needed to build or run the site.
+server/test
+tests
+test_reports
+test_result.md
+memory
