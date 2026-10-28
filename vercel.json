@@ -8,10 +8,28 @@
       "includeFiles": "frontend/src/seo/routes.json"
     }
   },
-  "crons": [{ "path": "/api/cron/retention", "schedule": "0 2 * * *" }],
+  "crons": [
+    {
+      "path": "/api/cron/retention",
+      "schedule": "0 2 * * *"
+    }
+  ],
   "rewrites": [
-    { "source": "/sitemap.xml", "destination": "/api/sitemap.xml" },
-    { "source": "/robots.txt", "destination": "/api/robots.txt" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/api"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ]
 }
