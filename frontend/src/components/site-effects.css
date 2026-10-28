@@ -183,6 +183,16 @@
 .cl-orbit:hover .cl-orbit-ring,
 .cl-orbit:hover .cl-orbit-upright { animation-play-state: paused; }
 
+/* --- Cube mascot: float, shadow breathing with it, antenna glow, a wave on hover --------------- */
+@keyframes cm-float { 50% { transform: translateY(-7px); } }
+@keyframes cm-shadow { 50% { transform: scaleX(0.8); opacity: 0.6; } }
+@keyframes cm-pulse { 50% { opacity: 0.25; } }
+@keyframes cm-wave { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-28deg); } 75% { transform: rotate(14deg); } }
+.cm-float { animation: cm-float 3.6s ease-in-out infinite; }
+.cm-shadow { animation: cm-shadow 3.6s ease-in-out infinite; }
+.cm-pulse { animation: cm-pulse 1.8s ease-in-out infinite; }
+.cm-wave { transform-box: view-box; animation: cm-wave 0.9s ease-in-out infinite; }
+
 /* --- Reduced motion: everything above holds still; marquees become scrollable rows ----------- */
 @media (prefers-reduced-motion: reduce) {
   .cl-glint { animation: none; }
@@ -192,4 +202,5 @@
   .cl-marquee { overflow-x: auto; }
   .cl-ai-scene * { animation: none !important; }
   .cl-float, .cl-ai-blob, .cl-ai-grid { animation: none; }
+  .cm-float, .cm-shadow, .cm-pulse, .cm-wave { animation: none; }
 }

@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { MapPin, Phone, Clock, Building, Send, ShieldCheck, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageHero, Reveal, Section } from "../components/page/kit";
+import { api } from "../lib/api";
+import { readConsent, saveConsent, useConsent } from "../lib/consent";
 
-const EMPTY = { name: "", email: "", phone: "", company: "", jobTitle: "", website: "", interest: "", users: "", message: "" };
+const EMPTY = { name: "", email: "", phone: "", company: "", jobTitle: "", website: "", interest: "", users: "", message: "", company_website: "" };
 
 const FIELD =
   "w-full rounded-xl border border-[#E5EAF4] bg-[#F7F9FD] px-4 py-3.5 text-base text-[#0A0626] transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-[#9CA3AF] focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10";
@@ -22,19 +24,27 @@ function Field({ id, label, children }) {
 export default function ContactPage() {
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
+  const consent = useConsent();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const formEl = e.currentTarget;
     if (!form.name || !form.email || !form.phone || !form.interest || !form.message) {
       toast.error("Please fill in all required fields.");
       return;
     }
     setSubmitting(true);
-    setTimeout(() => {
+    const { jobTitle, ...rest } = form;
+    try {
+      await api("/leads", { method: "POST", body: { ...rest, designation: jobTitle, source: "contact", consent: true } });
       toast.success("Thank you! Our team will connect with you promptly.");
       setForm(EMPTY);
+      formEl.reset(); // clears the consent tick, which isn't held in state
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
       setSubmitting(false);
-    }, 1000);
+    }
   };
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
@@ -119,6 +129,20 @@ export default function ContactPage() {
               <Field id="c-message" label="Message *">
                 <textarea id="c-message" required value={form.message} onChange={set("message")} className={`${FIELD} min-h-[130px] resize-none`} />
               </Field>
+              {/* Hidden from people; bots fill it in. */}
+              <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+                <label htmlFor="c-hp">Company website</label>
+                <input id="c-hp" tabIndex={-1} autoComplete="off" value={form.company_website} onChange={set("company_website")} />
+              </div>
+              <label htmlFor="c-consent" className="mt-5 flex items-start gap-3 text-[13px] leading-5 text-[#4A4D53]">
+                <input id="c-consent" type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-[#0047FF]" />
+                <span>
+                  I agree to the{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Terms &amp; Conditions</a>{" "}
+                  and{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Privacy Policy</a>, and consent to Cube Software using these details to contact me about my enquiry, including storing them on servers outside my country (EU).
+                </span>
+              </label>
               <div className="mt-2 flex flex-col items-center gap-5 sm:flex-row">
                 <button
                   type="submit"
@@ -135,14 +159,37 @@ export default function ContactPage() {
           </Reveal>
 
           <Reveal delay={0.1} className="relative min-h-[460px] overflow-hidden rounded-[28px] border border-[#E5EAF4] shadow-[0_40px_80px_-50px_rgb(0_71_255/0.5)]">
-            <iframe
-              title="Cube Software Noida Office Map"
-              src="https://maps.google.com/maps?q=Cube%20Software%20Pvt.%20Ltd.,%20Sector%2063,%20Noida&t=&z=15&ie=UTF8&iwloc=&output=embed"
-              className="absolute inset-0 h-full w-full border-0"
-              allowFullScreen=""
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+            {consent?.functional ? (
+              <iframe
+                title="Cube Software Noida Office Map"
+                src="https://maps.google.com/maps?q=Cube%20Software%20Pvt.%20Ltd.,%20Sector%2063,%20Noida&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                className="absolute inset-0 h-full w-full border-0"
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            ) : (
+              // Google Maps sets cookies, so it loads only after the visitor allows it.
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#F0F4FB] p-8 text-center">
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
+                  <MapPin size={26} />
+                </span>
+                <p className="max-w-[320px] text-[15px] leading-6 text-[#404348]">The map is provided by Google Maps, which sets its own cookies.</p>
+                <div className="flex flex-col gap-2.5 sm:flex-row">
+                  <button type="button" onClick={() => saveConsent({ ...readConsent(), functional: true })} className="rounded-xl bg-primary px-5 py-2.5 font-medium text-white transition-colors hover:bg-[#2300DC]">
+                    Show the map
+                  </button>
+                  <a
+                    href="https://maps.google.com/?q=Cube%20Software%20Pvt.%20Ltd.,%20Sector%2063,%20Noida"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-[#D5DBE7] bg-white px-5 py-2.5 font-medium text-[#0A0626] transition-colors hover:bg-[#E6EEFF]"
+                  >
+                    Open in Google Maps
+                  </a>
+                </div>
+              </div>
+            )}
           </Reveal>
         </div>
       </Section>

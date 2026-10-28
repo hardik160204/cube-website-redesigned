@@ -5,9 +5,30 @@ import { FeatureCards, Heading, Label, LinkPair, PageHero, Reveal, Section, Spli
 
 // --- HARDCODED IMAGES ---
 const ABOUT_IMAGE = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80";
-const IMAGES = {
-  team: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80",
-};
+// The directors' messages, with their portraits from the Meet Our Team page. The vision message is the site's
+// former founder's message; the mission message is drafted from the site's own copy for the directors to approve.
+const DIRECTORS = [
+  {
+    label: "Our Vision",
+    title: "A Message on Our",
+    highlight: "Vision",
+    name: "Nirupma Kumar Sinha",
+    role: "Director",
+    image: "/sinha-sir-image.webp",
+    message:
+      "We at Cube Software are happy to revolutionize the world with the power of cloud telephony. We look forward for developing a cloud telephony network which is reachable to every business, be it a well-established business or new start-up or an entrepreneur. Our strength is our quality of service on which we never compromise.",
+  },
+  {
+    label: "Our Mission",
+    title: "A Message on Our",
+    highlight: "Mission",
+    name: "Praveen Varshney",
+    role: "Director",
+    image: "/praveensir-image.png",
+    message:
+      "Our mission is to give every business, from a five-seat team to a thousand-seat floor, communication software that is built in-house, deployed quickly and supported around the clock. For more than three decades we have engineered Computer Telephony Integration that works seamlessly with the world's leading telecom vendors, and we measure ourselves by one thing: the quality of service our customers receive.",
+  },
+];
 
 const MILESTONES = [
   { year: "1990", text: "Cube Software is founded, pioneering Computer Telephony Integration in India." },
@@ -45,17 +66,25 @@ const AboutPage = () => (
       actions={<LinkPair primary={{ label: "Work With Us", to: "/contact" }} secondary={{ label: "Meet Our Team", to: "/meet-our-team" }} />}
     />
 
-    <Section tone="tint">
-      <Split image={IMAGES.team} imageAlt="Cube Software Team Meeting" reverse>
-        <Title>Founder's Message</Title>
-        <figure className="relative mt-8">
-          <Quote aria-hidden="true" className="absolute -left-2 -top-6 h-16 w-16 text-[#D9E6FF]" strokeWidth={1.5} />
-          <blockquote className="relative text-[19px] font-medium leading-[1.7] text-[#31343A] md:text-[21px]">
-            "We at Cube Software are happy to revolutionize the world with the power of cloud telephony. We look forward for developing a cloud telephony network which is reachable to every business, be it a well-established business or new start-up or an entrepreneur. Our strength is our quality of service on which we never compromise."
-          </blockquote>
-        </figure>
-      </Split>
-    </Section>
+    {DIRECTORS.map((d, i) => (
+      <Section key={d.name} tone={i % 2 ? "tint" : "white"}>
+        <Split image={d.image} imageAlt={d.name} reverse={i % 2 === 0}>
+          <Label>{d.label}</Label>
+          <Title highlight={d.highlight}>{d.title}</Title>
+          <figure className="relative mt-8">
+            <Quote aria-hidden="true" className="absolute -left-2 -top-6 h-16 w-16 text-[#D9E6FF]" strokeWidth={1.5} />
+            <blockquote className="relative text-[18px] font-medium leading-[1.7] text-[#31343A] md:text-[20px]">"{d.message}"</blockquote>
+            <figcaption className="mt-7 flex items-center gap-4">
+              <span className="h-px w-10 bg-[linear-gradient(90deg,#00B8FF,#0047FF)]" />
+              <span>
+                <span className="block text-lg font-medium text-[#0A0626]">{d.name}</span>
+                <span className="text-sm text-primary">{d.role}, Cube Software</span>
+              </span>
+            </figcaption>
+          </figure>
+        </Split>
+      </Section>
+    ))}
 
     <Section>
       <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">

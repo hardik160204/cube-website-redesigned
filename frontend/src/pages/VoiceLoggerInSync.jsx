@@ -10,7 +10,7 @@ import ProductPage from "../components/page/ProductPage";
 const PAGE_DATA = {
   title: "Voice Logger InSync",
   tagline: "Centralise critical recording data from every location into one synchronised archive.",
-  heroVideo: "/voice-logger-insync-bg.mp4", // <-- UPDATE THIS TO YOUR VIDEO FILE NAME
+  heroVideo: "/blue-voice.mp4", // shared with Callisto Voice Logger until a dedicated InSync video is supplied
   overviewImage: "/voice-logger-insync-overview.png", // <-- UPDATE THIS TO YOUR OVERVIEW IMAGE
   stats: [
     { value: "Multi-Site", label: "Consolidation" },

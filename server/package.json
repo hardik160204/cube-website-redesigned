@@ -1,0 +1,31 @@
+{
+  "name": "cube-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cube Software website server: serves the site, forms, demo bookings, admin dashboard API.",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/index.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch src/index.js",
+    "create-admin": "node --disable-warning=ExperimentalWarning scripts/create-admin.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/**/*.test.js\"",
+    "set-owner": "node --disable-warning=ExperimentalWarning scripts/set-owner.js",
+    "remove-admin": "node --disable-warning=ExperimentalWarning scripts/remove-admin.js",
+    "reset-authenticator": "node --disable-warning=ExperimentalWarning scripts/reset-authenticator.js"
+  },
+  "dependencies": {
+    "compression": "^1.8.2",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "multer": "^2.5.0",
+    "nodemailer": "^10.2.1",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.12"
+  }
+}

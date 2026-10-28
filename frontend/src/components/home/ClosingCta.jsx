@@ -14,31 +14,31 @@ export default function ClosingCta({
   children,
 }) {
   return (
-    <section className="w-full bg-white px-4 pb-16 pt-12 md:pb-24 md:pt-16">
-      <div className="relative isolate mx-auto flex max-w-[1228px] flex-col items-center overflow-hidden rounded-[32px] bg-[linear-gradient(110deg,#2300DC_0%,#0047FF_55%,#0091FF_100%)] px-6 py-16 text-center shadow-[0_40px_80px_-40px_rgb(35_0_220/0.7)] md:py-20">
+    <section className="w-full bg-white px-4 pb-14 pt-10 md:pb-20 md:pt-14">
+      <div className="relative isolate mx-auto flex max-w-[1080px] flex-col items-center overflow-hidden rounded-[32px] bg-[linear-gradient(110deg,#2300DC_0%,#0047FF_55%,#0091FF_100%)] px-6 py-10 text-center shadow-[0_40px_80px_-40px_rgb(35_0_220/0.7)] md:py-12">
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-white/10 blur-[90px]" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -left-20 -z-10 h-72 w-72 rounded-full bg-[#00B8FF]/25 blur-[90px]" />
         <span className="text-sm font-semibold uppercase tracking-[0.12em] text-[#7FD8FF]">{label}</span>
-        <h2 className="mt-4 max-w-[1000px] text-[34px] font-medium leading-[1.12] text-white md:text-[52px] xl:text-[60px]">{title}</h2>
-        <p className="mt-5 max-w-[820px] text-[17px] leading-8 text-[#DCE6FF] md:text-xl">{body}</p>
+        <h2 className="mt-3 max-w-[900px] text-[30px] font-medium leading-[1.12] text-white md:text-[40px] xl:text-[46px]">{title}</h2>
+        <p className="mt-4 max-w-[760px] text-[16px] leading-7 text-[#DCE6FF] md:text-lg">{body}</p>
         {children}
-        <div className="mt-10 flex w-full max-w-[560px] flex-col items-stretch justify-center gap-4 sm:flex-row">
+        <div className="mt-7 flex w-full max-w-[500px] flex-col items-stretch justify-center gap-4 sm:flex-row">
           <button
             type="button"
             onClick={openDemo}
-            className="inline-flex h-14 flex-1 items-center justify-center rounded-xl bg-white px-8 text-lg font-semibold text-primary shadow-[0_16px_30px_-16px_rgb(10_6_38/0.7)] transition-[background-color,transform] duration-200 hover:bg-[#E6EEFF] active:scale-[0.97]"
+            className="inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-white px-7 text-[17px] font-semibold text-primary shadow-[0_16px_30px_-16px_rgb(10_6_38/0.7)] transition-[background-color,transform] duration-200 hover:bg-[#E6EEFF] active:scale-[0.97]"
           >
             {primary}
           </button>
           <a
             href={tel(CONTACT.expert)}
-            className="inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl border border-white/40 px-8 text-lg font-semibold text-white transition-[background-color,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
+            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-white/40 px-7 text-[17px] font-semibold text-white transition-[background-color,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
           >
             <Phone size={18} /> Talk to an expert
           </a>
         </div>
-        <p className="mt-10 text-2xl font-medium text-white/80 md:text-3xl">Or</p>
-        <a href={tel(CONTACT.sales)} className="group mt-3 text-[30px] font-medium leading-tight text-white md:text-[44px]">
+        <p className="mt-6 text-xl font-medium text-white/80 md:text-2xl">Or</p>
+        <a href={tel(CONTACT.sales)} className="group mt-2 text-[26px] font-medium leading-tight text-white md:text-[34px]">
           Call Us <span className="whitespace-nowrap underline decoration-white/30 underline-offset-8 transition-[text-decoration-color] group-hover:decoration-white">{CONTACT.sales}</span>
         </a>
       </div>

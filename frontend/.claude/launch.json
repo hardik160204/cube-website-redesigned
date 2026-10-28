@@ -4,9 +4,25 @@
     {
       "name": "frontend",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["craco", "start"],
-      "env": { "BROWSER": "none" },
-      "port": 3000
+      "runtimeArgs": [
+        "craco",
+        "start"
+      ],
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3001"
+      },
+      "port": 3001
+    },
+    {
+      "name": "server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--disable-warning=ExperimentalWarning",
+        "--watch",
+        "../server/src/index.js"
+      ],
+      "port": 5000
     }
   ]
 }

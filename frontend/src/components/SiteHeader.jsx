@@ -211,7 +211,7 @@ function SolutionsPanel({ onNavigate }) {
 }
 
 const RESOURCE_COLUMNS = [
-  { heading: "Company", items: RESOURCES.filter((r) => ["/about", "/meet-our-team", "/career"].includes(r.href)) },
+  { heading: "Company", items: RESOURCES.filter((r) => ["/about", "/meet-our-team", "/career", "/blog"].includes(r.href)) },
   { heading: "Customers", items: RESOURCES.filter((r) => ["/client-voices", "/#faq", "/contact"].includes(r.href)) },
 ];
 

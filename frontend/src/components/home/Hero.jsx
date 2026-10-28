@@ -103,9 +103,6 @@ export default function Hero() {
             <Phone size={18} /> Talk to an expert<span className="hidden lg:inline">&nbsp;· {CONTACT.expert}</span>
           </a>
         </div>
-        <p style={delay(500)} className="cl-fade-up mt-4 text-center text-sm text-[#a1080d]">
-          Or call sales on {CONTACT.sales}
-        </p>
       </div>
 
     </section>

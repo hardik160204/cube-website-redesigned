@@ -1,6 +1,6 @@
 import {
   BarChart3, Building, Briefcase, Cloud, Database, Flag, GraduationCap, Hash, Headphones, HeartPulse, Headset, Heart,
-  Info, Landmark, LifeBuoy, Lock, Mail, MessageCircle, MessagesSquare, Mic, MonitorPlay, MousePointerClick,
+  Info, Landmark, Newspaper, LifeBuoy, Lock, Mail, MessageCircle, MessagesSquare, Mic, MonitorPlay, MousePointerClick,
   Phone, PhoneCall, PhoneIncoming, PhoneMissed, PhoneOutgoing, Plane, Plug, Quote, Radio, Receipt, Route, ShieldCheck,
   Target, TowerControl, Users, Voicemail, Workflow,
 } from "lucide-react";
@@ -166,6 +166,7 @@ export const RESOURCES = [
   { title: "Client voices", desc: "What our customers say", href: "/client-voices", icon: Quote },
   { title: "Meet our team", desc: "The people behind the platform", href: "/meet-our-team", icon: Users },
   { title: "Careers", desc: "Build telephony with us", href: "/career", icon: Briefcase },
+  { title: "Blog", desc: "Guides on cloud telephony", href: "/blog", icon: Newspaper },
   { title: "FAQ", desc: "Answers to common questions", href: "/#faq", icon: LifeBuoy },
   { title: "Contact", desc: "Talk to sales or support", href: "/contact", icon: Mail },
 ];

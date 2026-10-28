@@ -1,0 +1,135 @@
+import { useEffect, useState } from "react";
+import { BarChart3, Cloud, Database, Globe, Headset, MessageSquare, Mic, Newspaper, PhoneMissed, PhoneOutgoing, ShieldCheck, Workflow } from "lucide-react";
+import { api } from "../lib/api";
+
+// The blog's starter articles. Live posts come from the server (managed in the admin dashboard); these are
+// the fallback when it can't be reached. `body` items are paragraphs, `{ h }` a sub-heading, `{ list }` a list.
+export const POSTS = [
+  {
+    slug: "multi-level-ivr-menus",
+    category: "Inbound",
+    icon: Workflow,
+    title: "Multi-level IVR: designing menus callers actually finish",
+    excerpt: "A good IVR greets, qualifies and routes in seconds. Here is how to structure main menus and sub-menus so callers reach the right team without giving up.",
+    body: [
+      "An Interactive Voice Response system is the first voice most of your customers hear. Done well, it answers common questions, captures intent and routes every caller to the right team. Done badly, it becomes a maze that callers abandon.",
+      { h: "Start with the reasons people call" },
+      "List the top reasons customers call you and order them by volume. Those become your main-menu options. Keep the first level to three or four choices: sales, support, billing and an option to reach a person.",
+      { h: "Use sub-menus for the detail" },
+      "A multi-level IVR lets each main option open its own short sub-menu, such as new versus existing customers under Sales, or technical versus account issues under Support. Callers only hear the choices that matter to them, so every path stays short.",
+      { list: ["Keep prompts under ten seconds each.", "Always offer a way back and a way to an agent.", "Route each final option to the queue with the right skills.", "Record calls so you can review where callers drop off."] },
+      { h: "Measure and refine" },
+      "Live analytics show where callers press, wait and hang up. Review them monthly and move popular options earlier. With Cube's IVR you can change menus without new hardware, so improving the experience is quick.",
+    ],
+  },
+  {
+    slug: "dialer-modes-explained",
+    category: "Outbound",
+    icon: PhoneOutgoing,
+    title: "Predictive, progressive or preview: choosing the right dialer mode",
+    excerpt: "Every outbound team wants more talk time and less waiting. The right dialing mode depends on your list, your agents and your compliance needs.",
+    body: [
+      "An auto dialer removes manual dialing so agents spend their time talking, not waiting. Cube's dialer offers three pacing modes, and each suits a different kind of campaign.",
+      { h: "Predictive dialing" },
+      "The dialer calls several numbers per available agent and connects only answered calls, using answering-machine detection to skip voicemail. It maximises agent talk time on large lead lists such as telesales and collections.",
+      { h: "Progressive dialing" },
+      "The next number is dialed the moment an agent becomes free, one call per agent. You never have more connected calls than agents, which suits smaller teams and campaigns where every answered call matters.",
+      { h: "Preview dialing" },
+      "The agent sees the customer's record before the call is placed and chooses when to dial. It is slower, but ideal for high-value or complex conversations where preparation counts.",
+      { list: ["Large list, simple pitch: predictive.", "Steady pace, no abandoned calls: progressive.", "High-value accounts: preview."] },
+      "Whichever mode you choose, use call disposition codes so every outcome is counted and callbacks are scheduled automatically.",
+    ],
+  },
+  {
+    slug: "call-recording-for-compliance",
+    category: "Recording",
+    icon: Mic,
+    title: "Call recording for compliance: what financial teams should capture",
+    excerpt: "In lending and banking, a tamper-proof audit trail is non-negotiable. Here is what a compliant call-recording setup needs to cover.",
+    body: [
+      "Regulated businesses must be able to prove what was said on a call. A dependable voice logger records every conversation, stores it securely and lets you find it fast when an auditor asks.",
+      { h: "Record every line" },
+      "Make sure recording covers SIP, analog and digital lines alike, so no conversation is missed. Cube's Callisto Voice Logger records across all three and compresses audio so storage stays affordable.",
+      { h: "Keep recordings secure and searchable" },
+      { list: ["Encrypted storage with role-based access.", "Search by agent, date, number or call ID.", "Audit logs of who played what, and when.", "Retention periods that match your policy."] },
+      { h: "Add the screen to the voice" },
+      "For process audits, pairing voice with screen recording shows exactly what the agent saw and did during the call. That turns a recording into complete evidence.",
+      "With multiple branches, a central archive such as Voice Logger InSync brings every site's recordings into one searchable place.",
+    ],
+  },
+  {
+    slug: "cloud-or-on-premise",
+    category: "Platform",
+    icon: Cloud,
+    title: "Cloud or on-premise contact center: how to decide",
+    excerpt: "Both models can run a world-class contact center. The right choice depends on your data rules, IT team and growth plans.",
+    body: [
+      "Cube's contact center runs hosted in the cloud or on your own servers, domestic or international. The software is the same; what changes is who runs the infrastructure.",
+      { h: "When cloud makes sense" },
+      { list: ["You want to go live quickly without buying hardware.", "Agents work from several offices or from home.", "Your team size changes with seasons or campaigns."] },
+      { h: "When on-premise makes sense" },
+      { list: ["Regulations require call data to stay on your premises.", "You already run a PBX and an IT team to support it.", "You prefer a one-time licence over a subscription."] },
+      { h: "You can keep your existing setup" },
+      "Many businesses start by connecting their current PBX to Cube over SIP and add features on top, with no rip-and-replace. Talk to our team about your call volumes and we will suggest the right setup.",
+    ],
+  },
+  {
+    slug: "missed-call-campaigns",
+    category: "Engagement",
+    icon: PhoneMissed,
+    title: "Turning a missed call into a lead: five campaign ideas",
+    excerpt: "A missed call costs the customer nothing and gives you a verified number. Here are five ways businesses put that to work.",
+    body: [
+      "With a missed call service, a customer dials your number, the call disconnects after a ring at no cost to them, and your system captures their number instantly. From there you can send an SMS, schedule a callback or update your CRM.",
+      { h: "Five ideas to try" },
+      { list: ["Lead capture from print, outdoor and TV ads.", "Cash-on-delivery and number verification at checkout.", "Voting and polling with one number per option.", "Opt-ins for alerts, offers and newsletters.", "Callback requests during busy hours."] },
+      { h: "Close the loop quickly" },
+      "The value of a missed call fades fast. Trigger an automatic SMS straight away and route the number to an agent or an auto dialer for a callback while the interest is fresh.",
+    ],
+  },
+  {
+    slug: "telephony-crm-integration",
+    category: "Integrations",
+    icon: Database,
+    title: "Why your telephony should talk to your CRM",
+    excerpt: "Screen-pops, automatic call logging and click-to-call save agents minutes on every call. Here is what integration changes day to day.",
+    body: [
+      "When your phone system and CRM are separate, agents copy numbers, search for records and type notes after every call. Connecting the two removes that work.",
+      { h: "What integration gives your team" },
+      { list: ["Screen-pop: the caller's record opens as the phone rings.", "Click-to-call: dial any number from the CRM in one click.", "Automatic logging: every call and recording saved to the record.", "Better reports: call outcomes alongside sales data."] },
+      { h: "Works with the tools you use" },
+      "Cube connects with Salesforce, Freshdesk and custom CRMs through APIs and CTI connectors, so you can integrate without changing how your team already works.",
+    ],
+  },
+];
+
+export const readMinutes = (post) =>
+  Math.max(
+    2,
+    Math.round(
+      post.body
+        .map((b) => (typeof b === "string" ? b : b.h || (b.list || []).join(" ")))
+        .join(" ")
+        .split(/\s+/).length / 200
+    )
+  );
+
+// Icons an admin can choose for a post (names match the server's list).
+export const ICONS = { Workflow, PhoneOutgoing, Mic, Cloud, PhoneMissed, Database, Newspaper, BarChart3, MessageSquare, ShieldCheck, Headset, Globe };
+
+let cache = null;
+export function usePosts() {
+  const [state, setState] = useState(cache || { posts: POSTS, loaded: false });
+  useEffect(() => {
+    if (cache) return undefined;
+    let live = true;
+    api("/posts")
+      .then(({ posts }) => (cache = { posts: posts.map((p) => ({ ...p, icon: ICONS[p.icon] || Newspaper })), loaded: true }))
+      .catch(() => (cache = { posts: POSTS, loaded: true }))
+      .then((c) => live && setState(c));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return state;
+}
