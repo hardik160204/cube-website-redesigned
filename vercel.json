@@ -4,7 +4,7 @@
   "buildCommand": "cd frontend && npm install --legacy-peer-deps && CI=false npm run build",
   "outputDirectory": "frontend/build",
   "functions": {
-    "api/[...path].js": {
+    "api/**": {
       "includeFiles": "frontend/src/seo/routes.json"
     }
   },
@@ -12,6 +12,6 @@
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap.xml" },
     { "source": "/robots.txt", "destination": "/api/robots.txt" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
