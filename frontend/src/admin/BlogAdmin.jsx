@@ -132,6 +132,7 @@ function Editor({ post, icons, onDone }) {
       </div>
       {picking && (
         <MediaPicker
+          imagesOnly
           onClose={() => setPicking(false)}
           onPick={(url) => {
             setF({ ...f, cover: url });

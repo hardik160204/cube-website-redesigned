@@ -2,6 +2,7 @@ import React from "react";
 import { Check } from "lucide-react";
 import { CONTACT, tel } from "./catalog";
 import { DIAMONDS } from "./cube-diamonds";
+import MediaSlot from "../MediaSlot";
 import { ENTERPRISE_FEATURES, MODULES_DATA } from "../../pages/CloudContactCenter";
 
 // Cube's dark AI band. Copy is Cube's own: the "AI Call Management" pitch and the contact center's
@@ -65,7 +66,10 @@ export default function AiSection() {
   const [lead, ...rest] = AI_PITCH.description.split(". ");
   return (
     <section className="relative isolate overflow-hidden bg-[#0A0626] px-4 py-14 md:py-20">
-      <Scene />
+      {/* The animated background; admins can swap it for a video, GIF or picture. */}
+      <MediaSlot id="ai-scene" className="pointer-events-none absolute inset-0 z-0 overflow-hidden" mediaClass="h-full w-full object-cover opacity-60">
+        <Scene />
+      </MediaSlot>
       <div className="relative z-10 mx-auto grid max-w-[1200px] items-center gap-10 lg:grid-cols-[1fr_1.2fr]">
         <div className="min-w-0">
           <div className="flex items-center gap-3">

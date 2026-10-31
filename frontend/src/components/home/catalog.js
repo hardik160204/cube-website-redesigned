@@ -1,7 +1,7 @@
 import {
   BarChart3, Building, Briefcase, Cloud, Database, Flag, GraduationCap, Hash, Headphones, HeartPulse, Headset, Heart,
-  Info, Landmark, Newspaper, LifeBuoy, Lock, Mail, MessageCircle, MessagesSquare, Mic, MonitorPlay, MousePointerClick,
-  Phone, PhoneCall, PhoneIncoming, PhoneMissed, PhoneOutgoing, Plane, Plug, Quote, Radio, Receipt, Route, ShieldCheck,
+  Info, Landmark, Newspaper, LifeBuoy, Lock, Mail, MessageCircle, MessagesSquare, Mic, MonitorPlay, MousePointer2, MousePointerClick,
+  Phone, PhoneCall, PhoneIncoming, PhoneMissed, PhoneOutgoing, Plane, Plug, Quote, Radio, Receipt, Route, ScreenShare, ShieldCheck,
   Target, TowerControl, Users, Voicemail, Workflow,
 } from "lucide-react";
 
@@ -32,6 +32,8 @@ export const PLATFORM = [
       { label: "Web Chat Bot", desc: "Chat lands in the same omnichannel contact center.", href: "/services/web-chat-bot", icon: MessagesSquare },
       { label: "Bulk Voice Calls", desc: "Record once and deliver to your whole list.", href: "/services/bulk-voice-call", icon: PhoneCall },
       { label: "Missed Call", desc: "Turn a missed call into a lead or an opt-in.", href: "/services/missed-call", icon: PhoneMissed },
+      { label: "Co-Browsing", desc: "See the same page together and guide step by step.", href: "/services/co-browsing", icon: MousePointer2 },
+      { label: "Screen Sharing", desc: "Customers show a screen, window or tab they choose.", href: "/services/screen-sharing", icon: ScreenShare },
     ],
   },
   {

@@ -1,13 +1,15 @@
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { api } from "../lib/api";
+import { isVideo, pagePath, setContent, useContent } from "../lib/content";
+import { EDIT_FLAG, editing as editMode } from "../lib/editable";
 
-// Applies the text and image edits made in the admin's visual editor. Each edit says "on this page (or on
-// every page), show X instead of Y"; matching text nodes and <img> sources are swapped after React renders,
-// and again whenever the page changes. An admin who started editing from the dashboard also gets the editor.
+// Applies the text, image and video edits made in the admin's visual editor. Each edit says "on this page
+// (or on every page), show X instead of Y"; matching text nodes, <img> sources and <video> sources are
+// swapped after React renders, and again whenever the page changes. (Card lists and animation spots apply
+// themselves: see lib/editable.js and MediaSlot.) An admin who started editing also gets the editor.
 
 const EditLayer = lazy(() => import("../admin/EditLayer"));
-export const EDIT_FLAG = "cube_edit";
+export { EDIT_FLAG };
 
 const norm = (s) => s.replace(/\s+/g, " ").trim();
 // What a node showed before we changed it, so the editor can always find the original text or image.
@@ -58,27 +60,37 @@ function apply(overrides, path) {
       }
       originals.set(img, { original, shown: next });
     }
+    // Background and hero videos. A video replaces the source; a picture or GIF is shown in the video's
+    // place (same size and position) and the video is hidden.
+    for (const v of document.body.querySelectorAll("video")) {
+      if (skip(v)) continue;
+      const source = v.querySelector("source");
+      const prev = originals.get(v);
+      const original = prev ? prev.original : v.getAttribute("src") || source?.getAttribute("src");
+      const next = original && images.get(original)?.replacement;
+      if (!next || prev?.shown === next) continue;
+      originals.set(v, { original, shown: next });
+      if (isVideo(next)) {
+        (source || v).setAttribute("src", next);
+        v.load();
+        v.play?.()?.catch?.(() => {});
+      } else {
+        v.style.display = "none";
+        const still = v.nextElementSibling?.hasAttribute("data-cube-swap") ? v.nextElementSibling : v.insertAdjacentElement("afterend", document.createElement("img"));
+        Object.assign(still, { className: v.className, alt: "", src: next });
+        still.setAttribute("data-cube-swap", "");
+      }
+    }
   }
 }
 
 export default function SiteContent() {
   const { pathname } = useLocation();
-  const path = pathname.replace(/\/+$/, "") || "/";
-  const [overrides, setOverrides] = useState([]);
-  const [editing] = useState(() => {
-    try {
-      return sessionStorage.getItem(EDIT_FLAG) === "1";
-    } catch {
-      return false;
-    }
-  });
+  const path = pagePath(pathname);
+  const { overrides } = useContent();
+  const setOverrides = useCallback((next) => setContent({ overrides: next }), []);
+  const [editing] = useState(editMode);
   const frame = useRef(0);
-
-  useEffect(() => {
-    api("/content")
-      .then((d) => setOverrides(d.overrides))
-      .catch(() => {});
-  }, []);
 
   const run = useCallback(() => {
     cancelAnimationFrame(frame.current);

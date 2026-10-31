@@ -8,6 +8,8 @@ import SectionIntro from "../home/SectionIntro";
 import { DIAMONDS } from "../home/cube-diamonds";
 import { CLIENT_LOGOS, PARTNER_LOGOS } from "../clients-and-partners";
 import { openDemo } from "../demo";
+import { useList } from "../../lib/editable";
+import MediaSlot from "../MediaSlot";
 
 // The inner pages' building blocks, in the homepage's language: logo palette, Outfit type, dark ink
 // (#0A0626) bands, 28px radii, Emil's ease-out, and reveal-on-scroll that reduced motion turns off.
@@ -125,22 +127,25 @@ export function PageHero({ crumbs = [], label, title, highlight, body, image, im
           {children}
         </div>
 
-        {!image && !media && <HeroOrb />}
-        {(image || media) && (
-          <motion.div
-            initial={reduce ? false : { opacity: 0, transform: "translateY(24px) scale(0.97)" }}
-            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
-            transition={{ duration: 0.9, ease, delay: 0.25 }}
-            className="relative"
-          >
-            <div aria-hidden="true" className="absolute inset-[8%] rounded-full bg-[#0047FF]/40 blur-[90px]" />
-            {media || (
-              <div className="cl-float relative rounded-[28px] border border-white/10 bg-white/[0.04] p-3 backdrop-blur-sm">
-                <img src={image} alt={imageAlt} className="max-h-[380px] w-full rounded-[20px] object-contain" />
-              </div>
-            )}
-          </motion.div>
-        )}
+        {/* The hero's art or animation; admins can swap it for their own video, GIF or picture. */}
+        <MediaSlot id="hero" mediaClass="max-h-[420px] w-full rounded-[28px] object-contain">
+          {!image && !media && <HeroOrb />}
+          {(image || media) && (
+            <motion.div
+              initial={reduce ? false : { opacity: 0, transform: "translateY(24px) scale(0.97)" }}
+              animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+              transition={{ duration: 0.9, ease, delay: 0.25 }}
+              className="relative"
+            >
+              <div aria-hidden="true" className="absolute inset-[8%] rounded-full bg-[#0047FF]/40 blur-[90px]" />
+              {media || (
+                <div className="cl-float relative rounded-[28px] border border-white/10 bg-white/[0.04] p-3 backdrop-blur-sm">
+                  <img src={image} alt={imageAlt} className="max-h-[380px] w-full rounded-[20px] object-contain" />
+                </div>
+              )}
+            </motion.div>
+          )}
+        </MediaSlot>
       </div>
 
       {stats && (
@@ -225,19 +230,21 @@ export function FeatureCard({ icon: Icon, title, desc, i = 0, dark = false, chil
   );
 }
 
-export function FeatureCards({ items, cols = 3, dark = false, className = "" }) {
+export function FeatureCards({ items: builtIn, cols = 3, dark = false, className = "" }) {
+  const { items, mark } = useList("features", builtIn);
   return (
-    <ul className={`grid gap-5 ${COLS[cols]} ${className}`}>
+    <ul {...mark} className={`grid gap-5 ${COLS[cols]} ${className}`}>
       {items.map((f, i) => (
-        <FeatureCard key={f.title} {...f} desc={f.desc ?? f.description} i={i} dark={dark} />
+        <FeatureCard key={`${i}-${f.title}`} {...f} desc={f.desc ?? f.description} i={i} dark={dark} />
       ))}
     </ul>
   );
 }
 
 // --- Steps: numbered, with a connector that draws itself across the row ------------------------
-export function Steps({ items, dark = false, className = "" }) {
+export function Steps({ items: builtIn, dark = false, className = "" }) {
   const reduce = useReducedMotion();
+  const { items, mark } = useList("steps", builtIn);
   const cols = { 2: "lg:grid-cols-2", 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5" }[items.length] || "lg:grid-cols-3";
   return (
     <motion.div className={`relative ${className}`} initial={reduce ? false : "hidden"} whileInView="show" viewport={{ once: true, margin: "-80px" }}>
@@ -246,9 +253,9 @@ export function Steps({ items, dark = false, className = "" }) {
         variants={{ hidden: { transform: "scaleX(0)" }, show: { transform: "scaleX(1)", transition: { duration: 1.2, ease } } }}
         className="absolute left-[8%] right-[8%] top-7 hidden h-[2px] origin-left bg-[linear-gradient(90deg,#FF0000,#2300DC,#0047FF,#00B8FF)] lg:block"
       />
-      <ol className={`relative grid gap-5 ${cols}`}>
+      <ol {...mark} className={`relative grid gap-5 ${cols}`}>
         {items.map((s, i) => (
-          <Reveal as="li" key={s.title} delay={0.15 + i * 0.12} className="flex flex-col items-start lg:items-center lg:text-center">
+          <Reveal as="li" key={`${i}-${s.title}`} delay={0.15 + i * 0.12} className="flex flex-col items-start lg:items-center lg:text-center">
             <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[linear-gradient(135deg,#00B8FF,#0047FF_55%,#2300DC)] text-lg font-semibold text-white shadow-[0_0_0_6px_rgb(0_71_255/0.12),0_16px_30px_-12px_rgb(0_71_255/0.9)]">
               {s.icon ? <s.icon size={22} /> : String(i + 1).padStart(2, "0")}
             </span>
@@ -292,9 +299,10 @@ export function Prose({ paragraphs, dark = false, className = "" }) {
   );
 }
 
-export function CheckList({ items, dark = false, cols = 1, className = "" }) {
+export function CheckList({ items: builtIn, dark = false, cols = 1, className = "" }) {
+  const { items, mark } = useList("checklist", builtIn);
   return (
-    <ul className={`grid gap-3.5 ${cols === 2 ? "sm:grid-cols-2" : ""} ${className}`}>
+    <ul {...mark} className={`grid gap-3.5 ${cols === 2 ? "sm:grid-cols-2" : ""} ${className}`}>
       {items.map((b, i) => (
         <Reveal as="li" key={typeof b === "string" ? b : i} delay={Math.min(i, 6) * 0.05} className={`flex items-start gap-3 text-[16px] leading-7 ${dark ? "text-[#DCE3F5]" : "text-[#31343A]"}`}>
           <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#D9F3FF] text-[#0047FF]">
@@ -308,11 +316,12 @@ export function CheckList({ items, dark = false, cols = 1, className = "" }) {
 }
 
 // Numbered tiles for short items: use cases, industries, plan names.
-export function Tiles({ items, className = "", cols = 2 }) {
+export function Tiles({ items: builtIn, className = "", cols = 2 }) {
+  const { items, mark } = useList("tiles", builtIn);
   return (
-    <ul className={`grid gap-4 ${cols === 4 ? "sm:grid-cols-2 lg:grid-cols-4" : cols === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"} ${className}`}>
+    <ul {...mark} className={`grid gap-4 ${cols === 4 ? "sm:grid-cols-2 lg:grid-cols-4" : cols === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"} ${className}`}>
       {items.map((u, i) => (
-        <Reveal as="li" key={u} delay={Math.min(i, 6) * 0.06}>
+        <Reveal as="li" key={`${i}-${u}`} delay={Math.min(i, 6) * 0.06}>
           <div className="group h-full rounded-[20px] border border-[#E5EAF4] bg-white p-5 transition-[translate,box-shadow,border-color] duration-300 ease-out-expo hover:border-[#99B5FF] hover:shadow-[0_20px_40px_-24px_rgb(0_71_255/0.45)] hover:[translate:0_-3px]">
             <span className="bg-gradient-to-r from-[#00B8FF] to-[#2300DC] bg-clip-text font-mono text-2xl font-semibold text-transparent">{String(i + 1).padStart(2, "0")}</span>
             <p className="mt-2 font-medium text-[#0A0626]">{u}</p>

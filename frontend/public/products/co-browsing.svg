@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 600" role="img" aria-labelledby="t">
+  <title id="t">Co-Browsing: a customer and an agent looking at the same web page, with a button highlighted and the password field masked</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E3F6FF"/>
+      <stop offset="0.55" stop-color="#E6EEFF"/>
+      <stop offset="1" stop-color="#EDE8FF"/>
+    </linearGradient>
+    <linearGradient id="cta" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0047FF"/>
+      <stop offset="1" stop-color="#2300DC"/>
+    </linearGradient>
+    <filter id="sh" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#0047FF" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="600" fill="url(#bg)"/>
+  <g opacity="0.35" stroke="#0047FF" stroke-opacity="0.12">
+    <path d="M0 120h1080M0 240h1080M0 360h1080M0 480h1080M180 0v600M360 0v600M540 0v600M720 0v600M900 0v600"/>
+  </g>
+
+  <!-- browser window -->
+  <g filter="url(#sh)">
+    <rect x="190" y="70" width="700" height="460" rx="26" fill="#FFFFFF"/>
+  </g>
+  <rect x="190" y="70" width="700" height="58" rx="26" fill="#0A0626"/>
+  <rect x="190" y="104" width="700" height="24" fill="#0A0626"/>
+  <circle cx="226" cy="99" r="7" fill="#FF0000"/>
+  <circle cx="250" cy="99" r="7" fill="#00B8FF"/>
+  <circle cx="274" cy="99" r="7" fill="#0047FF"/>
+  <rect x="310" y="85" width="420" height="28" rx="14" fill="#FFFFFF" fill-opacity="0.12"/>
+  <path d="M328 99a6 6 0 1 1 12 0v4h-12z" fill="none" stroke="#00B8FF" stroke-width="2.5"/>
+  <rect x="352" y="94" width="180" height="10" rx="5" fill="#FFFFFF" fill-opacity="0.55"/>
+
+  <!-- page content -->
+  <rect x="236" y="164" width="250" height="20" rx="10" fill="#0A0626"/>
+  <rect x="236" y="198" width="360" height="12" rx="6" fill="#C9D2EC"/>
+  <rect x="236" y="220" width="310" height="12" rx="6" fill="#C9D2EC"/>
+
+  <text x="236" y="272" font-family="Outfit, Inter, Arial, sans-serif" font-size="15" fill="#6B6E75">Email</text>
+  <rect x="236" y="282" width="300" height="42" rx="10" fill="#F5F8FD" stroke="#DCE2EE" stroke-width="2"/>
+  <rect x="252" y="298" width="150" height="10" rx="5" fill="#9CA3AF"/>
+
+  <text x="236" y="352" font-family="Outfit, Inter, Arial, sans-serif" font-size="15" fill="#6B6E75">Password</text>
+  <rect x="236" y="362" width="300" height="42" rx="10" fill="#F5F8FD" stroke="#DCE2EE" stroke-width="2"/>
+  <g fill="#0A0626">
+    <circle cx="258" cy="383" r="5"/><circle cx="276" cy="383" r="5"/><circle cx="294" cy="383" r="5"/><circle cx="312" cy="383" r="5"/><circle cx="330" cy="383" r="5"/><circle cx="348" cy="383" r="5"/>
+  </g>
+  <rect x="456" y="370" width="68" height="26" rx="13" fill="#0A0626"/>
+  <path d="M472 384a5 5 0 1 1 10 0v3h-10z" fill="none" stroke="#00B8FF" stroke-width="2.2"/>
+  <rect x="470" y="386" width="14" height="10" rx="2" fill="#00B8FF"/>
+  <text x="490" y="388" font-family="Outfit, Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">Hidden</text>
+
+  <!-- highlighted button -->
+  <rect x="226" y="424" width="200" height="66" rx="18" fill="none" stroke="#00B8FF" stroke-width="4" stroke-dasharray="10 8"/>
+  <rect x="236" y="434" width="180" height="46" rx="12" fill="url(#cta)"/>
+  <text x="326" y="463" text-anchor="middle" font-family="Outfit, Inter, Arial, sans-serif" font-size="17" font-weight="600" fill="#FFFFFF">Continue</text>
+
+  <!-- side panel: same page, two people -->
+  <rect x="600" y="164" width="250" height="326" rx="20" fill="#F0F4FB"/>
+  <text x="624" y="200" font-family="Outfit, Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#0A0626">Live session</text>
+  <circle cx="824" cy="195" r="7" fill="#2DD4BF"/>
+  <g font-family="Outfit, Inter, Arial, sans-serif" font-size="14">
+    <circle cx="640" cy="240" r="18" fill="#0047FF"/>
+    <text x="640" y="245" text-anchor="middle" font-weight="600" fill="#FFFFFF">Y</text>
+    <text x="668" y="236" font-weight="600" fill="#0A0626">You</text>
+    <text x="668" y="254" fill="#6B6E75">viewing this page</text>
+    <circle cx="640" cy="296" r="18" fill="#00B8FF"/>
+    <text x="640" y="301" text-anchor="middle" font-weight="600" fill="#0A0626">A</text>
+    <text x="668" y="292" font-weight="600" fill="#0A0626">Cube agent</text>
+    <text x="668" y="310" fill="#6B6E75">highlighting “Continue”</text>
+  </g>
+  <rect x="624" y="340" width="202" height="64" rx="14" fill="#FFFFFF"/>
+  <text x="640" y="366" font-family="Outfit, Inter, Arial, sans-serif" font-size="13" fill="#404348">Click the highlighted</text>
+  <text x="640" y="386" font-family="Outfit, Inter, Arial, sans-serif" font-size="13" fill="#404348">button to continue.</text>
+  <rect x="624" y="424" width="202" height="44" rx="12" fill="#FFFFFF" stroke="#F5C7C7" stroke-width="2"/>
+  <text x="725" y="451" text-anchor="middle" font-family="Outfit, Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#C81E1E">End session</text>
+
+  <!-- cursors -->
+  <g transform="translate(398 452)">
+    <path d="M0 0l0 34 9-8 7 15 7-3-7-15 12 0z" fill="#00B8FF" stroke="#0A0626" stroke-width="2.5" stroke-linejoin="round"/>
+    <rect x="22" y="38" width="62" height="24" rx="12" fill="#00B8FF"/>
+    <text x="53" y="55" text-anchor="middle" font-family="Outfit, Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#0A0626">Agent</text>
+  </g>
+  <g transform="translate(520 300)">
+    <path d="M0 0l0 34 9-8 7 15 7-3-7-15 12 0z" fill="#0047FF" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round"/>
+    <rect x="22" y="38" width="48" height="24" rx="12" fill="#0047FF"/>
+    <text x="46" y="55" text-anchor="middle" font-family="Outfit, Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">You</text>
+  </g>
+</svg>

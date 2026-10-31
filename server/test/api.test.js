@@ -34,6 +34,8 @@ supabase.deleteUser = async () => {};
 supabase.upload = async (file, buffer) => stored.set(file, buffer);
 supabase.remove = async (file) => stored.delete(file);
 supabase.publicUrl = (file) => `https://example.supabase.co/storage/v1/object/public/media/${file}`;
+supabase.signUpload = async (file) => `https://example.supabase.co/storage/v1/object/upload/sign/media/${file}?token=t`;
+supabase.readStart = async (file) => (stored.has(file) ? { buf: stored.get(file).subarray(0, 32), size: stored.get(file).length } : null);
 
 // Remembers each admin's authenticator secret (captured during enrolment) to compute its current code.
 const secrets = new Map(); // email -> base32 secret
@@ -219,23 +221,39 @@ test("blog posts: create, validate, publish", async () => {
   assert.equal((await api("/api/posts/does-not-exist")).status, 404);
 });
 
-test("uploads accept real images only, and go to Storage", async () => {
+test("uploads: images and videos only, checked by their real bytes after the direct upload", async () => {
   const cookie = await signIn();
-  const send = (bytes, name) => {
-    const form = new FormData();
-    form.append("file", new Blob([bytes]), name);
-    return fetch(`${base}/api/admin/media`, { method: "POST", headers: { Cookie: cookie, "X-Cube-Admin": "1" }, body: form });
+  const sign = (type, size) => api("/api/admin/media/sign", { method: "POST", cookie, body: { type, size } });
+  const confirm = (file, name = "x") => api("/api/admin/media/confirm", { method: "POST", cookie, body: { file, name } });
+  // Upload in two steps, putting `bytes` where the browser would have.
+  const upload = async (type, bytes, name) => {
+    const s = await (await sign(type, bytes.length)).json();
+    assert.match(s.uploadUrl, /upload\/sign\/media\/[a-f0-9]{24}\./);
+    stored.set(s.file, bytes);
+    return [s.file, await confirm(s.file, name)];
   };
-  assert.equal((await send(Buffer.from("<svg onload=alert(1)></svg>"), "x.svg")).status, 400);
-  assert.equal((await send(Buffer.from("<html><script>alert(1)</script></html>"), "x.png")).status, 400);
+  assert.equal((await sign("image/svg+xml", 100)).status, 400);
+  assert.equal((await sign("text/html", 100)).status, 400);
+  assert.equal((await sign("image/png", 11 * 1024 * 1024)).status, 400); // images up to 10 MB
+  assert.equal((await sign("video/mp4", 60 * 1024 * 1024)).status, 400); // video up to 50 MB
+  assert.equal((await sign("video/mp4", 30 * 1024 * 1024)).status, 200);
+  // A script uploaded under an image's name is caught and deleted.
+  const [fake, bad] = await upload("image/png", Buffer.from("<html><script>alert(1)</script></html>"));
+  assert.equal(bad.status, 400);
+  assert.ok(!stored.has(fake));
   const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32)]);
-  const res = await send(png, "../../evil.php");
-  assert.equal(res.status, 201);
-  const { url } = await res.json();
-  assert.match(url, /\/storage\/v1\/object\/public\/media\/[a-f0-9]{24}\.png$/);
-  assert.equal(stored.size, 1);
+  const [pngFile, ok] = await upload("image/png", png, "../../evil.php");
+  assert.equal(ok.status, 201);
+  assert.match((await ok.json()).url, /\/storage\/v1\/object\/public\/media\/[a-f0-9]{24}\.png$/);
+  assert.equal((await confirm(pngFile)).status, 409); // can't be added twice
+  const mp4 = Buffer.concat([Buffer.from([0, 0, 0, 0x20]), Buffer.from("ftypisom"), Buffer.alloc(40)]);
+  assert.equal((await upload("video/mp4", mp4))[1].status, 201);
+  const mov = Buffer.concat([Buffer.from([0, 0, 0, 0x20]), Buffer.from("ftypqt  "), Buffer.alloc(40)]);
+  assert.equal((await upload("video/mp4", mov))[1].status, 400); // QuickTime needs converting to MP4
+  assert.equal((await confirm("../../etc/passwd")).status, 400);
   const { media } = await (await api("/api/admin/media", { cookie })).json();
-  assert.equal((await api(`/api/admin/media/${media[0].id}`, { method: "DELETE", cookie })).status, 200);
+  assert.equal(media.length, 2);
+  for (const m of media) assert.equal((await api(`/api/admin/media/${m.id}`, { method: "DELETE", cookie })).status, 200);
   assert.equal(stored.size, 0);
   assert.equal((await api("/api/admin/media/abc", { method: "DELETE", cookie })).status, 404);
 });
@@ -414,7 +432,9 @@ test("owner: the first admin can't be removed, and only the owner manages admins
   assert.equal((await (await api("/api/admin/me", { cookie: owner })).json()).admin.isOwner, true);
   await api("/api/admin/admins", { method: "POST", cookie: owner, body: { email: "helper@cube-software.com", password: "helper-pass-123" } });
   const helper = await signIn("helper@cube-software.com", "helper-pass-123");
-  const { admins } = await (await api("/api/admin/admins", { cookie: helper })).json();
+  // A regular admin sees only their own account.
+  assert.deepEqual((await (await api("/api/admin/admins", { cookie: helper })).json()).admins.map((a) => a.email), ["helper@cube-software.com"]);
+  const { admins } = await (await api("/api/admin/admins", { cookie: owner })).json();
   const ownerRow = admins.find((a) => a.is_owner);
   assert.equal(ownerRow.email, "admin@cube-software.com");
   assert.equal((await api(`/api/admin/admins/${ownerRow.id}`, { method: "DELETE", cookie: helper })).status, 403);
@@ -435,6 +455,81 @@ test("image edits remember the size of the spot they fill", async () => {
   const c = overrides.find((o) => o.original === "/c.png");
   assert.deepEqual([a.width, a.height], [640, 360]);
   assert.deepEqual([c.width, c.height], [0, 0]);
+});
+
+test("access: the owner picks what each admin can open; the activity log is owner-only", async () => {
+  const owner = await signIn();
+  await api("/api/admin/admins", { method: "POST", cookie: owner, body: { email: "editor@cube-software.com", password: "editor-pass-123", permissions: ["blog"] } });
+  const editor = await signIn("editor@cube-software.com", "editor-pass-123");
+  const me = (await (await api("/api/admin/me", { cookie: editor })).json()).admin;
+  assert.deepEqual(me.permissions, ["blog"]);
+  assert.equal((await api("/api/admin/posts", { cookie: editor })).status, 200);
+  assert.equal((await api("/api/admin/media", { cookie: editor })).status, 200); // blog editors pick pictures
+  for (const path of ["/api/admin/leads", "/api/admin/bookings", "/api/admin/privacy?email=a@b.co", "/api/admin/analytics", "/api/admin/audit", "/api/admin/pages"]) {
+    assert.equal((await api(path, { cookie: editor })).status, 403, path);
+  }
+  assert.deepEqual(await (await api("/api/admin/settings", { cookie: editor })).json(), {}); // no settings sections
+  assert.equal((await api("/api/admin/settings/salesEmails", { method: "PUT", cookie: editor, body: { value: ["x@cube-software.com"] } })).status, 403);
+  const { admins } = await (await api("/api/admin/admins", { cookie: owner })).json();
+  const row = admins.find((a) => a.email === "editor@cube-software.com");
+  // Only the owner changes access, only to known sections, and never the owner's own.
+  assert.equal((await api(`/api/admin/admins/${row.id}/permissions`, { method: "PUT", cookie: editor, body: { permissions: ["leads"] } })).status, 403);
+  assert.equal((await api(`/api/admin/admins/${row.id}/permissions`, { method: "PUT", cookie: owner, body: { permissions: ["root"] } })).status, 400);
+  assert.equal((await api(`/api/admin/admins/${admins.find((a) => a.is_owner).id}/permissions`, { method: "PUT", cookie: owner, body: { permissions: [] } })).status, 400);
+  assert.equal((await api(`/api/admin/admins/${row.id}/permissions`, { method: "PUT", cookie: owner, body: { permissions: ["leads"] } })).status, 200);
+  assert.equal((await api("/api/admin/leads", { cookie: editor })).status, 200); // takes effect at once
+  assert.equal((await api("/api/admin/posts", { cookie: editor })).status, 403);
+  const log = await (await api("/api/admin/audit", { cookie: owner })).json();
+  assert.ok(log.entries.some((e) => e.action === "permissions_changed" && e.detail.includes("editor@")));
+});
+
+test("card lists: validated per kind, stripped to known fields, served with the site edits", async () => {
+  const cookie = await signIn();
+  const put = (body) => api("/api/admin/lists", { method: "PUT", cookie, body });
+  const product = { title: "Co-Browsing", tag: "Support", tagline: "See it together.", img: "/products/co-browsing.svg", href: "/services/co-browsing" };
+  assert.equal((await put({ scope: "*", key: "products:abc123", items: [{ ...product, href: "javascript:alert(1)" }] })).status, 400);
+  assert.equal((await put({ scope: "*", key: "products:abc123", items: [{ ...product, img: "data:text/html,x" }] })).status, 400);
+  assert.equal((await put({ scope: "*", key: "nope:abc", items: [] })).status, 400);
+  assert.equal((await put({ scope: "/a'b", key: "faq:abc", items: [] })).status, 400);
+  assert.equal((await put({ scope: "*", key: "products:abc123", items: [{ ...product, onClick: "x" }] })).status, 200);
+  assert.equal((await put({ scope: "/services/x", key: "features:z9", items: [{ icon: "Mic", title: "One", desc: "Text" }] })).status, 200);
+  assert.equal((await put({ scope: "/services/x", key: "features:z9", items: [{ icon: "<img>", title: "One" }] })).status, 400);
+  const { lists } = await (await api("/api/content")).json();
+  assert.deepEqual(lists.find((l) => l.key === "products:abc123").items, [product]);
+  const { lists: mine } = await (await api("/api/admin/lists", { cookie })).json();
+  for (const l of mine) assert.equal((await api(`/api/admin/lists/${l.id}`, { method: "DELETE", cookie })).status, 200);
+});
+
+test("pages built in the dashboard: validated, can't take over existing addresses, live only when published", async () => {
+  const cookie = await signIn();
+  const page = {
+    path: "/services/test-page",
+    title: "Test page | Cube Software",
+    description: "A page made in the dashboard.",
+    published: false,
+    content: {
+      hero: { label: "Support", title: "Hello", body: ["Intro."] },
+      sections: [{ title: "Why", cards: [{ icon: "Mic", title: "Card", desc: "Text" }], list: ["One"], steps: false }],
+      cta: { title: "Talk to us", body: ["Now."], button: "Book a demo" },
+    },
+  };
+  const post = (body) => api("/api/admin/pages", { method: "POST", cookie, body });
+  assert.equal((await post({ ...page, path: "/admin/x" })).status, 400);
+  assert.equal((await post({ ...page, path: "/about" })).status, 400); // a page the site already has
+  assert.equal((await post({ ...page, path: "/Services/../x" })).status, 400);
+  assert.equal((await post({ ...page, content: { ...page.content, hero: { ...page.content.hero, image: "javascript:alert(1)" } } })).status, 400);
+  const created = await post(page);
+  assert.equal(created.status, 201);
+  assert.equal((await post(page)).status, 409);
+  assert.equal((await api("/api/page?path=/services/test-page")).status, 404); // not published yet
+  const { id } = await created.json();
+  assert.equal((await api(`/api/admin/pages/${id}`, { method: "PUT", cookie, body: { ...page, published: true } })).status, 200);
+  const live = (await (await api("/api/page?path=/services/test-page")).json()).page;
+  assert.equal(live.content.sections[0].cards[0].title, "Card");
+  assert.equal(live.content.related, false);
+  assert.match(await (await api("/sitemap.xml")).text(), /\/services\/test-page/);
+  assert.equal((await api(`/api/admin/pages/${id}`, { method: "DELETE", cookie })).status, 200);
+  assert.equal((await api("/api/page?path=/services/test-page")).status, 404);
 });
 
 test("security headers are set", async () => {

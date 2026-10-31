@@ -152,7 +152,7 @@ async function sessionAdmin(db, req) {
   if (!t || t.length > 100) return null;
   const tokenHash = sha256(t);
   const row = await db.get(
-    "SELECT a.id, a.email, a.auth_user_id, a.is_owner, s.expires_at, s.last_seen FROM sessions s JOIN admins a ON a.id = s.admin_id WHERE s.token_hash = ?",
+    "SELECT a.id, a.email, a.auth_user_id, a.is_owner, a.permissions, s.expires_at, s.last_seen FROM sessions s JOIN admins a ON a.id = s.admin_id WHERE s.token_hash = ?",
     tokenHash
   );
   const now = Date.now();
@@ -162,7 +162,8 @@ async function sessionAdmin(db, req) {
     return null;
   }
   if (now - row.last_seen > 60_000) await db.run("UPDATE sessions SET last_seen = ? WHERE token_hash = ?", now, tokenHash);
-  return { id: row.id, email: row.email, authUserId: row.auth_user_id, isOwner: row.is_owner, tokenHash };
+  const permissions = Array.isArray(row.permissions) ? row.permissions.filter((p) => typeof p === "string") : [];
+  return { id: row.id, email: row.email, authUserId: row.auth_user_id, isOwner: row.is_owner, permissions, tokenHash };
 }
 
 // Admin API guard. Changes also need the X-Cube-Admin header, which a cross-site form or image cannot send

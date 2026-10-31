@@ -2,12 +2,12 @@
 // change also needs the X-Cube-Admin header. All input is validated here before it touches the database.
 const express = require("express");
 const rateLimit = require("express-rate-limit");
-const multer = require("multer");
 const crypto = require("node:crypto");
 const settings = require("../settings");
 const slots = require("../slots");
 const sec = require("../security");
 const supabase = require("../supabase");
+const seo = require("../seo");
 const { isUnique } = require("../db");
 const { EMAIL } = require("../validate");
 
@@ -23,14 +23,34 @@ const idOf = (req) => {
   return Number.isInteger(n) && n > 0 && n < 2 ** 31 ? n : null;
 };
 
-// Only real image files: checked by their first bytes, never by name or browser-supplied type. SVG is
-// refused on purpose (it can carry scripts).
-function imageType(buf) {
+// What can be uploaded, and the largest size of each (MB). Files are recognised by their first bytes, never
+// by name or the browser's say-so. SVG and HTML are refused on purpose: they can carry scripts.
+const TYPES = {
+  jpg: { mime: "image/jpeg", max: 10 },
+  png: { mime: "image/png", max: 10 },
+  gif: { mime: "image/gif", max: 10 },
+  webp: { mime: "image/webp", max: 10 },
+  avif: { mime: "image/avif", max: 10 },
+  mp4: { mime: "video/mp4", max: 50 },
+  webm: { mime: "video/webm", max: 50 },
+};
+const MEDIA_FILE = /^[a-f0-9]{24}\.(jpg|png|gif|webp|avif|mp4|webm)$/;
+
+function fileType(buf) {
   if (buf.length < 12) return null;
-  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return { ext: "jpg", mime: "image/jpeg" };
-  if (buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return { ext: "png", mime: "image/png" };
-  if (buf.subarray(0, 4).toString("ascii") === "GIF8") return { ext: "gif", mime: "image/gif" };
-  if (buf.subarray(0, 4).toString("ascii") === "RIFF" && buf.subarray(8, 12).toString("ascii") === "WEBP") return { ext: "webp", mime: "image/webp" };
+  const ascii = (a, b) => buf.subarray(a, b).toString("latin1");
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "jpg";
+  if (buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "png";
+  if (ascii(0, 4) === "GIF8") return "gif";
+  if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "webp";
+  if (buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3) return "webm";
+  if (ascii(4, 8) === "ftyp") {
+    const brand = ascii(8, 12);
+    if (brand === "avif" || brand === "avis") return "avif";
+    // HEIC photos and QuickTime .mov don't play in most browsers: those need converting first.
+    if (/^(heic|heix|hevc|mif1|msf1|qt {2})$/.test(brand)) return null;
+    return "mp4";
+  }
   return null;
 }
 
@@ -102,11 +122,96 @@ function checkSettings(key, v) {
   return "Unknown setting.";
 }
 
+// Dashboard sections the owner can give each admin. The owner always has them all, plus the activity log
+// and admin accounts; the overview and an admin's own password are open to everyone.
+const SECTIONS = ["bookings", "calendar", "leads", "blog", "content", "pages", "media", "team", "analytics", "consents", "privacy", "settings"];
+const may = (admin, ...any) => admin.isOwner || any.some((s) => admin.permissions.includes(s));
+const need = (...any) => (req, res, next) => (may(req.admin, ...any) ? next() : res.status(403).json({ error: "You don't have access to this. Ask the owner to give it to you." }));
+const ownerOnly = (req, res, next) => (req.admin.isOwner ? next() : res.status(403).json({ error: "Only the owner can see this." }));
+// Anyone who edits content needs the image library to pick from.
+const MEDIA_USERS = ["media", "blog", "content", "pages", "team"];
+const SETTING_SECTION = { salesEmails: "settings", demo: "settings", retention: "settings", team: "team", socials: "team" };
+const checkPermissions = (v) => (Array.isArray(v) && v.length <= SECTIONS.length && v.every((s) => SECTIONS.includes(s)) ? null : "Unknown section.");
+
+// Card lists edited on the site. Each kind keeps only its own fields, so nothing unexpected is stored and
+// served to visitors. Links are site paths or https addresses; pictures are site paths or uploaded files.
+const ICON_NAME = /^[A-Za-z0-9]{1,40}$/;
+const LINK = /^(\/[A-Za-z0-9._\-/#]{0,200}|https:\/\/[^\s<>"']{5,300})$/;
+const card = (c) => c && isStr(c.title, 160, 1) && isStr(c.desc ?? "", 600) && (!c.icon || ICON_NAME.test(c.icon));
+const keep = (o, keys) => Object.fromEntries(keys.map((k) => [k, typeof o[k] === "string" ? o[k].trim() : ""]));
+const LIST_KINDS = {
+  features: { max: 24, ok: card, clean: (c) => keep(c, ["icon", "title", "desc"]) },
+  steps: { max: 12, ok: card, clean: (c) => keep(c, ["icon", "title", "desc"]) },
+  checklist: { max: 40, ok: (s) => isStr(s, 300, 1), clean: (s) => s.trim() },
+  tiles: { max: 40, ok: (s) => isStr(s, 160, 1), clean: (s) => s.trim() },
+  faq: { max: 40, ok: (f) => f && isStr(f.q, 300, 1) && isStr(f.a, 2000, 1), clean: (f) => keep(f, ["q", "a"]) },
+  products: {
+    max: 40,
+    ok: (p) => p && isStr(p.title, 120, 1) && isStr(p.tag ?? "", 40) && isStr(p.tagline ?? "", 300) && (!p.img || (isStr(p.img, 500) && SAFE_URL.test(p.img))) && isStr(p.href, 300) && LINK.test(p.href),
+    clean: (p) => keep(p, ["title", "tag", "tagline", "img", "href"]),
+  },
+};
+const LIST_KEY = /^(features|steps|checklist|tiles|faq|products):[a-z0-9]{1,16}$/;
+const SCOPE = /^\/[A-Za-z0-9/_\-]*$/;
+
+// Pages built in the dashboard. Addresses are lowercase words and hyphens, up to three levels deep, and
+// can't take over the admin, the API, the blog or any page the site already has.
+const PAGE_PATH = /^\/[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*){0,2}$/;
+const paragraphs = (v, max = 12) => v === undefined || (Array.isArray(v) && v.length <= max && v.every((p) => isStr(p, 3000, 1)));
+const lines = (v) => v === undefined || (Array.isArray(v) && v.length <= 30 && v.every((p) => isStr(p, 300, 1)));
+const picture = (v) => !v || (isStr(v, 500) && SAFE_URL.test(v));
+
+function checkPage(b) {
+  if (!b || typeof b !== "object") return "Invalid request.";
+  if (!isStr(b.path, 120) || !PAGE_PATH.test(b.path)) return "Address: start with / and use lowercase letters, numbers and hyphens (e.g. /services/co-browsing).";
+  if (/^\/(admin|api|blog|static)(\/|$)/.test(b.path) || seo.routes()[b.path]) return "That address is already used by the website. Pick another.";
+  if (!isStr(b.title, 120, 3)) return "Browser-tab title is required (up to 120 characters).";
+  if (!isStr(b.description ?? "", 300)) return "Search description can be up to 300 characters.";
+  const c = b.content;
+  if (!c || typeof c !== "object" || !c.hero || typeof c.hero !== "object") return "The page needs a top section.";
+  const h = c.hero;
+  if (!isStr(h.title, 160, 1)) return "The top section needs a headline.";
+  if (!isStr(h.label ?? "", 60) || !isStr(h.button ?? "", 60) || !paragraphs(h.body, 4) || !lines(h.list) || !picture(h.image)) return "Check the top section's fields.";
+  if (!Array.isArray(c.sections) || c.sections.length > 20) return "Add up to 20 sections.";
+  for (const [i, s] of c.sections.entries()) {
+    const at = `Section ${i + 1}`;
+    if (!s || typeof s !== "object") return `${at} is not valid.`;
+    if (!isStr(s.label ?? "", 60) || !isStr(s.title ?? "", 160) || !isStr(s.button ?? "", 60)) return `${at}: label up to 60, heading up to 160, button up to 60 characters.`;
+    if (!paragraphs(s.body) || !lines(s.list) || !picture(s.image)) return `${at}: check its text, list and picture.`;
+    if (s.cards !== undefined && !(Array.isArray(s.cards) && s.cards.length <= 24 && s.cards.every(card))) return `${at}: each card needs a title (up to 160) and text up to 600 characters.`;
+    if (!s.title && !s.body?.length && !s.list?.length && !s.cards?.length && !s.image) return `${at} is empty.`;
+  }
+  if (c.cta && !(isStr(c.cta.title ?? "", 160) && paragraphs(c.cta.body, 3) && isStr(c.cta.button ?? "", 60))) return "Check the closing call to action.";
+  return null;
+}
+
+// Stores only the fields the page template uses.
+function cleanPage(c) {
+  const text = (v) => (typeof v === "string" ? v.trim() : "");
+  const arr = (v) => (Array.isArray(v) ? v.map((x) => x.trim()) : []);
+  return {
+    hero: { label: text(c.hero.label), title: text(c.hero.title), body: arr(c.hero.body), list: arr(c.hero.list), image: text(c.hero.image), button: text(c.hero.button) },
+    sections: c.sections.map((s) => ({
+      label: text(s.label),
+      title: text(s.title),
+      body: arr(s.body),
+      list: arr(s.list),
+      cards: (s.cards || []).map((x) => keep(x, ["icon", "title", "desc"])),
+      steps: s.steps === true,
+      image: text(s.image),
+      button: text(s.button),
+    })),
+    cta: c.cta ? { title: text(c.cta.title), body: arr(c.cta.body), button: text(c.cta.button) } : null,
+    related: c.related === true,
+  };
+}
+
 module.exports = function adminRoutes(db) {
   const r = express.Router();
   const guard = sec.requireAdmin(db);
-  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 5 } });
   const notFound = (res) => res.status(404).json({ error: "Not found." });
+  // What the dashboard needs to know about the signed-in admin: the owner gets every section.
+  const profile = (a) => ({ id: a.id, email: a.email, isOwner: a.isOwner, permissions: a.isOwner ? SECTIONS : a.permissions });
 
   // Nothing from the admin API is cached, and every request that changes something (sign-in included, so a
   // cross-site form can't sign someone in or out) must carry the X-Cube-Admin header.
@@ -118,10 +223,10 @@ module.exports = function adminRoutes(db) {
 
   // --- Session -------------------------------------------------------------------------------------------
   const signedIn = async (res, result) => {
-    const { is_owner: isOwner } = await db.get("SELECT is_owner FROM admins WHERE id = ?", result.admin.id);
+    const row = await db.get("SELECT is_owner, permissions FROM admins WHERE id = ?", result.admin.id);
     sec.clearPendingCookie(res);
     sec.setSessionCookie(res, result.session);
-    res.json({ admin: { id: result.admin.id, email: result.admin.email, isOwner } });
+    res.json({ admin: profile({ ...result.admin, isOwner: row.is_owner, permissions: Array.isArray(row.permissions) ? row.permissions : [] }) });
   };
 
   // Step 1: email + password. Replies with the second step the client should show — "totp" (enter the code)
@@ -156,7 +261,7 @@ module.exports = function adminRoutes(db) {
   r.get("/me", async (req, res) => {
     const admin = await sec.sessionAdmin(db, req);
     if (!admin) return res.status(401).json({ error: "Please sign in." });
-    res.json({ admin: { id: admin.id, email: admin.email, isOwner: admin.isOwner } });
+    res.json({ admin: profile(admin) });
   });
 
   r.use(guard);
@@ -168,8 +273,9 @@ module.exports = function adminRoutes(db) {
     res.json({ ok: true });
   });
 
-  r.get("/audit", async (req, res) => {
-    res.json({ entries: await db.all("SELECT id, at, email, action, detail, ip FROM audit_log ORDER BY id DESC LIMIT 500") });
+  // The activity log (every sign-in and change by every admin) is for the owner's eyes only.
+  r.get("/audit", ownerOnly, async (req, res) => {
+    res.json({ entries: await db.all("SELECT id, at, email, action, detail, ip FROM audit_log ORDER BY id DESC LIMIT 1000") });
   });
 
   r.get("/stats", async (req, res) => {
@@ -186,6 +292,17 @@ module.exports = function adminRoutes(db) {
   });
 
   // --- Demo bookings and enquiries --------------------------------------------------------------------------
+  r.use("/bookings", need("bookings"));
+  r.use("/leads", need("leads"));
+  r.use("/posts", need("blog"));
+  r.use(["/overrides", "/lists"], need("content"));
+  r.use("/pages", need("pages"));
+  r.use("/media", need(...MEDIA_USERS));
+  r.use(["/schedule", "/slot-rules", "/days"], need("calendar"));
+  r.use("/consents", need("consents"));
+  r.use(["/privacy", "/retention"], need("privacy"));
+  r.use("/analytics", need("analytics"));
+
   r.get("/bookings", async (req, res) => res.json({ bookings: await db.all("SELECT * FROM bookings ORDER BY slot_start DESC LIMIT 1000") }));
 
   r.patch("/bookings/:id", async (req, res) => {
@@ -293,19 +410,87 @@ module.exports = function adminRoutes(db) {
     res.json({ ok: true });
   });
 
+  // Whole card lists (add, remove, reorder, rewrite cards), saved for one page or every page.
+  r.get("/lists", async (req, res) => res.json({ lists: await db.all("SELECT * FROM lists ORDER BY updated_at DESC") }));
+
+  r.put("/lists", async (req, res) => {
+    const { scope, key, items } = req.body || {};
+    if (!(scope === "*" || (isStr(scope, 100) && SCOPE.test(scope)))) return res.status(400).json({ error: "Invalid page." });
+    if (!isStr(key, 40) || !LIST_KEY.test(key)) return res.status(400).json({ error: "Invalid list." });
+    const kind = LIST_KINDS[key.split(":")[0]];
+    if (!Array.isArray(items) || items.length > kind.max) return res.status(400).json({ error: `Up to ${kind.max} items.` });
+    const bad = items.findIndex((it) => !kind.ok(it));
+    if (bad >= 0) return res.status(400).json({ error: `Item ${bad + 1}: fill in the required fields (links start with / or https://).` });
+    await db.run(
+      "INSERT INTO lists (scope, key, items) VALUES (?, ?, ?::jsonb) ON CONFLICT (scope, key) DO UPDATE SET items = excluded.items, updated_at = now()",
+      scope, key, JSON.stringify(items.map(kind.clean))
+    );
+    res.json({ ok: true });
+  });
+
+  r.delete("/lists/:id", async (req, res) => {
+    const id = idOf(req);
+    if (!id) return notFound(res);
+    await db.run("DELETE FROM lists WHERE id = ?", id);
+    res.json({ ok: true });
+  });
+
+  // --- Pages built in the dashboard ------------------------------------------------------------------------
+  r.get("/pages", async (req, res) => res.json({ pages: await db.all("SELECT * FROM pages ORDER BY path") }));
+
+  const savePage = async (req, res, id) => {
+    const err = checkPage(req.body);
+    if (err) return res.status(400).json({ error: err });
+    const b = req.body;
+    const values = [b.path, b.title.trim(), (b.description || "").trim(), b.published === true, JSON.stringify(cleanPage(b.content))];
+    try {
+      if (!id) return res.status(201).json({ id: (await db.run("INSERT INTO pages (path, title, description, published, content) VALUES (?, ?, ?, ?, ?::jsonb) RETURNING id", ...values)).row.id });
+      const { changes } = await db.run("UPDATE pages SET path = ?, title = ?, description = ?, published = ?, content = ?::jsonb, updated_at = now() WHERE id = ?", ...values, id);
+      return changes ? res.json({ ok: true }) : notFound(res);
+    } catch (e) {
+      if (isUnique(e)) return res.status(409).json({ error: "Another page already uses that address." });
+      throw e;
+    }
+  };
+  r.post("/pages", (req, res) => savePage(req, res, null));
+  r.put("/pages/:id", (req, res) => (idOf(req) ? savePage(req, res, idOf(req)) : notFound(res)));
+  r.delete("/pages/:id", async (req, res) => {
+    const id = idOf(req);
+    if (!id) return notFound(res);
+    await db.run("DELETE FROM pages WHERE id = ?", id);
+    res.json({ ok: true });
+  });
+
   // --- Media library (files in the Supabase Storage "media" bucket) ----------------------------------------------
   r.get("/media", async (req, res) => res.json({ media: (await db.all("SELECT * FROM media ORDER BY id DESC")).map((m) => ({ ...m, url: supabase.publicUrl(m.file) })) }));
 
-  r.post("/media", upload.single("file"), async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "Choose an image to upload." });
-    const type = imageType(req.file.buffer);
-    if (!type) return res.status(400).json({ error: "Only JPG, PNG, GIF or WebP images are allowed." });
-    const file = `${crypto.randomBytes(12).toString("hex")}.${type.ext}`;
-    await supabase.upload(file, req.file.buffer, type.mime);
-    const name = String(req.file.originalname || "image").replace(/[^\w.\- ]/g, "").slice(0, 120) || "image";
+  // Uploads go straight from the browser to Storage in two steps. 1) Ask for a one-file upload link,
+  // saying what kind of file it is and how big. 2) After the upload, confirm: the server reads the file's
+  // first bytes and keeps it only if it really is that kind of file; anything else is deleted.
+  r.post("/media/sign", async (req, res) => {
+    const { type, size } = req.body || {};
+    const ext = Object.keys(TYPES).find((k) => TYPES[k].mime === type);
+    if (!ext) return res.status(400).json({ error: "Upload JPG, PNG, WebP, AVIF or GIF images, or MP4 or WebM video. SVG and other files aren't allowed." });
+    if (!Number.isInteger(size) || size < 1 || size > TYPES[ext].max * 1024 * 1024) return res.status(400).json({ error: `That file is too big: ${ext.toUpperCase()} files can be up to ${TYPES[ext].max} MB.` });
+    const file = `${crypto.randomBytes(12).toString("hex")}.${ext}`;
+    res.json({ file, mime: TYPES[ext].mime, uploadUrl: await supabase.signUpload(file) });
+  });
+
+  r.post("/media/confirm", async (req, res) => {
+    const file = req.body?.file;
+    if (typeof file !== "string" || !MEDIA_FILE.test(file)) return res.status(400).json({ error: "Invalid file." });
+    if (await db.get("SELECT 1 FROM media WHERE file = ?", file)) return res.status(409).json({ error: "Already added." });
+    const head = await supabase.readStart(file);
+    if (!head) return res.status(400).json({ error: "The upload didn't arrive. Please try again." });
+    const ext = file.split(".").pop();
+    if (fileType(head.buf) !== ext || head.size > TYPES[ext].max * 1024 * 1024) {
+      await supabase.remove(file).catch(() => {});
+      return res.status(400).json({ error: `That file isn't a real ${ext.toUpperCase()} file (or is too big), so it was removed.` });
+    }
+    const name = String(req.body.name || "file").replace(/[^\w.\- ]/g, "").slice(0, 120) || "file";
     try {
-      const { row } = await db.run("INSERT INTO media (file, original_name, mime, size) VALUES (?, ?, ?, ?) RETURNING id", file, name, type.mime, req.file.size);
-      res.status(201).json({ id: row.id, url: supabase.publicUrl(file) });
+      const { row } = await db.run("INSERT INTO media (file, original_name, mime, size) VALUES (?, ?, ?, ?) RETURNING id", file, name, TYPES[ext].mime, head.size);
+      res.status(201).json({ id: row.id, url: supabase.publicUrl(file), mime: TYPES[ext].mime });
     } catch (e) {
       await supabase.remove(file).catch(() => {});
       throw e;
@@ -317,7 +502,7 @@ module.exports = function adminRoutes(db) {
     const m = id && (await db.get("SELECT file FROM media WHERE id = ?", id));
     if (!m) return notFound(res);
     // The stored name is ours (random hex + extension), so it can only point at its own object.
-    if (/^[a-f0-9]{24}\.(jpg|png|gif|webp)$/.test(m.file)) await supabase.remove(m.file);
+    if (MEDIA_FILE.test(m.file)) await supabase.remove(m.file);
     await db.run("DELETE FROM media WHERE id = ?", id);
     res.json({ ok: true });
   });
@@ -419,18 +604,16 @@ module.exports = function adminRoutes(db) {
   });
 
   // --- Settings -----------------------------------------------------------------------------------------
-  r.get("/settings", async (req, res) =>
-    res.json({
-      salesEmails: await settings.get(db, "salesEmails"),
-      demo: await settings.get(db, "demo"),
-      retention: await settings.get(db, "retention"),
-      team: (await settings.get(db, "team")) ?? null,
-      socials: (await settings.get(db, "socials")) ?? null,
-    })
-  );
+  // Only the settings this admin's sections cover.
+  r.get("/settings", async (req, res) => {
+    const out = {};
+    for (const [key, section] of Object.entries(SETTING_SECTION)) if (may(req.admin, section)) out[key] = (await settings.get(db, key)) ?? null;
+    res.json(out);
+  });
 
   r.put("/settings/:key", async (req, res) => {
     const key = req.params.key;
+    if (SETTING_SECTION[key] && !may(req.admin, SETTING_SECTION[key])) return res.status(403).json({ error: "You don't have access to this. Ask the owner to give it to you." });
     const err = checkSettings(key, req.body?.value);
     if (err) return res.status(400).json({ error: err });
     let value = req.body.value;
@@ -442,9 +625,26 @@ module.exports = function adminRoutes(db) {
   });
 
   // --- Admin accounts (passwords live in Supabase Auth; authenticator secrets are our own) ------------------
-  r.get("/admins", async (req, res) =>
-    res.json({ admins: await db.all("SELECT id, email, is_owner, (totp_secret IS NOT NULL) AS has_authenticator, created_at FROM admins ORDER BY id") })
-  );
+  // The owner sees every admin and what each may open; everyone else sees only their own account.
+  r.get("/admins", async (req, res) => {
+    const rows = await db.all("SELECT id, email, is_owner, permissions, (totp_secret IS NOT NULL) AS has_authenticator, created_at FROM admins ORDER BY id");
+    res.json({ admins: req.admin.isOwner ? rows : rows.filter((a) => a.id === req.admin.id) });
+  });
+
+  // The owner chooses which sections another admin can open (and so see the data of).
+  r.put("/admins/:id/permissions", async (req, res) => {
+    if (!req.admin.isOwner) return res.status(403).json({ error: "Only the owner can change what admins can see." });
+    const id = idOf(req);
+    if (!id) return notFound(res);
+    const err = checkPermissions(req.body?.permissions);
+    if (err) return res.status(400).json({ error: err });
+    const row = await db.get("SELECT email, is_owner FROM admins WHERE id = ?", id);
+    if (!row) return notFound(res);
+    if (row.is_owner) return res.status(400).json({ error: "The owner always sees everything." });
+    await db.run("UPDATE admins SET permissions = ?::jsonb WHERE id = ?", JSON.stringify([...new Set(req.body.permissions)]), id);
+    await sec.audit(db, req, "permissions_changed", { admin: req.admin, detail: `${row.email}: ${req.body.permissions.join(", ") || "nothing"}` });
+    res.json({ ok: true });
+  });
 
   // Owner resets another admin's authenticator (e.g. they lost their phone): clears it so that admin sets up
   // a new one on their next sign-in. An admin can also reset their own.
@@ -463,13 +663,14 @@ module.exports = function adminRoutes(db) {
   // Only the owner (the first admin) adds or removes admins, and the owner can never be removed.
   r.post("/admins", async (req, res) => {
     if (!req.admin.isOwner) return res.status(403).json({ error: "Only the owner can add admins." });
-    const { email, password } = req.body || {};
+    const { email, password, permissions = [] } = req.body || {};
     if (!isStr(email, 254) || !EMAIL.test(email)) return res.status(400).json({ error: "Enter a valid email." });
     if (!sec.strongPassword(password)) return res.status(400).json({ error: "Password needs 12+ characters with letters and numbers." });
+    if (checkPermissions(permissions)) return res.status(400).json({ error: "Unknown section." });
     if (await db.get("SELECT 1 FROM admins WHERE lower(email) = lower(?)", email)) return res.status(409).json({ error: "That admin already exists." });
     const authId = await supabase.upsertUser(email.trim(), password);
     try {
-      await db.run("INSERT INTO admins (email, auth_user_id) VALUES (?, ?)", email.trim(), authId);
+      await db.run("INSERT INTO admins (email, auth_user_id, permissions) VALUES (?, ?, ?::jsonb)", email.trim(), authId, JSON.stringify([...new Set(permissions)]));
     } catch (e) {
       if (isUnique(e)) return res.status(409).json({ error: "That admin already exists." });
       throw e;

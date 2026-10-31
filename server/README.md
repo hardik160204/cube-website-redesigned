@@ -61,11 +61,12 @@ The same code runs on Vercel as a single project:
 | Part | Where it runs on Vercel |
 |---|---|
 | React site (`frontend/`) | Built to `frontend/build`, served from Vercel's CDN |
-| Express API (`server/`) | One Vercel Function: `api/[...path].js` |
+| Express API (`server/`) | One Vercel Function: `api/index.js` |
 | Database, admin sign-in, images | Supabase, exactly as on your own server |
 
-`vercel.json` wires this together. The function's file name is Vercel's catch-all convention, so every
-`/api/...` path (including `/api/admin/login`) reaches Express with its original URL — no rewrite involved.
+`vercel.json` wires this together: it rewrites every `/api/...` path (plus `/sitemap.xml` and `/robots.txt`)
+to that function, and Express routes on the original URL. Every other address gets the React app, which
+shows a page built in the dashboard if one lives there, or goes to the homepage.
 The root `package.json` exists only so Vercel installs the API's dependencies.
 
 ### Environment variables
@@ -235,11 +236,27 @@ Open `/admin`. From there you can:
 - see **consent records**: every cookie choice, plus the Terms & Privacy agreement time and version stored
   on each booking and enquiry (CSV export for audits)
 - write, edit, hide and delete **blog posts**
-- **edit any text or image on the website**: "Edit the website", click the text or image, save for that page
-  or every page; undo any edit from "Site content"
-- upload and delete **images**
+- **edit anything on the website**: "Edit the website", then click any text, picture or animation and save
+  for that page or every page. Hover over any group of cards (products, features, steps, lists, FAQs) and
+  click **Edit these cards** to add, remove, reorder or rewrite them. "Pictures & animations" lists every
+  spot on the page, including the animated ones, which can be swapped for a video, GIF or picture. Undo any
+  of it from "Site content"
+- **build new pages** in "Pages": a top section, any number of sections (text, bullet lists, cards with
+  icons, numbered steps, pictures) and a closing call to action, drawn in the same layout as the product
+  pages. Save as a draft (only signed-in admins can preview it) or publish; published pages join the sitemap
+- upload and delete **images and videos**: JPG, PNG, WebP, AVIF and GIF up to 10 MB, MP4/WebM up to 50 MB.
+  Files go from the browser straight to Storage through a one-file upload link the server signs (so no key
+  reaches the browser and big videos aren't limited by Vercel's 4.5 MB request cap); the server then checks
+  each file's real type from its first bytes and deletes anything that isn't what it claims. SVG, HEIC and
+  MOV are refused
 - set the **sales team emails**, demo hours (IST), session length, notice, booking window and holidays
-- add or remove **admins** and change your password
+- add or remove **admins**, choose **which sections each admin can open** (the server enforces it on every
+  request; the owner always has everything), and change your password
+- (owner only) read the **activity log**: every sign-in attempt and every change by every admin, in words,
+  filterable by admin
+
+The `media` bucket's limits (50 MB, images and MP4/WebM) were raised with the Storage API; `schema.sql`
+creates new buckets with them, but can't change an existing bucket from the database login.
 
 ## Security in place
 

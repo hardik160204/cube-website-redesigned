@@ -6,6 +6,7 @@ import { DIAMONDS } from "./cube-diamonds";
 import { PRODUCTS } from "./Products";
 import { STATS } from "../../pages/AboutPage";
 import { openDemo } from "../demo";
+import MediaSlot from "../MediaSlot";
 import SectionIntro from "./SectionIntro";
 
 // The homepage's brand moment: the Cube mark at the centre, every product Cube builds circling it on two
@@ -13,7 +14,8 @@ import SectionIntro from "./SectionIntro";
 // scene holds it still; reduced motion shows it at rest. The loops are CSS (site-effects.css).
 const BOX = 600;
 // One ring, so chips keep their spacing and never cross; the inner dashed circle is decoration.
-const RINGS = [{ r: 245, items: PRODUCTS, dur: "90s", reverse: false }];
+// The core products only: more than nine chips crowd the ring (the visual-support features have cards below).
+const RINGS = [{ r: 245, items: PRODUCTS.filter((p) => p.tag !== "Visual support"), dur: "90s", reverse: false }];
 const GUIDES = [150, 245];
 const ease = [0.23, 1, 0.32, 1];
 
@@ -120,12 +122,14 @@ export default function PlatformOrbit() {
           </motion.div>
         </div>
 
-        {/* Scaled to fit narrow screens; the scene itself is drawn at 600px */}
-        <div className="relative mx-auto h-[330px] w-[330px] sm:h-[480px] sm:w-[480px] xl:h-[600px] xl:w-[600px]">
-          <div className="absolute left-0 top-0 origin-top-left scale-[0.55] sm:scale-[0.8] xl:scale-100">
-            <Orbit />
+        {/* Scaled to fit narrow screens; the scene itself is drawn at 600px. Admins can swap it for a video, GIF or picture. */}
+        <MediaSlot id="platform-orbit" className="relative mx-auto w-full max-w-[600px]" mediaClass="w-full rounded-[28px] object-contain">
+          <div className="relative mx-auto h-[330px] w-[330px] sm:h-[480px] sm:w-[480px] xl:h-[600px] xl:w-[600px]">
+            <div className="absolute left-0 top-0 origin-top-left scale-[0.55] sm:scale-[0.8] xl:scale-100">
+              <Orbit />
+            </div>
           </div>
-        </div>
+        </MediaSlot>
       </div>
     </section>
   );

@@ -120,6 +120,7 @@ export default function TeamAdmin({ out }) {
 
       {picking !== null && (
         <MediaPicker
+          imagesOnly
           onClose={() => setPicking(null)}
           onPick={(url) => {
             update(picking, { image: url });

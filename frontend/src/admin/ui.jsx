@@ -60,14 +60,17 @@ export function PageTitle({ title, desc, actions }) {
 
 export const Empty = ({ children }) => <p className="rounded-xl bg-[#F5F8FD] p-6 text-center text-[14px] text-[#6B6E75]">{children}</p>;
 
-// GET a resource, with reload. Errors become a toast; 401 sends the admin back to sign in.
+// GET a resource, with reload (no path = nothing to load). Errors become a toast; 401 sends the admin back
+// to sign in.
 export function useResource(path, onUnauthorized) {
   const [data, setData] = useState(null);
   const reload = useCallback(
     () =>
-      api(path)
-        .then(setData)
-        .catch((e) => (e.status === 401 ? onUnauthorized?.() : toast.error(e.message))),
+      !path
+        ? Promise.resolve()
+        : api(path)
+            .then(setData)
+            .catch((e) => (e.status === 401 ? onUnauthorized?.() : toast.error(e.message))),
     [path, onUnauthorized]
   );
   useEffect(() => {

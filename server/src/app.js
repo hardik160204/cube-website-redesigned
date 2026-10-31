@@ -13,6 +13,8 @@ function createApp(db) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", config.trustProxy);
+  // Uploaded files live in Supabase Storage: the browser uploads to it directly and plays videos from it.
+  const storage = config.supabase.url ? [new URL(config.supabase.url).origin] : [];
 
   app.use(
     helmet({
@@ -24,8 +26,8 @@ function createApp(db) {
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
           imgSrc: ["'self'", "data:", "blob:", "https:"],
-          mediaSrc: ["'self'"],
-          connectSrc: ["'self'"],
+          mediaSrc: ["'self'", ...storage],
+          connectSrc: ["'self'", ...storage],
           frameSrc: ["https://maps.google.com", "https://www.google.com"],
           frameAncestors: ["'none'"],
           objectSrc: ["'none'"],
@@ -44,6 +46,8 @@ function createApp(db) {
   });
   app.use(compression());
 
+  // Signed-in admins save whole pages and card lists; everything public stays small.
+  app.use("/api/admin", express.json({ limit: "300kb" }));
   app.use("/api", express.json({ limit: "20kb" }));
 
   // Serverless has no long-running timer, so the daily deletion sweep is triggered by Vercel Cron, which
@@ -89,8 +93,7 @@ function createApp(db) {
     let status = 500;
     let message = "Something went wrong. Please try again.";
     if (err.type === "entity.parse.failed") [status, message] = [400, "Invalid request."];
-    else if (err.type === "entity.too.large" || err.code === "LIMIT_FILE_SIZE") [status, message] = [413, "That is too large."];
-    else if (err.name === "MulterError") [status, message] = [400, "Upload one image at a time."];
+    else if (err.type === "entity.too.large") [status, message] = [413, "That is too large."];
     else if (err.expose) [status, message] = [err.status, err.message];
     else console.error(`[error] ${req.method} ${req.originalUrl}`, err);
     res.status(status).json({ error: message });

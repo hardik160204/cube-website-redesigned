@@ -40,6 +40,10 @@ async function render(db, pathname) {
   let extra = "";
   let status = 200;
   const blog = /^\/blog\/([a-z0-9-]{1,80})$/.exec(clean);
+  if (!meta && !blog && /^\/[a-z0-9/-]{1,120}$/.test(clean)) {
+    const page = await db.get("SELECT title, description FROM pages WHERE path = ? AND published", clean);
+    if (page) meta = { title: page.title, description: page.description };
+  }
   if (!meta && blog) {
     const post = await db.get("SELECT slug, title, excerpt, cover, created_at, updated_at FROM posts WHERE slug = ? AND published", blog[1]);
     if (post) {
@@ -92,6 +96,9 @@ async function sitemap(db) {
   for (const p of await db.all("SELECT slug, updated_at FROM posts WHERE published")) {
     urls.push({ loc: `${config.siteUrl}/blog/${p.slug}`, lastmod: p.updated_at.slice(0, 10) });
   }
+  for (const p of await db.all("SELECT path, updated_at FROM pages WHERE published")) {
+    urls.push({ loc: `${config.siteUrl}${p.path}`, lastmod: p.updated_at.slice(0, 10) });
+  }
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((u) => `  <url><loc>${esc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`).join("\n")}
@@ -107,4 +114,4 @@ Disallow: /api/
 Sitemap: ${config.siteUrl}/sitemap.xml
 `;
 
-module.exports = { render, sitemap, robots };
+module.exports = { render, sitemap, robots, routes };

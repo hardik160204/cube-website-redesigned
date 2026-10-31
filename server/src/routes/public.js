@@ -123,7 +123,16 @@ module.exports = function publicRoutes(db) {
 
   r.get("/content", async (req, res) => {
     const rows = await db.all("SELECT kind, scope, original, replacement, width, height FROM overrides");
-    res.set("Cache-Control", "no-cache").json({ overrides: rows });
+    const lists = await db.all("SELECT scope, key, items FROM lists");
+    res.set("Cache-Control", "no-cache").json({ overrides: rows, lists });
+  });
+
+  // A page built in the dashboard, once it's published.
+  r.get("/page", async (req, res) => {
+    const path = String(req.query.path || "");
+    const page = /^\/[a-z0-9/-]{1,120}$/.test(path) && (await db.get("SELECT path, title, description, content FROM pages WHERE path = ? AND published", path));
+    if (!page) return res.status(404).json({ error: "Not found." });
+    res.set("Cache-Control", "no-cache").json({ page });
   });
 
   r.get("/posts", async (req, res) => {

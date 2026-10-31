@@ -59,3 +59,10 @@ test("uploads send the bytes with their image type; legacy keys also go as a Bea
   assert.equal(seen[0].auth, "Bearer eyJlegacy.service.role");
   assert.equal(supabase.publicUrl("abc.png"), `${config.supabase.url}/storage/v1/object/public/media/abc.png`);
 });
+
+test("deletes send no content type (Storage refuses a JSON type with an empty body)", async () => {
+  seen.length = 0;
+  await supabase.remove("abc.png");
+  assert.equal(seen[0].method, "DELETE");
+  assert.equal(seen[0].type, undefined);
+});

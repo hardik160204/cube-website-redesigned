@@ -14,9 +14,11 @@ async function call(path, { method = "GET", key = config.supabase.secretKey, bod
     // Safe to show: says what's missing, not any value.
     throw Object.assign(new Error("Supabase isn't set up yet: add the project URL and keys to server/.env, then restart the server."), { status: 503, expose: true });
   }
+  const hasBody = raw !== undefined || body !== undefined;
   const res = await fetch(`${config.supabase.url}${path}`, {
     method,
-    headers: headers(key, { "Content-Type": type || "application/json" }),
+    // A content type without a body makes Storage refuse the request (e.g. every DELETE), so only send one with a body.
+    headers: headers(key, hasBody ? { "Content-Type": type || "application/json" } : {}),
     body: raw ?? (body === undefined ? undefined : JSON.stringify(body)),
   });
   const data = await res.json().catch(() => ({}));
@@ -74,6 +76,23 @@ module.exports = {
   async remove(file) {
     const r = await call(`/storage/v1/object/${MEDIA}/${file}`, { method: "DELETE" });
     if (!r.ok && r.status !== 404) throw fail("Deleting the image", r);
+  },
+
+  // A link the browser can PUT exactly one file to, straight into Storage. It carries a short-lived token for
+  // that one file name only, so no key ever reaches the browser, and big videos skip this server (Vercel caps
+  // a request at 4.5 MB).
+  async signUpload(file) {
+    const r = await call(`/storage/v1/object/upload/sign/${MEDIA}/${file}`, { method: "POST", body: {} });
+    if (!r.ok || !r.data.url) throw fail("Preparing the upload", r);
+    return `${config.supabase.url}/storage/v1${r.data.url}`;
+  },
+
+  // The first bytes of an uploaded file (to check what it really is) and its full size; null if it's missing.
+  async readStart(file) {
+    const res = await fetch(module.exports.publicUrl(file), { headers: { Range: "bytes=0-31" } });
+    if (!res.ok) return null;
+    const size = Number((res.headers.get("content-range") || "").split("/")[1]) || Number(res.headers.get("content-length")) || 0;
+    return { buf: Buffer.from(await res.arrayBuffer()), size };
   },
 
   publicUrl: (file) => `${config.supabase.url}/storage/v1/object/public/${MEDIA}/${file}`,

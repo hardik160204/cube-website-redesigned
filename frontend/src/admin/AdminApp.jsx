@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, CalendarClock, Users, CalendarDays, FileCheck2, FileText, History, UserSearch, Image, Inbox, LayoutDashboard, LogOut, Menu, PencilLine, Settings, ShieldCheck, Trash2, UserCog, X } from "lucide-react";
+import { BarChart3, CalendarClock, Users, CalendarDays, FileCheck2, FilePlus2, FileText, History, UserSearch, Image, Inbox, LayoutDashboard, LogOut, Menu, PencilLine, Settings, ShieldCheck, Trash2, UserCog, X } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { api } from "../lib/api";
@@ -8,30 +8,38 @@ import { Button, Card, Empty, Field, INPUT, PageTitle, act, downloadCsv, istTime
 import BlogAdmin from "./BlogAdmin";
 import MediaAdmin from "./MediaAdmin";
 import ContentAdmin, { startEditing } from "./ContentAdmin";
+import PagesAdmin from "./PagesAdmin";
 import CalendarAdmin from "./CalendarAdmin";
 import ConsentAdmin from "./ConsentAdmin";
 import TeamAdmin from "./TeamAdmin";
 import { AnalyticsAdmin, PrivacyAdmin, SecurityAdmin } from "./ComplianceAdmin";
 
-// The admin dashboard at /admin: demo bookings, enquiries, blog, site edits, images, settings and accounts.
-// Everything here talks to /api/admin, which checks the session on every request.
+// The admin dashboard at /admin: demo bookings, enquiries, blog, site edits, pages, media, settings and
+// accounts. Everything here talks to /api/admin, which checks the session — and the admin's access to that
+// section — on every request; the menu below only hides what the server would refuse anyway.
 
+// [path, label, icon, the access it needs: a section the owner can give, "owner", or none]
 const NAV = [
   ["", "Overview", LayoutDashboard],
-  ["bookings", "Demo bookings", CalendarDays],
-  ["calendar", "Demo calendar", CalendarClock],
-  ["leads", "Enquiries", Inbox],
-  ["blog", "Blog", FileText],
-  ["content", "Site content", PencilLine],
-  ["media", "Images", Image],
-  ["team", "Team & social links", Users],
-  ["analytics", "Visitor analytics", BarChart3],
-  ["consents", "Consent records", FileCheck2],
-  ["privacy", "Privacy requests", UserSearch],
-  ["security", "Security log", History],
-  ["settings", "Settings", Settings],
+  ["bookings", "Demo bookings", CalendarDays, "bookings"],
+  ["calendar", "Demo calendar", CalendarClock, "calendar"],
+  ["leads", "Enquiries", Inbox, "leads"],
+  ["blog", "Blog", FileText, "blog"],
+  ["content", "Site content", PencilLine, "content"],
+  ["pages", "Pages", FilePlus2, "pages"],
+  ["media", "Images & videos", Image, "media"],
+  ["team", "Team & social links", Users, "team"],
+  ["analytics", "Visitor analytics", BarChart3, "analytics"],
+  ["consents", "Consent records", FileCheck2, "consents"],
+  ["privacy", "Privacy requests", UserSearch, "privacy"],
+  ["settings", "Settings", Settings, "settings"],
+  ["security", "Activity log", History, "owner"],
   ["account", "Admins & password", UserCog],
 ];
+const can = (me, need) => !need || me.isOwner || (need !== "owner" && me.permissions.includes(need));
+// What the owner can give other admins, in menu order.
+const SECTION_LABEL = Object.fromEntries(NAV.filter(([, , , need]) => need && need !== "owner").map(([, label, , need]) => [need, label]));
+const DEFAULT_ACCESS = ["bookings", "calendar", "leads", "blog", "content", "pages", "media", "team"];
 
 const INTEREST = { "cloud-contact-center": "Cloud Contact Center", "voice-logger": "Voice Logger", "call-billing": "Call Billing Software", ivrs: "IVRS Services", other: "Other" };
 
@@ -165,9 +173,9 @@ function Login({ onDone }) {
   );
 }
 
-function Overview({ out }) {
+function Overview({ me, out }) {
   const [stats] = useResource("/admin/stats", out);
-  const [data] = useResource("/admin/bookings", out);
+  const [data] = useResource(can(me, "bookings") ? "/admin/bookings" : null, out);
   const upcoming = (data?.bookings || []).filter((b) => b.status === "scheduled" && new Date(b.slot_start) >= new Date()).reverse().slice(0, 8);
   const tiles = stats
     ? [
@@ -177,11 +185,16 @@ function Overview({ out }) {
         ["All enquiries", stats.leads, "leads"],
         ["Blog posts", stats.posts, "blog"],
         ["Site edits", stats.edits, "content"],
-      ]
+      ].filter(([, , to]) => can(me, to))
     : [];
   return (
     <>
-      <PageTitle title="Overview" desc="What's happening on the website." actions={<Button onClick={startEditing}><PencilLine size={16} /> Edit the website</Button>} />
+      <PageTitle
+        title="Overview"
+        desc={`What's happening on the website. Signed in as ${me.email}${me.isOwner ? " (owner)" : ""}.`}
+        actions={can(me, "content") && <Button onClick={startEditing}><PencilLine size={16} /> Edit the website</Button>}
+      />
+      {tiles.length === 0 && <Empty>Use the menu to open the sections you have access to.</Empty>}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {tiles.map(([label, n, to]) => (
           <Link key={label} to={`/admin/${to}`} className="rounded-2xl border border-[#E5EAF4] bg-white p-5 transition-colors hover:border-primary/40">
@@ -190,7 +203,7 @@ function Overview({ out }) {
           </Link>
         ))}
       </div>
-      <Card title="Next demos" className="mt-6">
+      {can(me, "bookings") && <Card title="Next demos" className="mt-6">
         {upcoming.length === 0 ? (
           <Empty>No upcoming demos yet.</Empty>
         ) : (
@@ -205,7 +218,7 @@ function Overview({ out }) {
             ))}
           </ul>
         )}
-      </Card>
+      </Card>}
     </>
   );
 }
@@ -518,10 +531,48 @@ function SettingsPage({ out }) {
   );
 }
 
+// Checkboxes for the sections an admin may open.
+function AccessPicker({ value, onChange }) {
+  return (
+    <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
+      {Object.entries(SECTION_LABEL).map(([key, label]) => (
+        <label key={key} className="flex items-center gap-2 text-[13px] text-[#404348]">
+          <input type="checkbox" checked={value.includes(key)} onChange={(e) => onChange(e.target.checked ? [...value, key] : value.filter((k) => k !== key))} className="h-4 w-4 accent-[#0047FF]" />
+          {label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function AdminAccess({ a, onSaved }) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(a.permissions || []);
+  const save = async () => (await act(() => api(`/admin/admins/${a.id}/permissions`, { method: "PUT", body: { permissions: value } }), `Saved. ${a.email} sees the change straight away.`)) && (setOpen(false), onSaved());
+  return (
+    <div className="mt-2 w-full rounded-xl bg-[#F5F8FD] p-3">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="text-[13px] font-medium text-primary hover:underline" aria-expanded={open}>
+        {open ? "Hide access" : `Can open: ${(a.permissions || []).map((k) => SECTION_LABEL[k]).filter(Boolean).join(", ") || "only the overview"}`}
+      </button>
+      {open && (
+        <div className="mt-3">
+          <AccessPicker value={value} onChange={setValue} />
+          <div className="mt-3 flex gap-2">
+            <Button onClick={save}>Save access</Button>
+            <Button variant="ghost" onClick={() => (setValue(a.permissions || []), setOpen(false))}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Account({ me, out }) {
   const [data, reload] = useResource("/admin/admins", out);
   const [pw, setPw] = useState({ current: "", next: "" });
-  const [add, setAdd] = useState({ email: "", password: "" });
+  const [add, setAdd] = useState({ email: "", password: "", permissions: DEFAULT_ACCESS });
   const change = async (e) => {
     e.preventDefault();
     if (await act(() => api("/admin/password", { method: "POST", body: pw }), "Password changed. Other sessions were signed out.")) setPw({ current: "", next: "" });
@@ -529,9 +580,13 @@ function Account({ me, out }) {
   const create = async (e) => {
     e.preventDefault();
     if (await act(() => api("/admin/admins", { method: "POST", body: add }), "Admin added")) {
-      setAdd({ email: "", password: "" });
+      setAdd({ email: "", password: "", permissions: DEFAULT_ACCESS });
       reload();
     }
+  };
+  const signOutAll = async () => {
+    if (!window.confirm("Sign out of the admin on every device, including this one?")) return;
+    if (await act(() => api("/admin/logout-all", { method: "POST" }))) window.location.assign("/admin");
   };
   const remove = async (a) => window.confirm(`Remove ${a.email}?`) && (await act(() => api(`/admin/admins/${a.id}`, { method: "DELETE" }), "Removed")) && reload();
   const resetAuth = async (a) =>
@@ -555,8 +610,14 @@ function Account({ me, out }) {
           <p className="mt-4 border-t border-[#EEF1F7] pt-4 text-[13px] text-[#6B6E75]">
             Lost your phone? Reset your authenticator below and set it up again at the next sign-in.
           </p>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF1F7] pt-4">
+            <p className="text-[13px] text-[#6B6E75]">Signed in somewhere you shouldn't be?</p>
+            <Button variant="danger" onClick={signOutAll}>
+              Sign out everywhere
+            </Button>
+          </div>
         </Card>
-        <Card title="Admin accounts">
+        <Card title={me.isOwner ? "Admin accounts" : "Your account"}>
           <ul className="divide-y divide-[#EEF1F7]">
             {(data?.admins || []).map((a) => (
               <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-[14px]">
@@ -579,23 +640,31 @@ function Account({ me, out }) {
                     </Button>
                   )}
                 </span>
+                {me.isOwner && !a.is_owner && <AdminAccess key={JSON.stringify(a.permissions)} a={a} onSaved={reload} />}
               </li>
             ))}
           </ul>
           {me.isOwner ? (
-            <form onSubmit={create} className="mt-5 grid gap-3 border-t border-[#EEF1F7] pt-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-              <Field label="New admin email">
-                <input type="email" required value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} className={INPUT} />
-              </Field>
-              <Field label="Their first password">
-                <input type="password" required minLength={12} autoComplete="new-password" value={add.password} onChange={(e) => setAdd({ ...add, password: e.target.value })} className={INPUT} />
-              </Field>
-              <Button type="submit">Add</Button>
+            <form onSubmit={create} className="mt-5 space-y-3 border-t border-[#EEF1F7] pt-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="New admin email">
+                  <input type="email" required value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} className={INPUT} />
+                </Field>
+                <Field label="Their first password">
+                  <input type="password" required minLength={12} autoComplete="new-password" value={add.password} onChange={(e) => setAdd({ ...add, password: e.target.value })} className={INPUT} />
+                </Field>
+              </div>
+              <div>
+                <span className="mb-2 block text-[13px] font-medium text-[#404348]">What they can open (you can change this any time)</span>
+                <AccessPicker value={add.permissions} onChange={(permissions) => setAdd({ ...add, permissions })} />
+              </div>
+              <Button type="submit">Add admin</Button>
             </form>
           ) : null}
           <p className="mt-4 text-[12px] text-[#6B6E75]">
-            The owner is the first admin. They can't be removed, and only they can add or remove admins. Every admin signs in with their password plus a code from
-            their own authenticator app.
+            {me.isOwner
+              ? "You are the owner (master admin): you can't be removed, you see every section and the activity log, and only you add or remove admins and decide what each of them can open. Everyone signs in with their password plus a code from their own authenticator app."
+              : "The owner decides which sections you can open. Ask them if you need access to something else."}
           </p>
         </Card>
       </div>
@@ -630,22 +699,31 @@ export default function AdminApp() {
   if (!me) return <Login onDone={setMe} />;
 
   const props = { me, out };
-  const page = {
-    "": <Overview {...props} />,
-    bookings: <Bookings {...props} />,
-    leads: <Leads {...props} />,
-    blog: <BlogAdmin {...props} />,
-    content: <ContentAdmin {...props} />,
-    media: <MediaAdmin {...props} />,
-    calendar: <CalendarAdmin {...props} />,
-    team: <TeamAdmin {...props} />,
-    consents: <ConsentAdmin {...props} />,
-    analytics: <AnalyticsAdmin {...props} />,
-    privacy: <PrivacyAdmin {...props} />,
-    security: <SecurityAdmin {...props} />,
-    settings: <SettingsPage {...props} />,
-    account: <Account {...props} />,
-  }[section] || <Empty>Page not found.</Empty>;
+  const nav = NAV.filter(([, , , need]) => can(me, need));
+  const entry = NAV.find(([to]) => to === section);
+  const page = !entry ? (
+    <Empty>Page not found.</Empty>
+  ) : !can(me, entry[3]) ? (
+    <Empty>You don't have access to {entry[1]}. Ask the owner if you need it.</Empty>
+  ) : (
+    {
+      "": <Overview {...props} />,
+      bookings: <Bookings {...props} />,
+      leads: <Leads {...props} />,
+      blog: <BlogAdmin {...props} />,
+      content: <ContentAdmin {...props} />,
+      pages: <PagesAdmin {...props} />,
+      media: <MediaAdmin {...props} />,
+      calendar: <CalendarAdmin {...props} />,
+      team: <TeamAdmin {...props} />,
+      consents: <ConsentAdmin {...props} />,
+      analytics: <AnalyticsAdmin {...props} />,
+      privacy: <PrivacyAdmin {...props} />,
+      security: <SecurityAdmin {...props} />,
+      settings: <SettingsPage {...props} />,
+      account: <Account {...props} />,
+    }[section]
+  );
 
   return (
     <div className="min-h-screen bg-[#F5F8FD] text-[#31343A] lg:grid lg:grid-cols-[250px_1fr]">
@@ -655,13 +733,15 @@ export default function AdminApp() {
           {menu ? <X size={20} /> : <Menu size={20} />}
         </button>
       </header>
-      <aside className={`${menu ? "block" : "hidden"} bg-[#0A0626] p-4 text-[#C9D2EC] lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col`}>
-        <div className="hidden px-2 pb-6 pt-2 lg:block">
+      {/* Full screen height on desktop: the logo and the footer stay put and only the menu scrolls, so the
+          dark panel always reaches the bottom however many sections there are. */}
+      <aside className={`${menu ? "block" : "hidden"} bg-[#0A0626] p-4 text-[#C9D2EC] lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-hidden`}>
+        <div className="hidden shrink-0 px-2 pb-5 pt-2 lg:block">
           <img src="/logo75.png" alt="Cube Software" className="h-8 w-auto rounded bg-white px-2 py-1" />
-          <p className="mt-3 text-[12px] uppercase tracking-[0.14em] text-[#00B8FF]">Admin</p>
+          <p className="mt-3 text-[12px] uppercase tracking-[0.14em] text-[#00B8FF]">{me.isOwner ? "Admin · Owner" : "Admin"}</p>
         </div>
-        <nav className="space-y-1">
-          {NAV.map(([to, label, Icon]) => (
+        <nav className="space-y-1 lg:-mx-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:px-1 lg:[scrollbar-color:rgb(255_255_255/0.2)_transparent] lg:[scrollbar-width:thin]">
+          {nav.map(([to, label, Icon]) => (
             <Link
               key={to}
               to={`/admin${to ? `/${to}` : ""}`}
@@ -672,7 +752,7 @@ export default function AdminApp() {
             </Link>
           ))}
         </nav>
-        <div className="mt-6 space-y-1 border-t border-white/10 pt-4 lg:mt-auto">
+        <div className="mt-6 shrink-0 space-y-1 border-t border-white/10 pt-4 lg:mt-3">
           <a href="/" target="_blank" rel="noopener noreferrer" className="block rounded-lg px-3 py-2 text-[14px] hover:bg-white/5 hover:text-white">
             View website ↗
           </a>

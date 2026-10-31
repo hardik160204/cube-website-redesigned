@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { useSpotlight } from "../../hooks/use-pointer-motion";
+import { useList } from "../../lib/editable";
 import { CONTACT, tel } from "./catalog";
 import SectionIntro from "./SectionIntro";
 
@@ -74,6 +75,20 @@ export const PRODUCTS = [
     img: "/voice-logger-insync.png",
     href: "/services/voice-logger-insync",
   },
+  {
+    title: "Co-Browsing",
+    tag: "Visual support",
+    tagline: "See the same page together and guide customers step by step — only our website is shared, sensitive fields stay hidden.",
+    img: "/products/co-browsing.svg",
+    href: "/services/co-browsing",
+  },
+  {
+    title: "Screen Sharing",
+    tag: "Visual support",
+    tagline: "Customers show their screen, a window or a tab — they choose what's shared, and can stop at any time.",
+    img: "/products/screen-sharing.svg",
+    href: "/services/screen-sharing",
+  },
 ];
 
 const ease = [0.23, 1, 0.32, 1];
@@ -96,14 +111,18 @@ function ProductCard({ p, i }) {
       >
         {spot.glow}
         {/* Same 9:5 frame on every card; the whole picture sits inside, a blurred copy fills any edge */}
-        <div className="relative aspect-[9/5] overflow-hidden rounded-[20px] bg-[#F0F4FB]">
-          <img src={p.img} alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-xl" />
-          <img
-            src={p.img}
-            alt={p.title}
-            loading="lazy"
-            className="relative h-full w-full object-contain transition-[scale] duration-700 ease-out-expo group-hover:[scale:1.04]"
-          />
+        <div className="relative aspect-[9/5] overflow-hidden rounded-[20px] bg-[linear-gradient(135deg,#E3F6FF,#E6EEFF_55%,#EDE8FF)]">
+          {p.img && (
+            <>
+              <img src={p.img} alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-xl" />
+              <img
+                src={p.img}
+                alt={p.title}
+                loading="lazy"
+                className="relative h-full w-full object-contain transition-[scale] duration-700 ease-out-expo group-hover:[scale:1.04]"
+              />
+            </>
+          )}
         </div>
         <div className="relative flex flex-1 flex-col px-3 pb-3 pt-5">
           <span className="w-fit rounded-full bg-[#E6EEFF] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-primary">{p.tag}</span>
@@ -120,6 +139,8 @@ function ProductCard({ p, i }) {
 }
 
 export default function Products() {
+  // Admins can add, remove, reorder and rewrite these cards in the visual editor ("Edit cards").
+  const { items, mark } = useList("products", PRODUCTS);
   return (
     <section id="products" className="relative isolate scroll-mt-32 overflow-hidden bg-white px-4 py-20 md:py-28">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
@@ -140,9 +161,9 @@ export default function Products() {
           </a>
         </div>
 
-        <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {PRODUCTS.map((p, i) => (
-            <ProductCard key={p.title} p={p} i={i} />
+        <ul {...mark} className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((p, i) => (
+            <ProductCard key={`${i}-${p.title}`} p={p} i={i} />
           ))}
         </ul>
       </div>

@@ -1,7 +1,7 @@
 import "./App.css";
 import "./components/site-effects.css";
 import { Suspense, lazy, useEffect, useLayoutEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { ease } from "./lib/motion";
@@ -34,6 +34,8 @@ import CloudNumberMaskingPage from "./pages/CloudNumberMaskingPage";
 import CloudLiveAnalyticsPage from "./pages/CloudLiveAnalyticsPage";
 import CloudQualityAnalysisPage from "./pages/CloudQualityAnalysisPage";
 import ConferenceBridge from "./pages/ConferenceBridge";
+import VisualSupportPage from "./pages/VisualSupportPage";
+import CustomPage from "./pages/CustomPage";
 import PricingPage from "./pages/PricingPage"; 
 import FloatingChatWidget from "./components/FloatingChatWidget";
 import { DEMO_EVENT } from "./components/demo";
@@ -188,7 +190,10 @@ function Site() {
           <Route path="/services/quality-analysis" element={<CloudQualityAnalysisPage />} />
           
           <Route path="/services/conference-bridge" element={<ConferenceBridge />} />
-          <Route path="/services/:slug" element={<Navigate to="/" replace />} />
+          <Route path="/services/co-browsing" element={<VisualSupportPage feature="co-browsing" />} />
+          <Route path="/services/screen-sharing" element={<VisualSupportPage feature="screen-sharing" />} />
+          {/* Pages built in the admin; unknown addresses still go to the homepage */}
+          <Route path="/services/:slug" element={<CustomPage />} />
           <Route path="/meet-our-team" element={<MeetOurTeamPage />} />
           <Route path="/career" element={<CareerPage />} />
           <Route path="/contact" element={<ContactPage />} />
@@ -214,7 +219,7 @@ function Site() {
           <Route path="/billing/enterprise" element={<CallBillingEnterprise />} />
           
           
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<CustomPage />} />
         </Routes>
         </RouteTransition>
         <SiteFooter />

@@ -1,5 +1,6 @@
 import React from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
+import { useList } from "../../lib/editable";
 
 //Cube's FAQ: one centred column of bordered rows; the open row's border turns brand blue.
 const EXPERT_LINE = "+91 806 869 4440";
@@ -17,7 +18,8 @@ const FAQS = [
 ];
 
 // Pages pass their own questions and heading; the homepage uses the defaults.
-export default function Faq({ items = FAQS, label = "FAQ", title = "Questions,", highlight = "answered.", id = "faq" }) {
+export default function Faq({ items: builtIn = FAQS, label = "FAQ", title = "Questions,", highlight = "answered.", id = "faq" }) {
+  const { items, mark } = useList("faq", builtIn);
   return (
     <section id={id} className="flex scroll-mt-32 flex-col items-center px-4 pb-20 pt-16 md:pt-24">
       <span className="text-center text-sm font-semibold uppercase text-[#0047FF]">{label}</span>
@@ -32,10 +34,10 @@ export default function Faq({ items = FAQS, label = "FAQ", title = "Questions,",
         .
       </p>
 
-      <Accordion type="single" collapsible defaultValue="faq-0" className="mx-auto mt-10 w-full max-w-[760px] space-y-3 md:mt-12">
+      <Accordion {...mark} type="single" collapsible defaultValue="faq-0" className="mx-auto mt-10 w-full max-w-[760px] space-y-3 md:mt-12">
         {items.map((faq, i) => (
           <AccordionItem
-            key={faq.q}
+            key={`${i}-${faq.q}`}
             value={`faq-${i}`}
             className="rounded-2xl border border-[#ECECEC] bg-white px-5 transition-colors duration-200 hover:border-[#D5D9E3] data-[state=open]:border-primary md:px-6"
           >

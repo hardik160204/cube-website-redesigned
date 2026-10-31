@@ -163,39 +163,78 @@ const ACTIONS = {
   admin_removed: "Admin removed",
   privacy_erase: "Personal data erased",
   retention_sweep: "Automatic deletion",
+  permissions_changed: "Admin access changed",
 };
 
+// Every change is logged as "METHOD /path"; this says what it was in words.
+const CHANGES = [
+  [/^POST \/overrides/, "Changed text, a picture or an animation on the site"],
+  [/^DELETE \/overrides/, "Undid a site edit"],
+  [/^PUT \/lists/, "Changed a set of cards on the site"],
+  [/^DELETE \/lists/, "Put back the original cards"],
+  [/^POST \/pages/, "Created a page"],
+  [/^PUT \/pages/, "Edited a page"],
+  [/^DELETE \/pages/, "Deleted a page"],
+  [/^POST \/media\/sign/, "Started an upload"],
+  [/^POST \/media\/confirm/, "Uploaded a file"],
+  [/^DELETE \/media/, "Deleted an uploaded file"],
+  [/^POST \/posts/, "Wrote a blog post"],
+  [/^PUT \/posts/, "Edited a blog post"],
+  [/^DELETE \/posts/, "Deleted a blog post"],
+  [/^PATCH \/bookings/, "Changed a demo booking's status"],
+  [/^DELETE \/bookings/, "Deleted a demo booking"],
+  [/^DELETE \/leads/, "Deleted an enquiry"],
+  [/^PUT \/slot-rules/, "Changed a demo slot"],
+  [/^PUT \/days/, "Opened or closed a demo day"],
+  [/^PUT \/settings\/(team|socials)/, "Changed the team or social links"],
+  [/^PUT \/settings/, "Changed settings"],
+  [/^POST \/privacy\/erase/, "Erased someone's personal data"],
+  [/^POST \/retention/, "Ran the automatic deletion"],
+  [/^POST \/admins\/\d+\/reset-authenticator/, "Reset an authenticator"],
+  [/^PUT \/admins\/\d+\/permissions/, "Changed an admin's access"],
+  [/^POST \/admins/, "Added an admin"],
+  [/^DELETE \/admins/, "Removed an admin"],
+  [/^POST \/password/, "Changed their password"],
+  [/^POST \/logout-all/, "Signed out everywhere"],
+];
+const describe = (e) => (e.action === "change" ? CHANGES.find(([re]) => re.test(e.detail))?.[1] || "Change" : ACTIONS[e.action] || e.action);
+
+// Only the owner can open this (the server refuses everyone else).
 export function SecurityAdmin({ out }) {
   const [data] = useResource("/admin/audit", out);
-  const rows = data?.entries || [];
-  const signOutAll = async () => {
-    if (!window.confirm("Sign out of the admin on every device, including this one?")) return;
-    if (await act(() => api("/admin/logout-all", { method: "POST" }))) window.location.assign("/admin");
-  };
+  const [who, setWho] = useState("");
+  const all = data?.entries || [];
+  const rows = who ? all.filter((e) => e.email === who) : all;
+  const people = [...new Set(all.map((e) => e.email).filter(Boolean))].sort();
   return (
     <>
       <PageTitle
-        title="Security log"
-        desc="Every sign-in attempt and every change made in this dashboard, with the IP address. Kept for 1 year, then deleted automatically."
+        title="Activity log"
+        desc="Only you, the owner, can see this. Every sign-in attempt and every change any admin made, with the IP address. Kept for 1 year, then deleted automatically."
         actions={
           <>
+            <select value={who} onChange={(e) => setWho(e.target.value)} className={`${INPUT} w-auto`} aria-label="Show activity of">
+              <option value="">Every admin</option>
+              {people.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
             <Button
               variant="ghost"
               disabled={!rows.length}
               onClick={() =>
-                downloadCsv("cube-security-log.csv", rows, [
+                downloadCsv("cube-activity-log.csv", rows, [
                   [(e) => utcStamp(e.at), "Time (IST)"],
                   ["email", "Admin"],
-                  [(e) => ACTIONS[e.action] || e.action, "Event"],
+                  [describe, "Event"],
                   ["detail", "Detail"],
                   ["ip", "IP address"],
                 ])
               }
             >
               Export CSV
-            </Button>
-            <Button variant="danger" onClick={signOutAll}>
-              Sign out everywhere
             </Button>
           </>
         }
@@ -220,7 +259,7 @@ export function SecurityAdmin({ out }) {
                   <tr key={e.id} className={/failed|locked/.test(e.action) ? "bg-[#FFF8F8]" : ""}>
                     <td className="whitespace-nowrap px-5 py-2.5">{utcStamp(e.at)}</td>
                     <td className="px-5 py-2.5">{e.email || "—"}</td>
-                    <td className={`px-5 py-2.5 ${/failed|locked/.test(e.action) ? "font-medium text-[#C81E1E]" : ""}`}>{ACTIONS[e.action] || e.action}</td>
+                    <td className={`px-5 py-2.5 ${/failed|locked/.test(e.action) ? "font-medium text-[#C81E1E]" : ""}`}>{describe(e)}</td>
                     <td className="px-5 py-2.5 font-mono text-[12px] text-[#6B6E75]">{e.detail}</td>
                     <td className="px-5 py-2.5 font-mono text-[12px] text-[#6B6E75]">{e.ip}</td>
                   </tr>
