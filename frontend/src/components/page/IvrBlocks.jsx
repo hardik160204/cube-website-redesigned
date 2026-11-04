@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { BarChart3, Clock, FileText, Hash, Mic, Phone, Settings, Users } from "lucide-react";
 import FlowChart from "../home/FlowChart";
 import { Heading, Reveal, Section } from "./kit";
+import { useCards } from "../../lib/editable";
 
 // The Cloud IVR page's two interactive pieces: its savings calculator (same maths and copy as before)
 // and its multi-level IVR diagram, now drawn by the homepage's animated flowchart.
@@ -85,16 +86,17 @@ const ALONGSIDE = [
 ];
 
 export function IvrDiagram() {
+  const { items: alongside, mark } = useCards(ALONGSIDE, { icon: "Icon", label: "Text" });
   return (
     <Section tone="tint">
       <Heading label="Multi-level IVR number system" title="Automate your business communication with" align="center" />
       <Reveal className="mt-12">
         <FlowChart stages={IVR_STAGES} title="Multi-level IVR number system" className="mx-auto max-w-[980px]" />
       </Reveal>
-      <ul className="mt-6 flex flex-wrap justify-center gap-3">
-        {ALONGSIDE.map((a, i) => (
-          <Reveal as="li" key={a.label} delay={0.1 + i * 0.08} className="flex items-center gap-2 rounded-full border border-[#E5EAF4] bg-white px-4 py-2 text-[15px] text-[#31343A]">
-            <a.icon size={16} className="text-primary" /> {a.label}
+      <ul {...mark} className="mt-6 flex flex-wrap justify-center gap-3">
+        {alongside.map((a, i) => (
+          <Reveal as="li" key={`${i}-${a.label}`} delay={0.1 + Math.min(i, 5) * 0.08} className="flex items-center gap-2 rounded-full border border-[#E5EAF4] bg-white px-4 py-2 text-[15px] text-[#31343A]">
+            {a.icon && <a.icon size={16} className="text-primary" />} {a.label}
           </Reveal>
         ))}
       </ul>

@@ -67,7 +67,7 @@ module.exports = function publicRoutes(db) {
       if (isUnique(e)) return res.status(409).json({ error: "That time was just taken. Please pick another slot." });
       throw e;
     }
-    mail.bookingEmails(booking, await settings.get(db, "salesEmails"), demo).catch((e) => console.error("[mail] booking", booking.id, e.message));
+    mail.bookingEmails(booking, await settings.get(db, "salesEmails"), demo, await settings.editedPhone(db, mail.SALES_PHONE)).catch((e) => console.error("[mail] booking", booking.id, e.message));
     res.status(201).json({ ok: true, id: booking.id });
   });
 

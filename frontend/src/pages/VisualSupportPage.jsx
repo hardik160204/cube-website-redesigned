@@ -209,7 +209,7 @@ export default function VisualSupportPage({ feature }) {
   return (
     <>
       <PageHero
-        crumbs={["Products", f.title]}
+        crumbs={["Cloud Contact Center", f.title]}
         label="Visual support"
         title={`${f.title}:`}
         highlight="See It, Share It, Solve It"

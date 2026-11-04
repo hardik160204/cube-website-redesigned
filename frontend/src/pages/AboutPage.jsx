@@ -2,6 +2,7 @@ import React from "react";
 import { Award, Target, Eye, HeartHandshake, Quote } from "lucide-react";
 import ClosingCta from "../components/home/ClosingCta";
 import { FeatureCards, Heading, Label, LinkPair, PageHero, Reveal, Section, Split, Timeline, Title } from "../components/page/kit";
+import { useCards } from "../lib/editable";
 
 // --- HARDCODED IMAGES ---
 const ABOUT_IMAGE = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80";
@@ -53,6 +54,33 @@ export const STATS = [
   { value: "20+", label: "Product Lines" },
 ];
 
+function Directors() {
+  const { items, mark } = useCards(DIRECTORS, { label: "Small label", title: "Heading", highlight: "Highlighted word", name: "Name", role: "Role", image: "Portrait", message: "Message" });
+  return (
+    <div {...mark}>
+      {items.map((d, i) => (
+        <Section key={`${i}-${d.name}`} tone={i % 2 ? "tint" : "white"}>
+          <Split image={d.image} imageAlt={d.name} reverse={i % 2 === 0}>
+            <Label>{d.label}</Label>
+            <Title highlight={d.highlight}>{d.title}</Title>
+            <figure className="relative mt-8">
+              <Quote aria-hidden="true" className="absolute -left-2 -top-6 h-16 w-16 text-[#D9E6FF]" strokeWidth={1.5} />
+              <blockquote className="relative text-[18px] font-medium leading-[1.7] text-[#31343A] md:text-[20px]">"{d.message}"</blockquote>
+              <figcaption className="mt-7 flex items-center gap-4">
+                <span className="h-px w-10 bg-[linear-gradient(90deg,#00B8FF,#0047FF)]" />
+                <span>
+                  <span className="block text-lg font-medium text-[#0A0626]">{d.name}</span>
+                  <span className="text-sm text-primary">{d.role}, Cube Software</span>
+                </span>
+              </figcaption>
+            </figure>
+          </Split>
+        </Section>
+      ))}
+    </div>
+  );
+}
+
 const AboutPage = () => (
   <>
     <PageHero
@@ -66,25 +94,7 @@ const AboutPage = () => (
       actions={<LinkPair primary={{ label: "Work With Us", to: "/contact" }} secondary={{ label: "Meet Our Team", to: "/meet-our-team" }} />}
     />
 
-    {DIRECTORS.map((d, i) => (
-      <Section key={d.name} tone={i % 2 ? "tint" : "white"}>
-        <Split image={d.image} imageAlt={d.name} reverse={i % 2 === 0}>
-          <Label>{d.label}</Label>
-          <Title highlight={d.highlight}>{d.title}</Title>
-          <figure className="relative mt-8">
-            <Quote aria-hidden="true" className="absolute -left-2 -top-6 h-16 w-16 text-[#D9E6FF]" strokeWidth={1.5} />
-            <blockquote className="relative text-[18px] font-medium leading-[1.7] text-[#31343A] md:text-[20px]">"{d.message}"</blockquote>
-            <figcaption className="mt-7 flex items-center gap-4">
-              <span className="h-px w-10 bg-[linear-gradient(90deg,#00B8FF,#0047FF)]" />
-              <span>
-                <span className="block text-lg font-medium text-[#0A0626]">{d.name}</span>
-                <span className="text-sm text-primary">{d.role}, Cube Software</span>
-              </span>
-            </figcaption>
-          </figure>
-        </Split>
-      </Section>
-    ))}
+    <Directors />
 
     <Section>
       <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">

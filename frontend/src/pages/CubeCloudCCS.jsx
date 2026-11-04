@@ -2,8 +2,9 @@ import React from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronRight, Users, MessageCircle, BarChart, CheckCircle2, ShieldCheck, Zap, Network, Database, PhoneMissed,
-  PhoneForwarded, Megaphone, Bot, Headphones, PhoneCall, Mic, ClipboardList, TrendingDown, TrendingUp, Monitor,
+  PhoneForwarded, Megaphone, Bot, Headphones, PhoneCall, Mic, ClipboardList, TrendingDown, TrendingUp, Monitor, MousePointer2, ScreenShare,
 } from "lucide-react";
+import { useCards, useList } from "../lib/editable";
 import Faq from "../components/home/Faq";
 import ClosingCta from "../components/home/ClosingCta";
 import { CONTACT } from "../components/home/catalog";
@@ -13,7 +14,7 @@ import { ACCENTS, CtaButtons, Heading, PageHero, Prose, Reveal, Section, Split, 
 // PAGE CONTENT DATA
 // =========================================================================
 
-// 15 Small Service Cards Data
+// Small Service Cards Data
 const CLOUD_SERVICES = [
   { icon: Mic, title: "IVR", desc: "Interactive Voice Response system for automated intelligent routing.", color: "blue", path: "/services/ivr" },
   { icon: PhoneMissed, title: "Missed Call Service", desc: "Engage customers easily with zero-cost missed call campaigns.", color: "blue", path: "/services/missed-call" },
@@ -29,7 +30,9 @@ const CLOUD_SERVICES = [
   { icon: MessageCircle, title: "Whatsapp Chat Bot", desc: "Automate customer support and notifications on WhatsApp 24/7.", color: "blue", path: "/services/whatsapp-bot" },
   { icon: Bot, title: "Web Chat Bot", desc: "AI-powered web widget for instant visitor engagement and help.", color: "blue", path: "/services/web-chat-bot" },
   { icon: Users, title: "CRM Integration", desc: "Manage leads and customer interactions seamlessly in one place.", color: "blue", path: "/services/crm-integration" },
-  { icon: Headphones, title: "Toll Free Number", desc: "Provide a free, professional contact method for your customers.", color: "blue", path: "/services/toll-free-number" }
+  { icon: Headphones, title: "Toll Free Number", desc: "Provide a free, professional contact method for your customers.", color: "blue", path: "/services/toll-free-number" },
+  { icon: MousePointer2, title: "Co-Browsing", desc: "See the same page together and guide customers step by step, with sensitive fields hidden.", color: "blue", path: "/services/co-browsing" },
+  { icon: ScreenShare, title: "Screen Sharing", desc: "Customers show their screen, a window or a tab. They choose what's shared and can stop anytime.", color: "blue", path: "/services/screen-sharing" }
 ];
 
 const BENEFITS_DATA = [
@@ -129,7 +132,14 @@ const FAQ_DATA = [
 ];
 
 
+const CHIPS = ["Unlimited Channels", "Multi level IVR", "Unlimited Users", "API integration", "Real Time Notification"];
+
 export default function CubeCloudCCS() {
+  const benefits = useCards(BENEFITS_DATA, { title: "Title", desc: "Text" });
+  const services = useCards(CLOUD_SERVICES, { icon: "Icon", title: "Title", desc: "Text", path: "Link" });
+  const usps = useCards(USP_DATA, { icon: "Icon", title: "Title", bullets: "Points (one per line)" });
+  const facts = useCards(FACTS_DATA, { icon: "Icon", stat: "Big number", title: "Title", desc: "Text" });
+  const chips = useList("checklist", CHIPS);
   return (
     <>
       <PageHero
@@ -160,9 +170,9 @@ export default function CubeCloudCCS() {
               "End-to-End Communication Platform — From voice infrastructure and dialers to CRM, AI, analytics, WhatsApp/social channels and integrations, customers can build their communication ecosystem with one technology partner.",
             ]}
           />
-          <ul className="mt-8 grid gap-5 sm:grid-cols-2">
-            {BENEFITS_DATA.map((b, i) => (
-              <Reveal as="li" key={b.title} delay={i * 0.06} className="flex items-start gap-3">
+          <ul {...benefits.mark} className="mt-8 grid gap-5 sm:grid-cols-2">
+            {benefits.items.map((b, i) => (
+              <Reveal as="li" key={`${i}-${b.title}`} delay={Math.min(i, 5) * 0.06} className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#D9F3FF] text-[#0047FF]">
                   <CheckCircle2 size={16} />
                 </span>
@@ -178,17 +188,17 @@ export default function CubeCloudCCS() {
 
       <Section>
         <Heading title="Cloud Contact Center" highlight="Services" body="We provide an end-to-end solution to our users." align="center" />
-        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {CLOUD_SERVICES.map((s, i) => {
+        <ul {...services.mark} className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {services.items.map((s, i) => {
             const accent = ACCENTS[i % ACCENTS.length];
             return (
-              <Reveal as="li" key={s.title} delay={(i % 5) * 0.06} className="h-full">
+              <Reveal as="li" key={`${i}-${s.title}`} delay={(i % 5) * 0.06} className="h-full">
                 <Link
-                  to={s.path}
+                  to={s.path || "/"}
                   className="group flex h-full flex-col rounded-[22px] border border-[#E5EAF4] bg-white p-6 transition-[translate,box-shadow,border-color] duration-300 ease-out-expo hover:border-[#99B5FF] hover:shadow-[0_24px_48px_-28px_rgb(0_71_255/0.5)] hover:[translate:0_-4px]"
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl text-white transition-transform duration-300 ease-out-expo group-hover:[transform:rotate(-6deg)_scale(1.06)]" style={{ background: accent, boxShadow: `0 10px 20px -8px ${accent}` }}>
-                    <s.icon size={20} />
+                    {s.icon && <s.icon size={20} />}
                   </span>
                   <h3 className="mt-5 text-[17px] font-medium leading-snug text-[#0A0626] transition-colors group-hover:text-primary">{s.title}</h3>
                   <p className="mt-2 text-[13.5px] leading-6 text-[#4A4D53]">{s.desc}</p>
@@ -204,15 +214,15 @@ export default function CubeCloudCCS() {
 
       <Section tone="dark">
         <Heading title="Our" highlight="USP" body="Here are few smart features" align="center" dark />
-        <ul className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {USP_DATA.map((u, i) => {
+        <ul {...usps.mark} className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          {usps.items.map((u, i) => {
             const accent = ACCENTS[i % ACCENTS.length];
             return (
-              <Reveal as="li" key={u.title} delay={i * 0.08} className="h-full">
+              <Reveal as="li" key={`${i}-${u.title}`} delay={Math.min(i, 5) * 0.08} className="h-full">
                 <div className="flex h-full flex-col rounded-[24px] border border-white/10 bg-white/[0.04] p-7 transition-[border-color,translate] duration-300 ease-out-expo hover:border-[#00B8FF]/40 hover:[translate:0_-4px]">
                   <div className="flex items-center gap-3 border-b border-white/10 pb-5">
                     <span className="flex h-11 w-11 items-center justify-center rounded-xl text-white" style={{ background: accent, boxShadow: `0 10px 20px -8px ${accent}` }}>
-                      <u.icon size={20} />
+                      {u.icon && <u.icon size={20} />}
                     </span>
                     <h3 className="text-xl font-medium text-white">{u.title}</h3>
                   </div>
@@ -242,12 +252,12 @@ export default function CubeCloudCCS() {
                 94% of Managers state their business security and workflow efficiency have drastically improved after migrating to robust <strong className="font-semibold text-white">cloud telephony services.</strong>
               </p>
             </Reveal>
-            <ul className="grid gap-5 sm:grid-cols-3 lg:col-span-8">
-              {FACTS_DATA.map((f, i) => (
-                <Reveal as="li" key={f.title} delay={0.1 + i * 0.1} className="h-full">
+            <ul {...facts.mark} className="grid gap-5 sm:grid-cols-3 lg:col-span-8">
+              {facts.items.map((f, i) => (
+                <Reveal as="li" key={`${i}-${f.title}`} delay={0.1 + Math.min(i, 5) * 0.1} className="h-full">
                   <div className="flex h-full flex-col rounded-[24px] bg-white p-6 shadow-[0_30px_60px_-30px_rgb(10_6_38/0.6)] transition-[translate] duration-300 ease-out-expo hover:[translate:0_-4px]">
                     <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#E6EEFF] text-primary">
-                      <f.icon size={22} />
+                      {f.icon && <f.icon size={22} />}
                     </span>
                     <p className="mt-4 bg-gradient-to-r from-[#0047FF] to-[#2300DC] bg-clip-text text-[44px] font-medium leading-none text-transparent">{f.stat}</p>
                     <h3 className="mt-4 font-medium text-[#0A0626]">{f.title}</h3>
@@ -268,9 +278,9 @@ export default function CubeCloudCCS() {
         body="Connect with our experts today. We will assess your call volume and set up a customized cloud environment for your team. Give your brand a better outlook by using professional cloud services."
         primary="Book a Free Demo"
       >
-        <ul className="mt-7 flex max-w-[640px] flex-wrap justify-center gap-2">
-          {["Unlimited Channels", "Multi level IVR", "Unlimited Users", "API integration", "Real Time Notification"].map((t) => (
-            <li key={t} className="rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[13px] text-white">
+        <ul {...chips.mark} className="mt-7 flex max-w-[640px] flex-wrap justify-center gap-2">
+          {chips.items.map((t, i) => (
+            <li key={`${i}-${t}`} className="rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[13px] text-white">
               {t}
             </li>
           ))}

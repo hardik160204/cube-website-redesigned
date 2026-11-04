@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
 import { CLIENTS } from "../clients-and-partners";
+import { useCards } from "../../lib/editable";
 import SectionIntro from "./SectionIntro";
 
 // Cube's client stories: one card per company Cube already works with (clients-and-partners.js), in a row you
@@ -48,6 +49,12 @@ const PLATFORM_STORY = {
   points: ["Cloud Contact Center", "Call Recording", "IVRS Services"],
 };
 
+// As the card editor sees them: reviews flattened to plain fields, reviewed clients first.
+const STORIES = [...CLIENTS]
+  .sort((a, b) => Boolean(b.review) - Boolean(a.review))
+  .map((c) => ({ name: c.name, logo: c.logo, sector: c.sector || "", quote: c.review?.quote || "", author: c.review?.author || "", role: c.review?.role || "" }));
+const STORY_FIELDS = { name: "Company", logo: "Logo", sector: "Sector", quote: "Their words (leave empty to show what Cube offers the sector)", author: "Who said it", role: "Their role" };
+
 // Shared by every card: the same lift, glow and top sweep on hover.
 function Sweep() {
   return <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-[linear-gradient(90deg,#00B8FF,#0047FF,#2300DC)] transition-transform duration-500 ease-out-expo group-hover:scale-x-100" />;
@@ -66,7 +73,7 @@ function Footer({ name, sub }) {
 }
 
 function StoryCard({ c }) {
-  if (!c.review) {
+  if (!c.quote) {
     const st = SECTOR_STORY[c.sector] || PLATFORM_STORY;
     return (
       <article className={CARD}>
@@ -95,8 +102,8 @@ function StoryCard({ c }) {
           <Star key={k} size={16} className="fill-[#00B8FF] text-[#00B8FF]" />
         ))}
       </div>
-      <p className="relative mb-6 mt-4 text-[17px] leading-[1.55] text-[#31343A]">“{c.review.quote}”</p>
-      <Footer name={c.review.author} sub={`${c.review.role}, ${c.name}`} />
+      <p className="relative mb-6 mt-4 text-[17px] leading-[1.55] text-[#31343A]">“{c.quote}”</p>
+      <Footer name={c.author} sub={c.role ? `${c.role}, ${c.name}` : c.name} />
     </article>
   );
 }
@@ -109,7 +116,7 @@ export function ClientStories({ className = "" }) {
   const reduce = useReducedMotion();
   const [edge, setEdge] = useState({ start: true, end: false });
   const [paused, setPaused] = useState(false);
-  const stories = [...CLIENTS].sort((a, b) => Boolean(b.review) - Boolean(a.review));
+  const { items: stories, mark } = useCards(STORIES, STORY_FIELDS);
 
   const update = () => {
     const el = ref.current;
@@ -174,10 +181,11 @@ export function ClientStories({ className = "" }) {
         onPointerLeave={endDrag}
         onClickCapture={onClickCapture}
         aria-label="Client stories"
+        {...mark}
         className="-mx-4 flex cursor-grab snap-x snap-mandatory scroll-px-4 gap-5 overflow-x-auto px-4 pb-6 pt-4 [scrollbar-width:none] active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
       >
-        {stories.map((c) => (
-          <li key={c.name} className="flex">
+        {stories.map((c, i) => (
+          <li key={`${i}-${c.name}`} className="flex">
             <StoryCard c={c} />
           </li>
         ))}

@@ -5,6 +5,7 @@ import { ArrowRight, Building2, Check, ChevronRight, ShieldCheck, Sparkles, Zap 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 import { CONTACT, tel } from "../components/home/catalog";
 import { TrustBand } from "../components/page/kit";
+import { useCards, useList } from "../lib/editable";
 
 export const PRICING_TIERS = [
   {
@@ -59,6 +60,18 @@ export const PRICING_TIERS = [
   },
 ];
 
+export const PRICING_FIELDS = {
+  name: "Plan name",
+  badge: "Small badge",
+  description: "Text",
+  monthlyPrice: "Monthly price (a number, or Custom)",
+  yearlyPrice: "Annual-billing price (a number, or Custom)",
+  highlight: "Highlight this plan",
+  features: "What's included (one per line)",
+};
+// Prices are numbers in the code and text once edited; anything that isn't a number is a custom quote.
+export const priceOf = (v) => (typeof v === "number" ? v : /^[\d,]+$/.test(String(v ?? "").trim()) ? Number(String(v).replace(/,/g, "")) : null);
+
 const PRICING_FAQS = [
   {
     q: "Can we switch between monthly and annual plans?",
@@ -89,10 +102,12 @@ const delay = (ms) => ({ animationDelay: `${ms}ms` });
 
 // The price rolls out and the new one rolls in when the billing interval changes.
 function Price({ tier, isYearly, dark }) {
-  if (typeof tier.monthlyPrice !== "number") {
+  const monthly = priceOf(tier.monthlyPrice);
+  const yearly = priceOf(tier.yearlyPrice);
+  if (monthly === null || yearly === null) {
     return <p className={`text-[40px] font-medium leading-[52px] ${dark ? "text-white" : "text-[#0A0626]"}`}>Custom Quote</p>;
   }
-  const price = isYearly ? tier.yearlyPrice : tier.monthlyPrice;
+  const price = isYearly ? yearly : monthly;
   return (
     <div>
       <div className="flex flex-wrap items-baseline gap-x-2">
@@ -114,7 +129,7 @@ function Price({ tier, isYearly, dark }) {
       <p className={`mt-1 h-5 text-sm ${dark ? "text-[#A9B3CC]" : "text-[#6B6E75]"}`}>
         {isYearly && (
           <>
-            <span className="mr-1.5 line-through opacity-70">{rupees(tier.monthlyPrice)}</span>
+            <span className="mr-1.5 line-through opacity-70">{rupees(monthly)}</span>
             billed annually
           </>
         )}
@@ -125,6 +140,9 @@ function Price({ tier, isYearly, dark }) {
 
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(true);
+  const tiers = useCards(PRICING_TIERS, PRICING_FIELDS);
+  const trust = useCards(TRUST, { icon: "Icon", title: "Title", text: "Text" });
+  const faqs = useList("faq", PRICING_FAQS);
 
   return (
     <>
@@ -187,13 +205,13 @@ export default function PricingPage() {
 
         {/* --- PLANS --- */}
         <section className="px-4 pb-20 pt-4 sm:px-6">
-          <div className="mx-auto grid max-w-[1228px] items-stretch gap-6 lg:grid-cols-3">
-            {PRICING_TIERS.map((tier, i) => {
+          <div {...tiers.mark} className="mx-auto grid max-w-[1228px] items-stretch gap-6 lg:grid-cols-3">
+            {tiers.items.map((tier, i) => {
               const dark = tier.highlight;
-              const priced = typeof tier.monthlyPrice === "number";
+              const priced = priceOf(tier.monthlyPrice) !== null && priceOf(tier.yearlyPrice) !== null;
               return (
                 <div
-                  key={tier.name}
+                  key={`${i}-${tier.name}`}
                   style={delay(300 + i * 80)}
                   className={`cl-fade-up relative flex flex-col rounded-3xl p-8 transition-[box-shadow,border-color,translate] duration-300 hover:[translate:0_-4px] ${
                     dark
@@ -256,11 +274,11 @@ export default function PricingPage() {
 
         {/* --- TRUST --- */}
         <section className="bg-[#F0F3FA] px-4 py-16 sm:px-6 md:py-20">
-          <div className="mx-auto grid max-w-[1228px] gap-5 md:grid-cols-3">
-            {TRUST.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="rounded-2xl border border-[#E5EAF4] bg-white p-7 transition-colors hover:border-[#B8C5EE]">
+          <div {...trust.mark} className="mx-auto grid max-w-[1228px] gap-5 md:grid-cols-3">
+            {trust.items.map(({ icon: Icon, title, text }, i) => (
+              <div key={`${i}-${title}`} className="rounded-2xl border border-[#E5EAF4] bg-white p-7 transition-colors hover:border-[#B8C5EE]">
                 <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EEF2FB] text-primary">
-                  <Icon size={24} />
+                  {Icon && <Icon size={24} />}
                 </span>
                 <h3 className="mt-5 text-lg font-medium text-[#31343A]">{title}</h3>
                 <p className="mt-2 text-[15px] leading-6 text-[#4A4D53]">{text}</p>
@@ -277,10 +295,10 @@ export default function PricingPage() {
           <h2 className="mt-3 text-center text-[30px] font-medium text-[#2B2D36] xl:text-[45px]">
             Frequently Asked <span className="text-primary">Questions</span>
           </h2>
-          <Accordion type="single" collapsible defaultValue="faq-0" className="mx-auto mt-10 w-full max-w-[760px] space-y-3 md:mt-12">
-            {PRICING_FAQS.map((faq, i) => (
+          <Accordion {...faqs.mark} type="single" collapsible defaultValue="faq-0" className="mx-auto mt-10 w-full max-w-[760px] space-y-3 md:mt-12">
+            {faqs.items.map((faq, i) => (
               <AccordionItem
-                key={faq.q}
+                key={`${i}-${faq.q}`}
                 value={`faq-${i}`}
                 className="rounded-2xl border border-[#ECECEC] bg-white px-5 transition-colors duration-200 hover:border-[#D5D9E3] data-[state=open]:border-primary md:px-6"
               >

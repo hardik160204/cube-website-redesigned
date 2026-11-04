@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useList } from "../../lib/editable";
 import { Link } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
 import { Check, Mic, Phone, Receipt } from "lucide-react";
@@ -41,6 +42,7 @@ function TypedAudience() {
 }
 
 export default function Hero() {
+  const trust = useList("checklist", TRUST);
   // Hero pieces rise in one after another, 80ms apart
   const delay = (ms) => ({ animationDelay: `${ms}ms` });
   return (
@@ -77,9 +79,9 @@ export default function Hero() {
           One software platform, one provider, and every communication function you need, fully integrated in the cloud.
         </p>
 
-        <ul style={delay(240)} className="cl-fade-up mb-8 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8">
-          {TRUST.map((t) => (
-            <li key={t} className="flex items-center gap-1.5 text-sm font-medium text-[#31343A] md:text-base">
+        <ul {...trust.mark} style={delay(240)} className="cl-fade-up mb-8 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8">
+          {trust.items.map((t, i) => (
+            <li key={`${i}-${t}`} className="flex items-center gap-1.5 text-sm font-medium text-[#31343A] md:text-base">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#D9F3FF] text-[#0047FF]">
                 <Check size={14} strokeWidth={3} />
               </span>

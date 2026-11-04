@@ -3,8 +3,8 @@ import { ArrowDown, ArrowUp, ImagePlus, LayoutGrid, Plus, Sparkles, Trash2 } fro
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import { isVideo, setContent, useContent } from "../lib/content";
-import { EDIT_FLAG, ICONS, mounted, watchMounted } from "../lib/editable";
-import { originals } from "../components/SiteContent";
+import { EDIT_FLAG, ICONS, STARTER_ICONS, mounted, watchMounted } from "../lib/editable";
+import { originals, removalContext, removalOptions } from "../components/SiteContent";
 import { Media } from "../components/MediaSlot";
 import { Button, INPUT, useNatural } from "./ui";
 import { ACCEPT_NOTE, MediaPicker } from "./MediaAdmin";
@@ -73,7 +73,7 @@ function Preview({ src, label }) {
 }
 
 // --- Card lists ----------------------------------------------------------------------------------------
-const KIND_LABEL = { features: "Feature cards", steps: "Steps", checklist: "List items", tiles: "Tiles", faq: "Questions", products: "Product cards" };
+const KIND_LABEL = { features: "Feature cards", steps: "Steps", checklist: "List items", tiles: "Tiles", faq: "Questions", products: "Product cards", card: "Cards" };
 const BLANK = {
   features: { icon: "", title: "", desc: "" },
   steps: { icon: "", title: "", desc: "" },
@@ -82,10 +82,89 @@ const BLANK = {
   faq: { q: "", a: "" },
   products: { title: "", tag: "", tagline: "", img: "", href: "/" },
 };
-const filled = (kind, it) =>
-  typeof it === "string" ? Boolean(it.trim()) : kind === "faq" ? Boolean(it.q.trim() && it.a.trim()) : kind === "products" ? Boolean(it.title.trim() && /^(\/|https:\/\/)/.test(it.href)) : Boolean(it.title.trim());
+const PICTURE_FIELD = /^(img|image|logo|src)$/;
+const LINK_FIELD = /^(path|href|to)$/;
+const GOOD_LINK = /^(\/|https:\/\/|tel:|mailto:)/;
+const LONG_FIELD = /^(desc|text|line|message|description|tagline|quote)$/;
+// A blank custom card takes its shape from the built-in ones: lists stay lists, on/off stays on/off.
+const blankCard = (group) =>
+  Object.fromEntries(Object.keys(group.fields).map((k) => [k, Array.isArray(group.items[0]?.[k]) ? [] : typeof group.items[0]?.[k] === "boolean" ? false : ""]));
+const filled = (group, it) => {
+  const { kind, fields } = group;
+  if (fields) {
+    const first = Object.keys(fields).find((k) => k !== "icon");
+    return Boolean(String(it[first] ?? "").trim()) && Object.keys(fields).every((k) => !LINK_FIELD.test(k) || !it[k] || GOOD_LINK.test(it[k]));
+  }
+  return typeof it === "string" ? Boolean(it.trim()) : kind === "faq" ? Boolean(it.q.trim() && it.a.trim()) : kind === "products" ? Boolean(it.title.trim() && /^(\/|https:\/\/)/.test(it.href)) : Boolean(it.title.trim());
+};
 
-function CardFields({ kind, it, set, pickImage }) {
+function IconField({ value, onChange, own = [] }) {
+  const Icon = ICONS.get(value);
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[12px] font-medium text-[#404348]">Icon</span>
+      <span className="flex items-center gap-2">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">{Icon ? <Icon size={17} /> : null}</span>
+        <select value={value} onChange={(e) => onChange(e.target.value)} className={INPUT}>
+          <option value="">No icon</option>
+          {[...new Set([...own, ...STARTER_ICONS])].map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </span>
+    </label>
+  );
+}
+
+// A custom card's form, from its declared fields.
+function CustomFields({ group, it, set, pickImage }) {
+  const own = group.items.map((x) => x.icon).filter(Boolean);
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {Object.entries(group.fields).map(([k, label]) => {
+        const wide = "sm:col-span-2";
+        if (k === "icon") return <IconField key={k} value={it[k] || ""} own={own} onChange={(v) => set({ ...it, [k]: v })} />;
+        if (PICTURE_FIELD.test(k))
+          return (
+            <div key={k}>
+              <span className="mb-1 block text-[12px] font-medium text-[#404348]">{label}</span>
+              <button type="button" onClick={() => pickImage(k)} className="flex h-20 w-32 items-center justify-center overflow-hidden rounded-lg bg-[#F0F4FB] text-[#6B6E75]" aria-label={`Choose: ${label}`}>
+                {it[k] ? <img src={it[k]} alt="" className="h-full w-full object-contain" /> : <ImagePlus size={20} />}
+              </button>
+            </div>
+          );
+        if (Array.isArray(group.items[0]?.[k]))
+          return (
+            <label key={k} className={`block ${wide}`}>
+              <span className="mb-1 block text-[12px] font-medium text-[#404348]">{label}</span>
+              <textarea rows={5} value={(it[k] || []).join("\n")} onChange={(e) => set({ ...it, [k]: e.target.value.split("\n") })} className={INPUT} />
+            </label>
+          );
+        if (typeof group.items[0]?.[k] === "boolean")
+          return (
+            <label key={k} className={`flex items-center gap-2 text-[13px] text-[#404348] ${wide}`}>
+              <input type="checkbox" checked={Boolean(it[k])} onChange={(e) => set({ ...it, [k]: e.target.checked })} className="h-4 w-4 accent-[#0047FF]" />
+              {label}
+            </label>
+          );
+        const long = LONG_FIELD.test(k) || String(group.items[0]?.[k] ?? "").length > 60;
+        const Box = long ? "textarea" : "input";
+        return (
+          <label key={k} className={`block ${long || LINK_FIELD.test(k) ? wide : ""}`}>
+            <span className="mb-1 block text-[12px] font-medium text-[#404348]">{label}</span>
+            <Box value={it[k] ?? ""} rows={long ? 3 : undefined} onChange={(e) => set({ ...it, [k]: e.target.value })} className={INPUT} />
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function CardFields({ group, it, set, pickImage }) {
+  const { kind } = group;
+  if (group.fields) return <CustomFields group={group} it={it} set={set} pickImage={pickImage} />;
   const field = (k, label, props = {}) => (
     <label className="block">
       <span className="mb-1 block text-[12px] font-medium text-[#404348]">{label}</span>
@@ -108,7 +187,7 @@ function CardFields({ kind, it, set, pickImage }) {
     return (
       <div className="grid gap-3 sm:grid-cols-[132px_1fr]">
         <div>
-          <button type="button" onClick={pickImage} className="relative flex aspect-[9/5] w-full items-center justify-center overflow-hidden rounded-lg bg-[#F0F4FB] text-[#6B6E75]" aria-label="Choose the card's picture">
+          <button type="button" onClick={() => pickImage("img")} className="relative flex aspect-[9/5] w-full items-center justify-center overflow-hidden rounded-lg bg-[#F0F4FB] text-[#6B6E75]" aria-label="Choose the card's picture">
             {it.img ? <img src={it.img} alt="" className="h-full w-full object-contain" /> : <ImagePlus size={20} />}
           </button>
           <p className="mt-1 text-center text-[11px] text-[#6B6E75]">1080 × 600 px, or GIF</p>
@@ -126,23 +205,9 @@ function CardFields({ kind, it, set, pickImage }) {
         </div>
       </div>
     );
-  const Icon = ICONS.get(it.icon);
   return (
     <div className="grid gap-2 sm:grid-cols-[180px_1fr]">
-      <label className="block">
-        <span className="mb-1 block text-[12px] font-medium text-[#404348]">Icon</span>
-        <span className="flex items-center gap-2">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">{Icon ? <Icon size={17} /> : null}</span>
-          <select value={it.icon} onChange={(e) => set({ ...it, icon: e.target.value })} className={INPUT}>
-            <option value="">No icon</option>
-            {[...ICONS.keys()].sort().map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </span>
-      </label>
+      <IconField value={it.icon} own={group.items.map((x) => x.icon).filter(Boolean)} onChange={(v) => set({ ...it, icon: v })} />
       <div className="grid gap-2">
         {field("title", "Title", { maxLength: 160 })}
         {field("desc", "Text", { maxLength: 600, rows: 2 })}
@@ -153,11 +218,18 @@ function CardFields({ kind, it, set, pickImage }) {
 
 function ListEditor({ group, path, onClose }) {
   const { key, kind } = group;
-  const { lists } = useContent();
+  const { lists, overrides } = useContent();
   const saved = lists.find((l) => l.key === key && l.scope === path) || lists.find((l) => l.key === key && l.scope === "*");
-  const [scope, setScope] = useState(saved?.scope || (kind === "products" ? "*" : path));
-  const [items, setItems] = useState(() => (saved ? saved.items : group.items));
-  const [picking, setPicking] = useState(null); // index of the card choosing a picture
+  const [scope, setScope] = useState(saved?.scope || (kind === "products" || kind === "card" ? "*" : path));
+  // Start from what the page shows: text and pictures already changed by clicking them keep those changes here.
+  const shownNow = (v) => {
+    if (Array.isArray(v)) return v.map(shownNow);
+    if (typeof v !== "string" || !v) return v;
+    const edit = (s) => overrides.find((o) => o.scope === s && o.replacement && o.original === norm(v));
+    return (edit(path) || edit("*"))?.replacement ?? v;
+  };
+  const [items, setItems] = useState(() => (saved ? saved.items : group.items).map((it) => (typeof it === "string" ? shownNow(it) : Object.fromEntries(Object.entries(it).map(([k, v]) => [k, k === "icon" ? v : shownNow(v)])))));
+  const [picking, setPicking] = useState(null); // { i, key }: the card and field choosing a picture
   const [busy, setBusy] = useState(false);
 
   const set = (i, v) => setItems((all) => all.map((it, k) => (k === i ? v : it)));
@@ -167,13 +239,15 @@ function ListEditor({ group, path, onClose }) {
       [next[i], next[i + d]] = [next[i + d], next[i]];
       return next;
     });
-  const ready = items.length > 0 && items.every((it) => filled(kind, it));
+  const ready = items.length > 0 && items.every((it) => filled(group, it));
 
   const save = async () => {
     setBusy(true);
     try {
-      await api("/admin/lists", { method: "PUT", body: { scope, key, items } });
-      setContent({ lists: [...lists.filter((l) => !(l.key === key && l.scope === scope)), { scope, key, items }] });
+      // Lines typed in a list box: blank ones are only there while typing.
+      const clean = items.map((it) => (typeof it === "string" ? it : Object.fromEntries(Object.entries(it).map(([k, v]) => [k, Array.isArray(v) ? v.map((x) => x.trim()).filter(Boolean) : v]))));
+      await api("/admin/lists", { method: "PUT", body: { scope, key, items: clean } });
+      setContent({ lists: [...lists.filter((l) => !(l.key === key && l.scope === scope)), { scope, key, items: clean }] });
       toast.success(scope === "*" ? "Cards saved on every page" : "Cards saved on this page");
       onClose();
     } catch (e) {
@@ -208,7 +282,7 @@ function ListEditor({ group, path, onClose }) {
             <li key={i} className="flex gap-3 rounded-xl border border-[#E5EAF4] p-3">
               <span className="mt-1 font-mono text-[12px] text-[#9CA3AF]">{String(i + 1).padStart(2, "0")}</span>
               <div className="min-w-0 flex-1">
-                <CardFields kind={kind} it={it} set={(v) => set(i, v)} pickImage={() => setPicking(i)} />
+                <CardFields group={group} it={it} set={(v) => set(i, v)} pickImage={(field) => setPicking({ i, key: field })} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Button variant="ghost" className="px-2" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move up">
@@ -224,7 +298,7 @@ function ListEditor({ group, path, onClose }) {
             </li>
           ))}
           <li>
-            <Button variant="ghost" className="w-full" onClick={() => setItems((all) => [...all, typeof BLANK[kind] === "string" ? "" : { ...BLANK[kind] }])}>
+            <Button variant="ghost" className="w-full" onClick={() => setItems((all) => [...all, group.fields ? blankCard(group) : typeof BLANK[kind] === "string" ? "" : { ...BLANK[kind] }])}>
               <Plus size={15} /> Add {kind === "faq" ? "a question" : kind === "checklist" || kind === "tiles" ? "an item" : kind === "steps" ? "a step" : "a card"}
             </Button>
           </li>
@@ -266,7 +340,7 @@ function ListEditor({ group, path, onClose }) {
           imagesOnly
           onClose={() => setPicking(null)}
           onPick={(url) => {
-            setItems((all) => all.map((it, k) => (k === picking ? { ...it, img: url } : it)));
+            setItems((all) => all.map((it, k) => (k === picking.i ? { ...it, [picking.key]: url } : it)));
             setPicking(null);
           }}
         />
@@ -312,7 +386,7 @@ export default function EditLayer({ path, overrides, setOverrides }) {
     document.head.appendChild(style);
     document.body.classList.add("cube-editing");
     const onClick = (e) => {
-      if (e.target.closest("[data-cube-ui]")) return;
+      if (e.target.closest("[data-cube-ui], [data-sonner-toaster]")) return;
       e.preventDefault();
       e.stopPropagation();
       const slot = e.target.closest("[data-cube-slot]");
@@ -326,7 +400,7 @@ export default function EditLayer({ path, overrides, setOverrides }) {
       const shown = norm(node.nodeValue);
       const prev = originals.get(node);
       const original = prev && prev.shown === shown ? prev.original : shown;
-      setTarget({ kind: "text", original, value: shown, scope: path });
+      setTarget({ kind: "text", original, value: shown, scope: path, el: node.parentElement });
     };
     const onMove = (e) => {
       if (e.target.closest?.("[data-cube-ui]")) return;
@@ -364,15 +438,15 @@ export default function EditLayer({ path, overrides, setOverrides }) {
     const prev = originals.get(img);
     const src = img.getAttribute("src");
     const original = prev && prev.shown === src ? prev.original : src;
-    openMedia({ what: "image", original, value: src, box: boxOf(img), label: img.alt });
+    openMedia({ what: "image", original, value: src, box: boxOf(img), label: img.alt, el: img });
   }
   function openVideo(v) {
-    openMedia({ what: "video", original: videoOriginal(v), value: videoSrc(v), box: boxOf(v) });
+    openMedia({ what: "video", original: videoOriginal(v), value: videoSrc(v), box: boxOf(v), el: v });
   }
   function openSlot(el) {
     const original = `slot:${el.getAttribute("data-cube-slot")}`;
     const edit = overrides.find((o) => o.kind === "image" && o.original === original && (o.scope === path || o.scope === "*"));
-    openMedia({ what: "slot", original, value: edit?.replacement || original, box: boxOf(el), scope: edit?.scope || path });
+    openMedia({ what: "slot", original, value: edit?.replacement || original, box: boxOf(el), scope: edit?.scope || path, el });
   }
   const openList = (key) => {
     const g = mounted.get(key);
@@ -425,6 +499,35 @@ export default function EditLayer({ path, overrides, setOverrides }) {
       setTimeout(() => window.location.reload(), 600);
     } catch (e) {
       toast.error(e.message);
+      setBusy(false);
+    }
+  };
+
+  // Take something off the site; the layout closes up around it. Saved like any other edit, so it can be undone.
+  const removeIt = async (level) => {
+    const which = isSlot ? `s:${target.original.slice(5)}` : target.kind === "text" ? `t:${target.original}` : `m:${target.original}`;
+    const [type, ...rest] = which.split(":");
+    const body = { kind: "image", scope: target.scope, original: `hide:${level}:${type}:${removalContext(target.el, level)}\n${rest.join(":")}`, replacement: "" };
+    setBusy(true);
+    try {
+      await api("/admin/overrides", { method: "POST", body });
+      setOverrides([...overrides.filter((o) => !(o.kind === body.kind && o.original === body.original && o.scope === body.scope)), body]);
+      setTarget(null);
+      toast.success(target.scope === "*" ? "Removed from every page" : "Removed from this page", {
+        duration: 12000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const { overrides: all } = await api("/admin/overrides");
+            const row = all.find((o) => o.original === body.original && o.scope === body.scope);
+            if (row) await api(`/admin/overrides/${row.id}`, { method: "DELETE" });
+            window.location.reload();
+          },
+        },
+      });
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
       setBusy(false);
     }
   };
@@ -580,6 +683,22 @@ export default function EditLayer({ path, overrides, setOverrides }) {
                 </label>
               ))}
             </fieldset>
+            {target.el && (
+              <div className="mt-5 rounded-xl border border-[#F5C7C7] bg-[#FFF8F8] p-3">
+                <p className="text-[13px] font-medium text-[#C81E1E]">Remove from the website</p>
+                <p className="mt-0.5 text-[12px] leading-5 text-[#6B6E75]">The space closes up by itself, on the page choice above. You can undo it here or in Site content.</p>
+                <ul className="mt-2 space-y-1.5">
+                  {removalOptions(target.el, target.kind === "text" ? "this text" : isSlot ? "this animation" : target.what === "video" ? "this video" : "this picture").map((o) => (
+                    <li key={o.level} className="flex items-center gap-3">
+                      <Button variant="danger" className="shrink-0 px-2.5 py-1 text-[13px]" disabled={busy} onClick={() => removeIt(o.level)}>
+                        Remove {o.label}
+                      </Button>
+                      {o.preview && <span className="min-w-0 truncate text-[12px] text-[#6B6E75]">“{o.preview}”</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="mt-6 flex flex-wrap justify-between gap-2">
               <div>
                 {existing && (

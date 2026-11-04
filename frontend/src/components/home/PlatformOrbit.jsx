@@ -14,8 +14,7 @@ import SectionIntro from "./SectionIntro";
 // scene holds it still; reduced motion shows it at rest. The loops are CSS (site-effects.css).
 const BOX = 600;
 // One ring, so chips keep their spacing and never cross; the inner dashed circle is decoration.
-// The core products only: more than nine chips crowd the ring (the visual-support features have cards below).
-const RINGS = [{ r: 245, items: PRODUCTS.filter((p) => p.tag !== "Visual support"), dur: "90s", reverse: false }];
+const RINGS = [{ r: 245, items: PRODUCTS, dur: "90s", reverse: false }];
 const GUIDES = [150, 245];
 const ease = [0.23, 1, 0.32, 1];
 

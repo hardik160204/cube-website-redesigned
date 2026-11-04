@@ -3,12 +3,14 @@ import { Check } from "lucide-react";
 import { CONTACT, tel } from "./catalog";
 import { DIAMONDS } from "./cube-diamonds";
 import MediaSlot from "../MediaSlot";
+import { useList } from "../../lib/editable";
 import { ENTERPRISE_FEATURES, MODULES_DATA } from "../../pages/CloudContactCenter";
 
 // Cube's dark AI band. Copy is Cube's own: the "AI Call Management" pitch and the contact center's
 // "Artificial Intelligence & Automation" module.
 const AI_PITCH = ENTERPRISE_FEATURES.find((f) => f.title === "AI Call Management");
 const AI_MODULE = MODULES_DATA.find((m) => m.id === "ai");
+const AI_POINTS = AI_MODULE.items.slice(0, 4).map((i) => i.text);
 // Fixed, not random, so the scene renders the same on every load.
 const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
   left: `${(i * 37) % 100}%`,
@@ -63,6 +65,7 @@ function Scene() {
 }
 
 export default function AiSection() {
+  const points = useList("checklist", AI_POINTS);
   const [lead, ...rest] = AI_PITCH.description.split(". ");
   return (
     <section className="relative isolate overflow-hidden bg-[#0A0626] px-4 py-14 md:py-20">
@@ -80,9 +83,9 @@ export default function AiSection() {
             AI that listens, <span className="text-[#00B8FF]">routes, and scores.</span>
           </h2>
           <p className="mt-5 max-w-[600px] text-base leading-[1.6] text-[#B8C4E0] md:text-lg">{rest.join(". ") || lead}</p>
-          <ul className="mt-7 flex max-w-[620px] flex-col gap-3">
-            {AI_MODULE.items.slice(0, 4).map(({ text }) => (
-              <li key={text} className="flex items-start gap-3 text-base leading-6 text-[#D5DEF5]">
+          <ul {...points.mark} className="mt-7 flex max-w-[620px] flex-col gap-3">
+            {points.items.map((text, i) => (
+              <li key={`${i}-${text}`} className="flex items-start gap-3 text-base leading-6 text-[#D5DEF5]">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(0_184_255/0.18)] text-[#00B8FF]">
                   <Check size={12} strokeWidth={3} />
                 </span>

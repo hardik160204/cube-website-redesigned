@@ -75,20 +75,6 @@ export const PRODUCTS = [
     img: "/voice-logger-insync.png",
     href: "/services/voice-logger-insync",
   },
-  {
-    title: "Co-Browsing",
-    tag: "Visual support",
-    tagline: "See the same page together and guide customers step by step — only our website is shared, sensitive fields stay hidden.",
-    img: "/products/co-browsing.svg",
-    href: "/services/co-browsing",
-  },
-  {
-    title: "Screen Sharing",
-    tag: "Visual support",
-    tagline: "Customers show their screen, a window or a tab — they choose what's shared, and can stop at any time.",
-    img: "/products/screen-sharing.svg",
-    href: "/services/screen-sharing",
-  },
 ];
 
 const ease = [0.23, 1, 0.32, 1];

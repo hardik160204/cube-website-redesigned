@@ -3,6 +3,7 @@ import ClosingCta from "../home/ClosingCta";
 import { HeroScene } from "./HeroScenes";
 import Products from "../home/Products";
 import { CheckList, CtaButtons, FeatureCard, FeatureCards, Heading, IconTiles, Label, PageHero, Prose, Reveal, Section, Split, Steps, Title, TrustBand } from "./kit";
+import { useList } from "../../lib/editable";
 
 // Renders a page from its sections' data (see any page that imports it). Each section's copy stays exactly
 // as written; the layout is chosen from what the section holds: steps, cards, a picture, a list or text.
@@ -17,6 +18,18 @@ function Body({ s, dark, align }) {
       {s.body && <Prose paragraphs={s.body} dark={dark} className={`mt-6 ${align === "center" ? "mx-auto max-w-[760px] text-center" : ""}`} />}
       {s.more && s.more.map((m, i) => <Title key={i} dark={dark} className="mt-10">{m}</Title>)}
     </>
+  );
+}
+
+// A couple of highlight cards stacked beside a list.
+function StackedCards({ cards }) {
+  const { items, mark } = useList("features", cards);
+  return (
+    <ul {...mark} className="relative grid gap-4">
+      {items.map((c, i) => (
+        <FeatureCard key={`${i}-${c.title}`} {...c} desc={c.desc ?? c.description} i={i} />
+      ))}
+    </ul>
   );
 }
 
@@ -63,11 +76,7 @@ function Block({ s, tone }) {
             <CheckList items={s.list} dark={dark} className="mt-8" />
           </Reveal>
           <div className="relative rounded-[32px] bg-[linear-gradient(135deg,#E3F6FF,#E6EEFF_55%,#EDE8FF)] p-6 sm:p-10">
-            <ul className="relative grid gap-4">
-              {cards.map((c, i) => (
-                <FeatureCard key={c.title} {...c} i={i} />
-              ))}
-            </ul>
+            <StackedCards cards={cards} />
           </div>
         </div>
       </Section>

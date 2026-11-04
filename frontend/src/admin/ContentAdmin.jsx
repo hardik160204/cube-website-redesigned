@@ -87,8 +87,28 @@ function Row({ o, onChange }) {
   );
 }
 
-const LIST_LABEL = { features: "Feature cards", steps: "Steps", checklist: "List items", tiles: "Tiles", faq: "Questions", products: "Product cards" };
-const firstText = (it) => (typeof it === "string" ? it : it.title || it.q || "");
+// Something taken off the site in the editor. Undoing it brings it back, in its old place.
+const REMOVED = { self: "", block: " and the block around it", card: " and its whole card", section: " and its whole section" };
+function RemovedRow({ o, onChange }) {
+  const [, level, type, , which] = /^hide:(\w+):(\w):([^\n]*)\n([\s\S]*)$/.exec(o.original) || [];
+  const undo = async () => window.confirm("Put this back on the website?") && (await act(() => api(`/admin/overrides/${o.id}`, { method: "DELETE" }), "Put back")) && onChange();
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 py-4">
+      <div className="min-w-0 flex-1">
+        <p className="text-[12px] text-[#6B6E75]">
+          Removed{REMOVED[level] || ""} · {where(o.scope)} · {utcStamp(o.updated_at)}
+        </p>
+        {type === "t" ? <p className="mt-1 line-clamp-2 text-[14px] text-[#6B6E75] line-through decoration-[#C9CED8]">{which}</p> : type === "s" ? <Spot src={`slot:${which}`} label="Animation" /> : <Spot src={which} label="Removed" />}
+      </div>
+      <Button variant="ghost" onClick={undo}>
+        Put back
+      </Button>
+    </li>
+  );
+}
+
+const LIST_LABEL = { features: "Feature cards", steps: "Steps", checklist: "List items", tiles: "Tiles", faq: "Questions", products: "Product cards", card: "Cards" };
+const firstText = (it) => (typeof it === "string" ? it : it.title || it.q || Object.values(it).find((v) => typeof v === "string" && v) || "");
 
 export default function ContentAdmin({ out }) {
   const [data, reload] = useResource("/admin/overrides", out);
@@ -142,9 +162,7 @@ export default function ContentAdmin({ out }) {
           <Empty>No edits yet. Click "Edit the website" to make your first change.</Empty>
         ) : (
           <ul className="-my-4 divide-y divide-[#EEF1F7]">
-            {data.overrides.map((o) => (
-              <Row key={`${o.id}-${o.updated_at}`} o={o} onChange={reload} />
-            ))}
+            {data.overrides.map((o) => (o.original.startsWith("hide:") ? <RemovedRow key={o.id} o={o} onChange={reload} /> : <Row key={`${o.id}-${o.updated_at}`} o={o} onChange={reload} />))}
           </ul>
         )}
       </Card>

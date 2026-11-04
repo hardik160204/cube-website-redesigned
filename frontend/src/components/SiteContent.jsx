@@ -15,7 +15,124 @@ const norm = (s) => s.replace(/\s+/g, " ").trim();
 // What a node showed before we changed it, so the editor can always find the original text or image.
 export const originals = new WeakMap();
 
-const skip = (el) => !el || el.closest("[data-cube-ui], script, style, textarea, input, select, [contenteditable]");
+const skip = (el) => !el || el.closest("[data-cube-ui], script, style, textarea, input, [contenteditable]");
+
+// --- Removing things from the site ------------------------------------------------------------------------
+// A removal is saved as an edit whose "original" says what was clicked and how much goes with it:
+// hide:<self|block|card|section>:<t text | m picture or video | s animation spot>:<surrounding text>\n<which>.
+// The surrounding text tells apart the same words used elsewhere on a page (a card and a menu link, say).
+// Whatever is removed is taken out of the layout (display: none), so grids and rows close up by themselves.
+// shortcut: rewriting other text in that surrounding brings the removed item back, undo and redo it if so.
+const cardOf = (el) => {
+  const item = el.closest("li, article");
+  if (item) return item;
+  let best = null;
+  for (let p = el.parentElement; p && p.tagName !== "SECTION" && p.tagName !== "MAIN"; p = p.parentElement) if (/\brounded-/.test(p.className) && /\b(border|ring-1)\b/.test(p.className)) best = p;
+  return best;
+};
+// The smallest thing around el that holds more than el does (a number together with its label, say).
+const blockOf = (el) => {
+  const own = (el.textContent || "").trim();
+  let p = el.parentElement;
+  while (p && (p.textContent || "").trim() === own && !p.querySelector("img, video")) p = p.parentElement;
+  return p && !p.matches("section, main, body, #root, .App") ? p : null;
+};
+const removalTarget = (el, level) => (level === "section" ? el.closest("section") : level === "card" ? cardOf(el) : level === "block" ? blockOf(el) : el);
+export const removalContext = (el, level) => norm((level === "self" ? blockOf(el) || el : removalTarget(el, level))?.textContent || "").slice(0, 200);
+
+// What can be removed around a clicked element, smallest first, without repeats.
+export function removalOptions(el, selfLabel) {
+  const seen = new Set();
+  return [
+    ["self", selfLabel],
+    ["block", "this whole block"],
+    ["card", "this whole card"],
+    ["section", "this whole section"],
+  ]
+    .map(([level, label]) => ({ level, label, target: removalTarget(el, level) }))
+    .filter((o) => o.target && !seen.has(o.target) && seen.add(o.target))
+    .map(({ level, label, target }) => ({ level, label, preview: norm(target.textContent || "").slice(0, 90) }))
+    .filter((o, i, all) => !o.preview || !all.slice(i + 1).some((x) => x.preview === o.preview)); // same content: offer only the larger one
+}
+
+function hide(el) {
+  el.setAttribute("data-cube-hidden", "");
+  // A wrapper left with nothing visible goes too, so its padding doesn't leave a gap.
+  for (let p = el.parentElement; p && !p.matches("main, body, #root, .App"); p = p.parentElement) {
+    const hasText = [...p.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && norm(n.nodeValue));
+    const visible = [...p.children].some((c) => !c.hasAttribute("data-cube-hidden") && c.getAttribute("aria-hidden") !== "true");
+    if (hasText || visible) break;
+    p.setAttribute("data-cube-hidden", "");
+  }
+}
+
+function applyRemovals(overrides, path) {
+  // Rebuilt on every pass: the header and footer stay on screen between pages with different removals.
+  for (const el of document.querySelectorAll("[data-cube-hidden]")) el.removeAttribute("data-cube-hidden");
+  const rules = { t: new Map(), m: new Map(), s: new Map() };
+  for (const o of overrides) {
+    const m = (o.scope === "*" || o.scope === path) && /^hide:(\w+):([tms]):([^\n]*)\n([\s\S]*)$/.exec(o.original);
+    if (m) rules[m[2]].set(m[4], [...(rules[m[2]].get(m[4]) || []), { level: m[1], context: m[3] }]);
+  }
+  const remove = (el, levels) => levels.forEach(({ level, context }) => {
+    const target = removalTarget(el, level);
+    if (target && removalContext(el, level) === context) hide(target);
+  });
+  if (rules.t.size) {
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      const shown = norm(n.nodeValue);
+      if (!shown || skip(n.parentElement)) continue;
+      const prev = originals.get(n);
+      const levels = rules.t.get(prev && prev.shown === shown ? prev.original : shown);
+      if (levels) remove(n.parentElement, levels);
+    }
+  }
+  if (rules.m.size) {
+    for (const el of document.body.querySelectorAll("img, video")) {
+      if (skip(el)) continue;
+      const src = el.getAttribute("src") || el.querySelector?.("source")?.getAttribute("src");
+      const prev = originals.get(el);
+      const levels = rules.m.get(prev ? prev.original : src);
+      if (levels) remove(el, levels);
+    }
+  }
+  for (const [id, levels] of rules.s) {
+    const el = document.querySelector(`[data-cube-slot="${CSS.escape(id)}"]`);
+    if (el) remove(el, levels);
+  }
+}
+
+// A phone number edited as text also changes its call links and any mention inside a longer sentence, in
+// whichever format it's written there (+91 80 68 69 44 40, +91 806 869 4440, tel:+918068694440).
+const PHONE = /^\+?[\d\s()-]{7,}$/;
+const digitsOf = (s) => s.replace(/\D/g, "");
+
+function applyPhones(texts) {
+  const edits = [...texts].filter(([from, to]) => PHONE.test(from) && PHONE.test(to) && digitsOf(from) !== digitsOf(to));
+  const byDigits = new Map(edits.map(([from, to]) => [digitsOf(from), to]));
+  for (const a of document.querySelectorAll('a[href^="tel:"]')) {
+    const href = a.getAttribute("href");
+    const was = originals.get(a)?.original || href;
+    const to = byDigits.get(digitsOf(was));
+    const want = to ? `tel:${to.replace(/[^\d+]/g, "")}` : was;
+    if (to) originals.set(a, { original: was });
+    if (href !== want) a.setAttribute("href", want);
+  }
+  if (!edits.length) return;
+  const mention = new RegExp(edits.map(([from]) => from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "g");
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    const value = n.nodeValue;
+    if (!/\d/.test(value) || skip(n.parentElement)) continue;
+    const next = value.replace(mention, (from) => texts.get(from));
+    if (next === value) continue;
+    const prev = originals.get(n);
+    const shown = norm(value);
+    originals.set(n, { original: prev && prev.shown === shown ? prev.original : shown, shown: norm(next) });
+    n.nodeValue = next;
+  }
+}
 
 function apply(overrides, path) {
   const texts = new Map();
@@ -39,6 +156,7 @@ function apply(overrides, path) {
       originals.set(n, { original, shown: norm(next) });
     }
   }
+  applyPhones(texts);
   if (images.size) {
     for (const img of document.body.querySelectorAll("img")) {
       if (skip(img)) continue;
@@ -82,6 +200,7 @@ function apply(overrides, path) {
       }
     }
   }
+  applyRemovals(overrides, path);
 }
 
 export default function SiteContent() {

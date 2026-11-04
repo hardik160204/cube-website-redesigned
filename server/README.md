@@ -239,8 +239,12 @@ Open `/admin`. From there you can:
 - **edit anything on the website**: "Edit the website", then click any text, picture or animation and save
   for that page or every page. Hover over any group of cards (products, features, steps, lists, FAQs) and
   click **Edit these cards** to add, remove, reorder or rewrite them. "Pictures & animations" lists every
-  spot on the page, including the animated ones, which can be swapped for a video, GIF or picture. Undo any
-  of it from "Site content"
+  spot on the page, including the animated ones, which can be swapped for a video, GIF or picture. Every edit
+  box also has **Remove from the website** (this text or picture, its block, its card or its whole section):
+  it comes out of the layout and the space closes up. Undo any of it from "Site content"
+- all of these edits live in the database, not the code, so changing or redeploying the code leaves them in
+  place. Each one is matched to the built-in text, picture or card list it replaced: if the code later rewrites
+  that exact original, the edit stops applying (it isn't deleted) until the original is restored or it's redone
 - **build new pages** in "Pages": a top section, any number of sections (text, bullet lists, cards with
   icons, numbered steps, pictures) and a closing call to action, drawn in the same layout as the product
   pages. Save as a draft (only signed-in admins can preview it) or publish; published pages join the sitemap

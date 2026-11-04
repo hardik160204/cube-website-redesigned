@@ -457,6 +457,30 @@ test("image edits remember the size of the spot they fill", async () => {
   assert.deepEqual([c.width, c.height], [0, 0]);
 });
 
+test("a phone number edited for every page is used by the server too, in any format", async () => {
+  const cookie = await signIn();
+  const edit = (scope, original, replacement) => api("/api/admin/overrides", { method: "POST", cookie, body: { kind: "text", scope, original, replacement } });
+  assert.equal(await settings.editedPhone(db, "+91-80-6869-4440"), "+91-80-6869-4440"); // not edited: as written
+  await edit("/about", "+91 80 68 69 44 40", "+91 11 11 11 11 11");
+  assert.equal(await settings.editedPhone(db, "+91-80-6869-4440"), "+91-80-6869-4440"); // one page's edit doesn't count
+  await edit("*", "Sales team", "+91 22 22 22 22 22");
+  assert.equal(await settings.editedPhone(db, "+91-80-6869-4440"), "+91-80-6869-4440"); // only an edit of the number
+  await edit("*", "+91 80 68 69 44 40", "+91 80 68 69 48 48");
+  assert.equal(await settings.editedPhone(db, "+91-80-6869-4440"), "+91 80 68 69 48 48");
+  assert.equal(await settings.editedPhone(db, "+91 806 869 4440"), "+91 80 68 69 48 48");
+  await db.run("DELETE FROM overrides");
+});
+
+test("removing something from the site is saved as an edit that can be undone", async () => {
+  const cookie = await signIn();
+  const original = "hide:card:t:Missed Call Service";
+  assert.equal((await api("/api/admin/overrides", { method: "POST", cookie, body: { kind: "image", scope: "*", original, replacement: "" } })).status, 200);
+  assert.ok((await (await api("/api/content")).json()).overrides.some((o) => o.original === original && o.replacement === ""));
+  const row = (await (await api("/api/admin/overrides", { cookie })).json()).overrides.find((o) => o.original === original);
+  assert.equal((await api(`/api/admin/overrides/${row.id}`, { method: "DELETE", cookie })).status, 200);
+  assert.ok(!(await (await api("/api/content")).json()).overrides.some((o) => o.original === original));
+});
+
 test("access: the owner picks what each admin can open; the activity log is owner-only", async () => {
   const owner = await signIn();
   await api("/api/admin/admins", { method: "POST", cookie: owner, body: { email: "editor@cube-software.com", password: "editor-pass-123", permissions: ["blog"] } });
@@ -496,6 +520,17 @@ test("card lists: validated per kind, stripped to known fields, served with the 
   assert.equal((await put({ scope: "/services/x", key: "features:z9", items: [{ icon: "<img>", title: "One" }] })).status, 400);
   const { lists } = await (await api("/api/content")).json();
   assert.deepEqual(lists.find((l) => l.key === "products:abc123").items, [product]);
+  // Custom cards: any declared fields, with icons, links and pictures checked; nothing but text, on/off and lists.
+  const custom = { icon: "Mic", title: "IVR", desc: "Menus", path: "/services/ivr", bullets: ["One", " ", "Two"], highlight: true };
+  assert.equal((await put({ scope: "*", key: "card:q1", items: [{ ...custom, path: "javascript:alert(1)" }] })).status, 400);
+  assert.equal((await put({ scope: "*", key: "card:q1", items: [{ ...custom, image: "data:text/html,x" }] })).status, 400);
+  assert.equal((await put({ scope: "*", key: "card:q1", items: [{ ...custom, icon: "<img>" }] })).status, 400);
+  assert.equal((await put({ scope: "*", key: "card:q1", items: [{ ...custom, title: { $ne: 1 } }] })).status, 400);
+  assert.equal((await put({ scope: "*", key: "card:q1", items: [{ icon: "Mic" }] })).status, 400); // no content
+  assert.equal((await put({ scope: "*", key: "card:q1", items: [{ ...custom, href: "tel:+91 80 68 69 48 48" }] })).status, 200);
+  const saved = (await (await api("/api/content")).json()).lists.find((l) => l.key === "card:q1").items[0];
+  assert.deepEqual(saved.bullets, ["One", "Two"]);
+  assert.equal(saved.highlight, true);
   const { lists: mine } = await (await api("/api/admin/lists", { cookie })).json();
   for (const l of mine) assert.equal((await api(`/api/admin/lists/${l.id}`, { method: "DELETE", cookie })).status, 200);
 });

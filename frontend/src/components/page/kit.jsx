@@ -8,7 +8,7 @@ import SectionIntro from "../home/SectionIntro";
 import { DIAMONDS } from "../home/cube-diamonds";
 import { CLIENT_LOGOS, PARTNER_LOGOS } from "../clients-and-partners";
 import { openDemo } from "../demo";
-import { useList } from "../../lib/editable";
+import { useCards, useList } from "../../lib/editable";
 import MediaSlot from "../MediaSlot";
 
 // The inner pages' building blocks, in the homepage's language: logo palette, Outfit type, dark ink
@@ -16,6 +16,13 @@ import MediaSlot from "../MediaSlot";
 export const ease = [0.23, 1, 0.32, 1];
 export const ACCENTS = ["#00B8FF", "#0047FF", "#2300DC", "#FF0000"];
 export { SectionIntro };
+
+export const STAT_FIELDS = { value: "Number", label: "Label" };
+// Module cards as the card editor sees them: each module's points as lines of text. A point keeps its own icon
+// while its wording is unchanged; new or reworded points get a tick.
+export const MODULE_FIELDS = { icon: "Icon", title: "Title", lines: "Points (one per line)" };
+export const moduleCards = (modules) => modules.map((m) => ({ ...m, lines: m.items.map((i) => i.text) }));
+export const moduleIcons = (modules) => new Map(modules.flatMap((m) => m.items.map((i) => [i.text, i.icon])));
 
 // --- Motion -----------------------------------------------------------------------------------
 export function Reveal({ as = "div", delay = 0, y = 24, className = "", children, ...rest }) {
@@ -63,8 +70,9 @@ export function CtaButtons({ primary = "Book a demo", secondary = "Talk to an ex
 // --- Page hero ----------------------------------------------------------------------------------
 // Dark ink band with the AI section's drifting light and moving grid. `video` plays full-bleed behind the
 // copy; `image` sits framed on the right. `stats` run along the bottom edge.
-export function PageHero({ crumbs = [], label, title, highlight, body, image, imageAlt = "", media, video, backdrop, stats, actions, children }) {
+export function PageHero({ crumbs = [], label, title, highlight, body, image, imageAlt = "", media, video, backdrop, stats: builtInStats, actions, children }) {
   const reduce = useReducedMotion();
+  const { items: stats, mark: statsMark } = useCards(builtInStats, STAT_FIELDS);
   const item = (i) => ({
     initial: reduce ? false : { opacity: 0, transform: "translateY(18px)" },
     animate: { opacity: 1, transform: "translateY(0px)" },
@@ -150,9 +158,10 @@ export function PageHero({ crumbs = [], label, title, highlight, body, image, im
 
       {stats && (
         <div className="relative border-t border-white/10 bg-white/[0.03] backdrop-blur-sm">
-          <dl className={`mx-auto grid max-w-[1228px] divide-x divide-white/10 px-4 ${stats.length > 3 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3"}`}>
+          <dl {...statsMark} className="mx-auto flex max-w-[1228px] flex-wrap divide-x divide-white/10 px-4">
             {stats.map((s, i) => (
-              <motion.div {...item(5 + i)} key={s.label} className="px-3 py-6 text-center">
+              // Flex, not a fixed grid: when a stat is removed or added the others share the row evenly.
+              <motion.div {...item(5 + i)} key={`${i}-${s.label}`} className={`min-w-0 flex-1 px-3 py-6 text-center ${stats.length > 3 ? "max-md:basis-[50%]" : ""}`}>
                 <dt className="sr-only">{s.label}</dt>
                 <dd className="text-xl font-medium leading-tight text-white [overflow-wrap:anywhere] sm:text-3xl lg:text-4xl">{s.value}</dd>
                 <dd className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8FA0C8] sm:text-xs">{s.label}</dd>
@@ -353,14 +362,16 @@ export function Title({ children, highlight, dark = false, className = "" }) {
 }
 
 // Module cards: a product's modules side by side, each with its list of capabilities.
-export function ModuleCards({ modules, className = "" }) {
+export function ModuleCards({ modules: builtIn, className = "" }) {
+  const { items: modules, mark } = useCards(moduleCards(builtIn), MODULE_FIELDS);
+  const icons = moduleIcons(builtIn);
   const cols = modules.length >= 4 ? "lg:grid-cols-4" : modules.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2";
   return (
-    <ul className={`grid gap-5 sm:grid-cols-2 ${cols} ${className}`}>
+    <ul {...mark} className={`grid gap-5 sm:grid-cols-2 ${cols} ${className}`}>
       {modules.map((m, i) => {
         const accent = ACCENTS[i % ACCENTS.length];
         return (
-          <Reveal as="li" key={m.id || m.title} delay={Math.min(i, 5) * 0.08}>
+          <Reveal as="li" key={`${i}-${m.title}`} delay={Math.min(i, 5) * 0.08}>
             <div className="relative flex h-full flex-col overflow-hidden rounded-[24px] border border-[#E5EAF4] bg-white p-7 transition-[translate,box-shadow,border-color] duration-300 ease-out-expo hover:border-[#99B5FF] hover:shadow-[0_30px_60px_-30px_rgb(0_71_255/0.45)] hover:[translate:0_-4px]">
               <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
               <div className="flex items-center justify-between">
@@ -371,12 +382,15 @@ export function ModuleCards({ modules, className = "" }) {
               </div>
               <h3 className="mt-5 text-xl font-medium leading-snug text-[#0A0626]">{m.title}</h3>
               <ul className="mt-4 flex flex-1 flex-col gap-3 border-t border-[#EDEEEF] pt-4">
-                {m.items.map(({ text, icon: Icon }) => (
-                  <li key={text} className="flex items-start gap-2.5 text-[14px] leading-[20px] text-[#4A4D53]">
-                    {Icon && <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />}
-                    {text}
-                  </li>
-                ))}
+                {m.lines.map((text, k) => {
+                  const Icon = icons.get(text) || Check;
+                  return (
+                    <li key={`${k}-${text}`} className="flex items-start gap-2.5 text-[14px] leading-[20px] text-[#4A4D53]">
+                      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      {text}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </Reveal>
@@ -388,18 +402,19 @@ export function ModuleCards({ modules, className = "" }) {
 
 // Icon diagram: the small labelled icons some pages drew instead of a picture, as a lit panel of tiles
 // that pop in one by one inside a slowly turning ring.
-export function IconTiles({ tiles, dark = false }) {
+export function IconTiles({ tiles: builtIn, dark = false }) {
   const reduce = useReducedMotion();
+  const { items: tiles, mark } = useCards(builtIn, { icon: "Icon", label: "Text" });
   const cols = tiles.length > 4 ? "grid-cols-3" : "grid-cols-2";
   return (
     <div className={`relative isolate mx-auto aspect-square w-full max-w-[440px] overflow-hidden rounded-full ${dark ? "bg-white/[0.04] ring-1 ring-white/10" : "bg-[radial-gradient(circle_at_50%_40%,#FFFFFF,#E3F6FF_60%,#E6EEFF)]"}`}>
       <div aria-hidden="true" className="cl-ai-orbit !inset-[6%] [&::before]:!inset-0" />
-      <ul className={`absolute inset-[16%] grid ${cols} content-center gap-3`}>
+      <ul {...mark} className={`absolute inset-[16%] grid ${cols} content-center gap-3`}>
         {tiles.map((t, i) => {
           const accent = ACCENTS[i % ACCENTS.length];
           return (
             <motion.li
-              key={t.label}
+              key={`${i}-${t.label}`}
               initial={reduce ? false : { opacity: 0, transform: "scale(0.85)" }}
               whileInView={{ opacity: 1, transform: "scale(1)" }}
               viewport={{ once: true }}
@@ -409,7 +424,7 @@ export function IconTiles({ tiles, dark = false }) {
               }`}
             >
               <span className="flex h-11 w-11 items-center justify-center rounded-xl text-white transition-transform duration-300 ease-out-expo group-hover:[transform:scale(1.1)]" style={{ background: accent, boxShadow: `0 10px 20px -8px ${accent}` }}>
-                <t.icon size={20} />
+                {t.icon && <t.icon size={20} />}
               </span>
               <span className="px-1 text-[13px] font-medium leading-tight">{t.label}</span>
             </motion.li>
@@ -499,8 +514,9 @@ export function LinkPair({ primary, secondary, dark = true, className = "" }) {
 }
 
 // Vertical timeline whose spine draws itself as it scrolls into view.
-export function Timeline({ items }) {
+export function Timeline({ items: builtIn }) {
   const reduce = useReducedMotion();
+  const { items, mark } = useCards(builtIn, { year: "Year", text: "Text" });
   return (
     <motion.div className="relative" initial={reduce ? false : "hidden"} whileInView="show" viewport={{ once: true, margin: "-80px" }}>
       <motion.span
@@ -508,9 +524,9 @@ export function Timeline({ items }) {
         variants={{ hidden: { transform: "scaleY(0)" }, show: { transform: "scaleY(1)", transition: { duration: 1.4, ease } } }}
         className="absolute bottom-2 left-[27px] top-2 w-[2px] origin-top bg-[linear-gradient(180deg,#00B8FF,#0047FF,#2300DC,#FF0000)]"
       />
-      <ol className="space-y-6">
+      <ol {...mark} className="space-y-6">
         {items.map((m, i) => (
-          <Reveal as="li" key={m.year} delay={0.1 + i * 0.08} className="relative flex items-start gap-6">
+          <Reveal as="li" key={`${i}-${m.year}`} delay={0.1 + Math.min(i, 8) * 0.08} className="relative flex items-start gap-6">
             <span className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white font-mono text-[13px] font-semibold text-primary shadow-[0_0_0_4px_#F0F4FB,0_10px_24px_-10px_rgb(0_71_255/0.6)] ring-2 ring-primary">
               {m.year}
             </span>

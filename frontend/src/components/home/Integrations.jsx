@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Code2, Database, Layers, Plug } from "lucide-react";
+import { useCards } from "../../lib/editable";
 import SectionIntro from "./SectionIntro";
 
 // The four integrations Cube leads with. Each line comes from the site's own copy.
@@ -12,6 +13,7 @@ const INTEGRATIONS = [
 ];
 
 export default function Integrations() {
+  const { items, mark } = useCards(INTEGRATIONS, { icon: "Icon", name: "Title", kind: "Small label", line: "Text" });
   return (
     <section id="integrations" className="bg-[#F0F3FA] px-4 py-[60px] md:py-24">
       <div className="mx-auto w-full max-w-[1228px]">
@@ -30,16 +32,16 @@ export default function Integrations() {
           </Link>
         </div>
 
-        <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {INTEGRATIONS.map(({ name, kind, icon: Icon, line }) => (
-            <li key={name}>
+        <ul {...mark} className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {items.map(({ name, kind, icon: Icon, line }, i) => (
+            <li key={`${i}-${name}`}>
               <Link
                 to="/services/crm-integration"
                 className="group flex h-full flex-col rounded-[24px] border border-[#E5EAF4] bg-white p-6 transition-[translate,box-shadow,border-color] duration-300 ease-out-expo hover:border-[#99B5FF] hover:shadow-[0_24px_50px_-28px_rgb(0_71_255/0.45)] hover:[translate:0_-4px]"
               >
                 <div className="flex items-center justify-between">
                   <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#00B8FF,#0047FF)] text-white shadow-[0_12px_24px_-12px_rgb(0_71_255/0.8)]">
-                    <Icon size={22} />
+                    {Icon && <Icon size={22} />}
                   </span>
                   <span className="rounded-full bg-[#F0F3F9] px-2.5 py-0.5 text-xs font-medium text-[#4A4D53]">{kind}</span>
                 </div>

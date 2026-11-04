@@ -4,6 +4,7 @@ import { ArrowRight, Camera, Briefcase, Award, Zap, MessageSquare, Globe, Coffee
 import { DIAMONDS } from "../components/home/cube-diamonds";
 import { ACCENTS, FeatureCards, Heading, LinkPair, PageHero, Reveal, Section } from "../components/page/kit";
 import { useSiteData } from "../lib/site";
+import { useCards } from "../lib/editable";
 
 // Placeholder for the office team hero background
 const TEAM_HERO_IMAGE = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1920&q=80";
@@ -89,6 +90,8 @@ function LeaderCard({ m, i }) {
 }
 
 export default function MeetOurTeamPage() {
+  const gallery = useCards(GALLERY, { src: "Picture", caption: "Caption" });
+  const departments = useCards(DEPARTMENTS, { icon: "Icon", title: "Title", desc: "Text" });
   const { team } = useSiteData();
   return (
     <>
@@ -127,10 +130,10 @@ export default function MeetOurTeamPage() {
             <Camera size={18} /> Inside Our World
           </span>
         </div>
-        <ul className="mt-12 grid auto-rows-[250px] grid-cols-1 gap-4 md:grid-cols-3">
-          {GALLERY.map((g, i) => (
-            <Reveal as="li" key={g.caption} delay={i * 0.06} className={`group relative overflow-hidden rounded-[24px] ${g.span || ""}`}>
-              <img src={g.src} alt={g.alt} loading="lazy" className="h-full w-full object-cover transition-[scale] duration-700 ease-out-expo group-hover:[scale:1.05]" />
+        <ul {...gallery.mark} className="mt-12 grid auto-rows-[250px] grid-cols-1 gap-4 md:grid-cols-3">
+          {gallery.items.map((g, i) => (
+            <Reveal as="li" key={`${i}-${g.caption}`} delay={Math.min(i, 6) * 0.06} className={`group relative overflow-hidden rounded-[24px] ${GALLERY[i]?.span || ""}`}>
+              <img src={g.src} alt={g.caption} loading="lazy" className="h-full w-full object-cover transition-[scale] duration-700 ease-out-expo group-hover:[scale:1.05]" />
               <div className="absolute inset-0 flex items-end bg-gradient-to-t from-[#0A0626]/80 via-transparent to-transparent p-6">
                 <p className="text-lg font-medium text-white">{g.caption}</p>
               </div>
@@ -142,16 +145,16 @@ export default function MeetOurTeamPage() {
       {/* The departments: four lit panels on the dark ink, each with its number, a glowing icon and a bar that fills on hover */}
       <Section tone="dark">
         <Heading label="How we work" title="The Engines of" highlight="Our Growth" align="center" dark />
-        <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {DEPARTMENTS.map((d, i) => {
+        <ul {...departments.mark} className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {departments.items.map((d, i) => {
             const accent = ACCENTS[i % ACCENTS.length];
             return (
-              <Reveal as="li" key={d.title} delay={i * 0.08} className="h-full">
+              <Reveal as="li" key={`${i}-${d.title}`} delay={Math.min(i, 5) * 0.08} className="h-full">
                 <div className="group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] p-7 transition-[translate,border-color,background-color] duration-300 ease-out-expo hover:border-white/25 hover:bg-white/[0.07] hover:[translate:0_-6px]">
                   <span aria-hidden="true" className="absolute -right-10 -top-10 h-36 w-36 rounded-full opacity-30 blur-3xl transition-opacity duration-500 group-hover:opacity-60" style={{ background: accent }} />
                   <div className="relative flex items-start justify-between">
                     <span className="flex h-14 w-14 items-center justify-center rounded-2xl text-white transition-transform duration-300 ease-out-expo group-hover:[transform:rotate(-8deg)_scale(1.08)]" style={{ background: accent, boxShadow: `0 0 0 6px rgb(255 255 255 / 0.04), 0 16px 30px -10px ${accent}` }}>
-                      <d.icon size={24} />
+                      {d.icon && <d.icon size={24} />}
                     </span>
                     <span className="font-mono text-[40px] font-semibold leading-none text-white/10 transition-colors duration-300 group-hover:text-white/25">{String(i + 1).padStart(2, "0")}</span>
                   </div>

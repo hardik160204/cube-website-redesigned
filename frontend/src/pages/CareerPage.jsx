@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, CheckCircle2, Quote } from "lucide-react";
 import ClosingCta from "../components/home/ClosingCta";
 import { Label, PageHero, Reveal, Section, Split, Title } from "../components/page/kit";
+import { useCards, useList } from "../lib/editable";
 
 const ROLES = [
   "Product Manager, AI",
@@ -53,7 +54,13 @@ const STORIES = [
   },
 ];
 
+// As the card editor sees them: each point is one line, "Heading – detail".
+const STORY_CARDS = STORIES.map((s) => ({ ...s, points: s.points.map(([head, line]) => `${head} – ${line}`) }));
+const STORY_FIELDS = { label: "Small label", title: "Title", image: "Picture", points: "Points, one per line (Heading – detail)" };
+
 export default function CareerPage() {
+  const roles = useList("checklist", ROLES);
+  const stories = useCards(STORY_CARDS, STORY_FIELDS);
   return (
     <>
       <PageHero
@@ -79,9 +86,9 @@ export default function CareerPage() {
       <Section id="roles" tone="tint">
         <Reveal className="rounded-[28px] border border-[#E5EAF4] bg-white p-7 shadow-[0_40px_80px_-50px_rgb(0_71_255/0.5)] md:p-10">
           <h3 className="text-2xl font-medium text-[#0A0626]">Top Open Roles</h3>
-          <ul className="mt-7 flex flex-wrap gap-3">
-            {ROLES.map((role, i) => (
-              <Reveal as="li" key={role} delay={i * 0.05}>
+          <ul {...roles.mark} className="mt-7 flex flex-wrap gap-3">
+            {roles.items.map((role, i) => (
+              <Reveal as="li" key={`${i}-${role}`} delay={Math.min(i, 8) * 0.05}>
                 <Link
                   to="/contact"
                   className="group inline-flex items-center gap-2 rounded-xl border border-[#E5EAF4] bg-white px-5 py-2.5 text-[15px] font-medium text-[#31343A] transition-[border-color,color,translate] duration-200 hover:border-primary hover:text-primary hover:[translate:0_-2px]"
@@ -99,20 +106,25 @@ export default function CareerPage() {
         </Reveal>
       </Section>
 
-      {STORIES.map((s, i) => (
-        <Section key={s.label} tone={i % 2 ? "tint" : "white"}>
-          <Split image={s.image} imageAlt={s.alt} reverse={i % 2 === 0}>
+      <div {...stories.mark}>
+      {stories.items.map((s, i) => (
+        <Section key={`${i}-${s.label}`} tone={i % 2 ? "tint" : "white"}>
+          <Split image={s.image} imageAlt={s.title} reverse={i % 2 === 0}>
             <Label>{s.label}</Label>
             <Title>{s.title}</Title>
             <ul className="mt-7 space-y-4">
-              {s.points.map(([head, line]) => (
-                <li key={head} className="flex items-start gap-3 text-[16px] leading-7 text-[#404348]">
-                  <CheckCircle2 size={20} className="mt-1 shrink-0 text-primary" />
-                  <p>
-                    <strong className="font-medium text-[#0A0626]">{head}</strong> – {line}
-                  </p>
-                </li>
-              ))}
+              {s.points.map((point, k) => {
+                const [head, ...rest] = point.split(" – ");
+                return (
+                  <li key={`${k}-${point}`} className="flex items-start gap-3 text-[16px] leading-7 text-[#404348]">
+                    <CheckCircle2 size={20} className="mt-1 shrink-0 text-primary" />
+                    <p>
+                      <strong className="font-medium text-[#0A0626]">{head}</strong>
+                      {rest.length > 0 && <> – {rest.join(" – ")}</>}
+                    </p>
+                  </li>
+                );
+              })}
             </ul>
             <Link to="/meet-our-team" className="mt-8 inline-flex h-12 items-center gap-2 rounded-full border border-[#D5DBE8] px-7 font-medium text-[#31343A] transition-colors hover:border-primary hover:text-primary">
               Explore Gallery <ArrowRight size={16} />
@@ -120,6 +132,7 @@ export default function CareerPage() {
           </Split>
         </Section>
       ))}
+      </div>
 
       <Section tone="dark">
         <Reveal>

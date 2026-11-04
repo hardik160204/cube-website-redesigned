@@ -204,3 +204,8 @@
   .cl-float, .cl-ai-blob, .cl-ai-grid { animation: none; }
   .cm-float, .cm-shadow, .cm-pulse, .cm-wave { animation: none; }
 }
+
+/* Things removed in the admin's visual editor: out of the layout, so the space closes up. */
+[data-cube-hidden] {
+  display: none !important;
+}

@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, RefreshCw, Server, ShieldCheck } from "lucide-react";
-import { PRICING_TIERS } from "../../pages/PricingPage";
+import { PRICING_FIELDS, PRICING_TIERS, priceOf } from "../../pages/PricingPage";
+import { useCards } from "../../lib/editable";
 
 // Cube plan strip, filled from the pricing page: annual seat prices, then the page's three guarantees.
 const GUARANTEES = [
@@ -12,6 +13,8 @@ const GUARANTEES = [
 const rupees = (n) => `Rs. ${n.toLocaleString("en-IN")}`;
 
 export default function PricingStrip() {
+  const tiers = useCards(PRICING_TIERS, PRICING_FIELDS);
+  const guarantees = useCards(GUARANTEES, { icon: "Icon", label: "Text" });
   return (
     <section id="pricing" className="scroll-mt-32 bg-white px-4 py-[60px] md:pb-24 lg:pl-[150px] lg:pr-[108px]">
       <div className="mx-auto w-full max-w-[1228px]">
@@ -27,12 +30,13 @@ export default function PricingStrip() {
           </Link>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {PRICING_TIERS.map((tier) => {
-            const priced = typeof tier.yearlyPrice === "number";
+        <div {...tiers.mark} className="mt-10 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {tiers.items.map((tier, i) => {
+            const yearly = priceOf(tier.yearlyPrice);
+            const priced = yearly !== null;
             return (
               <Link
-                key={tier.name}
+                key={`${i}-${tier.name}`}
                 to="/pricing"
                 className="flex flex-col gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-7 pb-[26px] pt-7 transition hover:border-primary/40 hover:shadow-[0_8px_24px_rgb(0_71_255/0.08)]"
               >
@@ -41,7 +45,7 @@ export default function PricingStrip() {
                   {tier.badge && <span className="rounded-full bg-[#E6EEFF] px-2.5 py-0.5 text-xs font-semibold uppercase text-primary">{tier.badge}</span>}
                 </span>
                 <div className="flex flex-wrap items-baseline gap-x-2">
-                  <span className="text-[40px] font-medium leading-[48px] text-[#31343A]">{priced ? rupees(tier.yearlyPrice) : "Custom Quote"}</span>
+                  <span className="text-[40px] font-medium leading-[48px] text-[#31343A]">{priced ? rupees(yearly) : "Custom Quote"}</span>
                   {priced && <span className="text-base leading-6 text-[#5F6062]">/ seat / month, annual billing</span>}
                 </div>
                 <p className="mt-1 text-base leading-6 text-[#404348]">{tier.description}</p>
@@ -56,10 +60,10 @@ export default function PricingStrip() {
             <span className="whitespace-nowrap text-lg font-medium leading-[26px] text-[#31343A]">with annual billing</span>
           </div>
           <span className="hidden h-8 w-px shrink-0 bg-[#C9D6F2] lg:block" />
-          <div className="flex flex-wrap items-center gap-2.5">
-            {GUARANTEES.map(({ icon: Icon, label }) => (
-              <span key={label} className="inline-flex h-10 items-center gap-2 rounded-full border border-[#D9DEEA] bg-white px-4 text-[15px] leading-[22px] text-[#31343A]">
-                <Icon size={16} className="text-primary" /> {label}
+          <div {...guarantees.mark} className="flex flex-wrap items-center gap-2.5">
+            {guarantees.items.map(({ icon: Icon, label }, i) => (
+              <span key={`${i}-${label}`} className="inline-flex h-10 items-center gap-2 rounded-full border border-[#D9DEEA] bg-white px-4 text-[15px] leading-[22px] text-[#31343A]">
+                {Icon && <Icon size={16} className="text-primary" />} {label}
               </span>
             ))}
           </div>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import FlowChart from "./FlowChart";
 import { FEATURE_FLOWS } from "./feature-flows";
+import { useCards } from "../../lib/editable";
 import SectionIntro from "./SectionIntro";
 
 // Cube telephony-features block: category pills, then an accordion whose open row fills a 6s progress bar
@@ -57,9 +58,13 @@ const TABS = [
 
 export default function FeatureTabs() {
   const [tab, setTab] = useState(0);
-  const [open, setOpen] = useState(0);
+  const [openRow, setOpen] = useState(0);
   const tabRefs = useRef([]);
-  const features = TABS[tab].features;
+  const builtIn = TABS[tab].features;
+  const { items: features, mark } = useCards(builtIn, { title: "Title", desc: "Text", href: "Link" });
+  const open = Math.min(openRow, features.length - 1);
+  // A feature added or renamed in the admin keeps the flowchart of the built-in row in its place.
+  const flowOf = (i) => FEATURE_FLOWS[features[i].title] || FEATURE_FLOWS[builtIn[i]?.title] || FEATURE_FLOWS[builtIn[0].title];
 
   const selectTab = (i) => {
     setTab(i);
@@ -118,7 +123,7 @@ export default function FeatureTabs() {
         </div>
 
         <div id="feature-panel" role="tabpanel" aria-labelledby={`feature-tab-${tab}`} className="cl-features mt-8 grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:min-h-[480px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.45fr)] lg:gap-10">
-          <div className="flex flex-col gap-2.5">
+          <div {...mark} className="flex flex-col gap-2.5">
             {features.map((f, i) => {
               const isOpen = i === open;
               return (
@@ -146,10 +151,10 @@ export default function FeatureTabs() {
                       </div>
                       <div className="cl-describe px-[22px] pb-5 pt-4">
                         <p className="text-base leading-[140%] text-[#4A4D53]">{f.desc}</p>
-                        <Link to={f.href} className="group mt-4 inline-flex items-center gap-2 text-base font-medium text-primary">
+                        <Link to={f.href || "/"} className="group mt-4 inline-flex items-center gap-2 text-base font-medium text-primary">
                           Learn more <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
                         </Link>
-                        <FlowChart key={f.title} stages={FEATURE_FLOWS[f.title]} title={f.title} className="mt-5 lg:hidden" />
+                        <FlowChart key={f.title} stages={flowOf(i)} title={f.title} className="mt-5 lg:hidden" />
                       </div>
                     </>
                   )}
@@ -157,7 +162,7 @@ export default function FeatureTabs() {
               );
             })}
           </div>
-          <FlowChart key={features[open].title} stages={FEATURE_FLOWS[features[open].title]} title={features[open].title} className="hidden lg:sticky lg:top-36 lg:flex lg:min-h-[480px]" />
+          <FlowChart key={features[open].title} stages={flowOf(open)} title={features[open].title} className="hidden lg:sticky lg:top-36 lg:flex lg:min-h-[480px]" />
         </div>
       </div>
     </section>

@@ -1,6 +1,7 @@
 import React from "react";
 import { CalendarClock, Globe2, Layers, Server } from "lucide-react";
-import { LogoRows } from "../page/kit";
+import { LogoRows, STAT_FIELDS } from "../page/kit";
+import { useCards } from "../../lib/editable";
 import { STATS } from "../../pages/AboutPage";
 import SectionIntro from "./SectionIntro";
 
@@ -9,6 +10,7 @@ import SectionIntro from "./SectionIntro";
 const STAT_ICONS = [CalendarClock, Server, Globe2, Layers];
 
 export default function LogosAndStats() {
+  const stats = useCards(STATS, STAT_FIELDS);
   return (
     <section className="w-full bg-white py-12 md:py-16 lg:py-20">
       <div className="mx-auto max-w-[1240px] px-4 md:px-6">
@@ -16,11 +18,11 @@ export default function LogosAndStats() {
 
         <LogoRows className="mt-14" />
 
-        <div className="mt-14 grid grid-cols-2 gap-10 lg:flex lg:flex-wrap lg:justify-center lg:gap-16">
-          {STATS.map(({ value, label }, i) => {
+        <div {...stats.mark} className="mt-14 grid grid-cols-2 gap-10 lg:flex lg:flex-wrap lg:justify-center lg:gap-16">
+          {stats.items.map(({ value, label }, i) => {
             const Icon = STAT_ICONS[i % STAT_ICONS.length];
             return (
-              <div key={label} className="flex flex-col gap-3 text-xs font-semibold uppercase leading-none tracking-[0.72px] md:flex-row md:items-center md:gap-6">
+              <div key={`${i}-${label}`} className="flex flex-col gap-3 text-xs font-semibold uppercase leading-none tracking-[0.72px] md:flex-row md:items-center md:gap-6">
                 <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E6EEFF] text-primary">
                   <Icon size={24} />
                 </span>

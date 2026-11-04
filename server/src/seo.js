@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const config = require("./config");
+const settings = require("./settings");
 const { esc } = require("./mail");
 
 const ORG = {
@@ -79,7 +80,7 @@ async function render(db, pathname) {
     `<meta property="og:url" content="${esc(url)}" />`,
     `<meta property="og:image" content="${esc(image)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
-    clean === "/" ? jsonLd(ORG) : "",
+    clean === "/" ? jsonLd({ ...ORG, contactPoint: [{ ...ORG.contactPoint[0], telephone: await settings.editedPhone(db, ORG.contactPoint[0].telephone) }] }) : "",
     extra,
   ].join("\n    ");
   const html = indexHtml()

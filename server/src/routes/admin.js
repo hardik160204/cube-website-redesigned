@@ -139,6 +139,23 @@ const ICON_NAME = /^[A-Za-z0-9]{1,40}$/;
 const LINK = /^(\/[A-Za-z0-9._\-/#]{0,200}|https:\/\/[^\s<>"']{5,300})$/;
 const card = (c) => c && isStr(c.title, 160, 1) && isStr(c.desc ?? "", 600) && (!c.icon || ICON_NAME.test(c.icon));
 const keep = (o, keys) => Object.fromEntries(keys.map((k) => [k, typeof o[k] === "string" ? o[k].trim() : ""]));
+const CARD_LINK = /^(\/[A-Za-z0-9._\-/#]{0,200}|https:\/\/[^\s<>"']{5,300}|tel:\+?[\d\s-]{3,24}|mailto:[^\s<>"']{3,254})$/;
+// Plain text, on/off values and lists of text only; icons by name; links and pictures checked. Needs some content.
+function anyCard(c) {
+  if (!c || typeof c !== "object" || Array.isArray(c)) return false;
+  const entries = Object.entries(c);
+  if (entries.length > 20 || !entries.some(([k, v]) => k !== "icon" && ((typeof v === "string" && v.trim()) || (Array.isArray(v) && v.length)))) return false;
+  return entries.every(([k, v]) => {
+    if (!/^[a-zA-Z]{1,30}$/.test(k)) return false;
+    if (typeof v === "boolean") return true;
+    if (Array.isArray(v)) return v.length <= 40 && v.every((x) => isStr(x, 500));
+    if (typeof v !== "string" || v.length > 5000) return false;
+    if (k === "icon") return !v || ICON_NAME.test(v);
+    if (/^(path|href|to)$/.test(k)) return !v || CARD_LINK.test(v);
+    if (/^(img|image|logo|src)$/.test(k)) return !v || (v.length <= 500 && SAFE_URL.test(v));
+    return true;
+  });
+}
 const LIST_KINDS = {
   features: { max: 24, ok: card, clean: (c) => keep(c, ["icon", "title", "desc"]) },
   steps: { max: 12, ok: card, clean: (c) => keep(c, ["icon", "title", "desc"]) },
@@ -150,8 +167,10 @@ const LIST_KINDS = {
     ok: (p) => p && isStr(p.title, 120, 1) && isStr(p.tag ?? "", 40) && isStr(p.tagline ?? "", 300) && (!p.img || (isStr(p.img, 500) && SAFE_URL.test(p.img))) && isStr(p.href, 300) && LINK.test(p.href),
     clean: (p) => keep(p, ["title", "tag", "tagline", "img", "href"]),
   },
+  // Any other group of cards: its fields are declared where it is drawn, so each is checked by what it is.
+  card: { max: 60, ok: anyCard, clean: (c) => Object.fromEntries(Object.entries(c).map(([k, v]) => [k, typeof v === "string" ? v.trim() : Array.isArray(v) ? v.map((x) => x.trim()).filter(Boolean) : v])) },
 };
-const LIST_KEY = /^(features|steps|checklist|tiles|faq|products):[a-z0-9]{1,16}$/;
+const LIST_KEY = /^(features|steps|checklist|tiles|faq|products|card):[a-z0-9]{1,16}$/;
 const SCOPE = /^\/[A-Za-z0-9/_\-]*$/;
 
 // Pages built in the dashboard. Addresses are lowercase words and hyphens, up to three levels deep, and
@@ -392,7 +411,7 @@ module.exports = function adminRoutes(db) {
     const [width, height] = kind === "image" ? [size(req.body.width), size(req.body.height)] : [0, 0];
     if (!["text", "image"].includes(kind)) return res.status(400).json({ error: "Invalid kind." });
     if (!(scope === "*" || (isStr(scope, 100) && /^\/[A-Za-z0-9/_\-]*$/.test(scope)))) return res.status(400).json({ error: "Invalid page." });
-    if (!isStr(original, 2000, 1)) return res.status(400).json({ error: "Original is required." });
+    if (!isStr(original, 2300, 1)) return res.status(400).json({ error: "Original is required." });
     if (kind === "text" && !isStr(replacement, 5000)) return res.status(400).json({ error: "Text is too long." });
     if (kind === "image" && !(replacement === "" || (isStr(replacement, 500) && SAFE_URL.test(replacement)))) return res.status(400).json({ error: "Image URL is not valid." });
     await db.run(

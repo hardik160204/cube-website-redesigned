@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Headset, Mail, Phone } from "lucide-react";
+import { useCards } from "../../lib/editable";
 import { CONTACT, tel } from "./catalog";
 
 // Cube  dark "available on every platform" band. Cube has no apps to download, so its store-style
@@ -14,6 +15,7 @@ const STORE_BUTTON =
   "inline-flex h-[50px] items-center gap-3.5 rounded-xl border border-[#33268F] bg-[#1A1052] px-5 text-white transition-colors hover:border-[#4A3BB5] hover:bg-[#22156B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B8FF]";
 
 export default function DirectLines() {
+  const { items, mark } = useCards(LINES, { icon: "Icon", caption: "Small label", value: "Number or address", href: "Link (tel:, mailto:, /page or https://)" });
   return (
     <section className="relative overflow-hidden bg-[#0A0626] px-4 py-[60px] md:py-20 lg:pl-[150px] lg:pr-[108px]">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_80%_at_85%_0%,rgb(35_0_220/0.55),transparent),radial-gradient(40%_60%_at_0%_100%,rgb(0_71_255/0.25),transparent)]" />
@@ -24,10 +26,10 @@ export default function DirectLines() {
             <h2 className="text-[32px] font-medium leading-[1.15] text-white md:leading-[52px]">Talk to sales or support</h2>
             <p className="text-lg leading-7 text-[#A9B3CC]">Tell us about your call volumes and our experts will help you choose the right setup.</p>
           </div>
-          <div className="flex flex-wrap gap-3 lg:shrink-0 lg:flex-nowrap">
-            {LINES.map(({ icon: Icon, caption, value, href }) => (
-              <a key={caption} href={href} className={STORE_BUTTON}>
-                <Icon size={26} className="shrink-0 text-[#C9D2EC]" />
+          <div {...mark} className="flex flex-wrap gap-3 lg:shrink-0 lg:flex-nowrap">
+            {items.map(({ icon: Icon, caption, value, href }, i) => (
+              <a key={`${i}-${caption}`} href={href} className={STORE_BUTTON}>
+                {Icon && <Icon size={26} className="shrink-0 text-[#C9D2EC]" />}
                 <span className="flex flex-col">
                   <span className="text-[13px] leading-4 text-[#A9B3CC]">{caption}</span>
                   <span className="whitespace-nowrap text-base font-medium leading-5">{value}</span>
