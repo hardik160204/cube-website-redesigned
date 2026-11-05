@@ -34,21 +34,7 @@ function StackedCards({ cards }) {
   );
 }
 
-function Block({ s, tone }) {
-  if (s.render) return s.render;
-  // Questions and answers follow whatever else the section holds; on their own they take its heading.
-  if (s.faqs) {
-    const { faqs, ...rest } = s;
-    const more = rest.body || rest.list || rest.cards?.length || rest.image || rest.numbered || rest.tiles;
-    return (
-      <>
-        {more && <Block s={rest} tone={tone} />}
-        <div className="bg-[#F0F4FB]">
-          <Faq items={faqs} label={more ? undefined : s.label} title={more ? undefined : s.title} highlight={more ? undefined : ""} />
-        </div>
-      </>
-    );
-  }
+function Content({ s, tone }) {
   const dark = tone === "dark";
   const cards = s.cards || [];
 
@@ -106,6 +92,23 @@ function Block({ s, tone }) {
       {cards.length > 0 && <FeatureCards items={cards} cols={cardCols(cards)} dark={dark} className="mt-12" />}
       {s.button && <CtaButtons primary={s.button} secondary={null} className={`mt-10 ${cards.length ? "justify-center" : ""}`} />}
     </Section>
+  );
+}
+
+// Not one component calling itself: the dev server's visual-edits plugin follows such a call round forever.
+function Block({ s, tone }) {
+  if (s.render) return s.render;
+  if (!s.faqs) return <Content s={s} tone={tone} />;
+  // Questions and answers follow whatever else the section holds; on their own they take its heading.
+  const { faqs, ...rest } = s;
+  const more = rest.body || rest.list || rest.cards?.length || rest.image || rest.numbered || rest.tiles;
+  return (
+    <>
+      {more && <Content s={rest} tone={tone} />}
+      <div className="bg-[#F0F4FB]">
+        <Faq items={faqs} label={more ? undefined : s.label} title={more ? undefined : s.title} highlight={more ? undefined : ""} />
+      </div>
+    </>
   );
 }
 

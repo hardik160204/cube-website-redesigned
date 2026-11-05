@@ -95,7 +95,7 @@ export default function MeetOurTeamPage() {
   const { team } = useSiteData();
   return (
     <>
-      <PageHero
+      <PageHero roomy
         crumbs={["Meet Our Team"]}
         label="Meet Our Team"
         title="The Minds Behind"
@@ -145,7 +145,7 @@ export default function MeetOurTeamPage() {
       {/* The departments: four lit panels on the dark ink, each with its number, a glowing icon and a bar that fills on hover */}
       <Section tone="dark">
         <Heading label="How we work" title="The Engines of" highlight="Our Growth" align="center" dark />
-        <ul {...departments.mark} className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <ul {...departments.mark} className="mt-14 cl-fit gap-5 [--n:1] sm:[--n:2] lg:[--n:4]">
           {departments.items.map((d, i) => {
             const accent = ACCENTS[i % ACCENTS.length];
             return (
@@ -170,7 +170,7 @@ export default function MeetOurTeamPage() {
 
       {/* Careers invitation: a rounded logo-blue panel with the Cube mark glinting beside the line */}
       <section className="bg-white px-4 py-16 md:py-20">
-        <Reveal className="relative isolate mx-auto grid max-w-[1100px] items-center gap-10 overflow-hidden rounded-[32px] bg-[linear-gradient(110deg,#2300DC_0%,#0047FF_55%,#0091FF_100%)] px-7 py-12 shadow-[0_40px_80px_-40px_rgb(35_0_220/0.7)] md:grid-cols-[1fr_auto] md:px-14 md:py-14">
+        <Reveal className="relative isolate mx-auto grid max-w-[1100px] items-center gap-10 overflow-hidden rounded-[32px] bg-[linear-gradient(110deg,#2300DC_0%,#0047FF_55%,#0091FF_100%)] px-7 py-12 shadow-[0_40px_80px_-40px_rgb(35_0_220/0.7)] md:px-14 md:py-14">
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 -z-10 h-80 w-80 rounded-full bg-white/10 blur-[90px]" />
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -left-16 -z-10 h-72 w-72 rounded-full bg-[#00B8FF]/30 blur-[90px]" />
           <div>
@@ -187,11 +187,6 @@ export default function MeetOurTeamPage() {
               </Link>
             </div>
           </div>
-          <span aria-hidden="true" className="relative mx-auto hidden h-[150px] w-[210px] md:block">
-            {DIAMONDS.map((dm) => (
-              <span key={`${dm.u},${dm.v}`} className="cl-glint absolute h-[30px] w-[30px] rotate-45 rounded-[7px] ring-1 ring-white/30" style={{ left: 90 + dm.u * 28, top: 4 + dm.v * 28, background: dm.color === "#FF0000" ? dm.color : "rgb(255 255 255 / 0.9)", boxShadow: `0 0 20px ${dm.color === "#FF0000" ? dm.color : "rgb(255 255 255 / 0.6)"}`, animationDelay: `${dm.v * 0.14}s` }} />
-            ))}
-          </span>
         </Reveal>
       </section>
     </>

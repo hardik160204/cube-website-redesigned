@@ -255,6 +255,17 @@ Open `/admin`. From there you can:
   their side options and links, and the two buttons on the right, and start a new page right from a link.
   Saved in the `nav` setting; until it's saved the site shows the menu built into `frontend/src/lib/nav.js`.
   It needs its own access ("Navigation bar"), which the owner gives per admin
+- **switch pages off** in "Pages": every page has an on/off switch and an Edit button. Visitors to a page that's
+  off see a "back soon" message beside the Cube animation (`pagesOff` setting); it also leaves the sitemap. Admins
+  who press Edit still get the page itself
+- **change font sizes** in "Font sizes": percentages for the whole site, headings, body text, menu and buttons
+  (`fonts` setting). The build multiplies every font size in the CSS by `--fs` (`frontend/craco.config.js`). One
+  piece of text can be sized on its own in the visual editor; it's saved as an edit named `size:<original words>`
+- **dress the site for a festival** in "Festivals": one at a time, on or off (`festival` setting). The theme lives in
+  `frontend/src/festival/` and loads only while it's on. It only adds colours and decoration, so edits aren't
+  touched. Add `?festival=diwali` to any address to preview one without switching it on
+- **edit the chat bot** in "Chat bot": what it says, its buttons and their links, its questions and answers (`bot`
+  setting); until something is saved, the site shows `frontend/src/lib/bot.js`
 - upload and delete **images and videos**: JPG, PNG, WebP, AVIF and GIF up to 10 MB, MP4/WebM up to 50 MB.
   Files go from the browser straight to Storage through a one-file upload link the server signs (so no key
   reaches the browser and big videos aren't limited by Vercel's 4.5 MB request cap); the server then checks

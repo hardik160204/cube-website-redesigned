@@ -137,8 +137,7 @@ export default function SiteFooter() {
       </div>
 
       <div className="border-t border-white/[0.07]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-[#7FD8FF] sm:flex-row sm:px-6">
-          <span>© {new Date().getFullYear()} Cube Software Pvt. Ltd.</span>
+        <div className="mx-auto max-w-7xl px-4 py-6 text-center font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-[#7FD8FF] sm:px-6">
           <span>Smart. Scalable. Secure Cloud Telephony.</span>
         </div>
       </div>

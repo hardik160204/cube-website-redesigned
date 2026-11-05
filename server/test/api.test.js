@@ -388,7 +388,7 @@ test("analytics: page views are stored without identifiers; admin pages and bots
 
 test("team and social links: validated, stripped to known fields, served to the site", async () => {
   const cookie = await signIn();
-  assert.deepEqual(await (await api("/api/site")).json(), { team: null, socials: null, nav: null });
+  assert.deepEqual(await (await api("/api/site")).json(), { team: null, socials: null, nav: null, bot: null, fonts: null, festival: null, pagesOff: null });
   const put = (key, value) => api(`/api/admin/settings/${key}`, { method: "PUT", cookie, body: { value } });
   assert.equal((await put("team", [{ name: "A", linkedin: "javascript:alert(1)" }])).status, 400);
   assert.equal((await put("team", [{ name: "A", image: "javascript:alert(1)" }])).status, 400);
@@ -632,6 +632,60 @@ test("navigation bar: validated, stripped to known fields, served to the site; n
   assert.equal((await put(ok, editor)).status, 200);
   await api(`/api/admin/admins/${id}`, { method: "DELETE", cookie: owner });
   await db.run("DELETE FROM settings WHERE key = 'nav'");
+});
+
+test("font sizes, festivals, switched-off pages and the bot: validated, cleaned, served to the site, each with its own access", async () => {
+  const owner = await signIn();
+  const put = (key, value, cookie = owner) => api(`/api/admin/settings/${key}`, { method: "PUT", cookie, body: { value } });
+  const site = async () => (await api("/api/site")).json();
+
+  for (const bad of [{ all: 100 }, { all: 500, head: 100, body: 100, nav: 100 }, { all: "100", head: 100, body: 100, nav: 100 }]) assert.equal((await put("fonts", bad)).status, 400);
+  assert.equal((await put("fonts", { all: 110, head: 120, body: 100, nav: 95, extra: 1 })).status, 200);
+  assert.deepEqual((await site()).fonts, { all: 110, head: 120, body: 100, nav: 95 });
+
+  for (const bad of [{ active: "halloween", greetings: {} }, { active: "diwali" }, { active: "diwali", greetings: { nope: "x" } }, { active: "diwali", greetings: { diwali: "x".repeat(141) } }]) assert.equal((await put("festival", bad)).status, 400);
+  assert.equal((await put("festival", { active: "diwali", scroll: false, greetings: { diwali: " Happy Diwali ", holi: "  " }, extra: 1 })).status, 200);
+  assert.deepEqual((await site()).festival, { active: "diwali", scroll: false, effects: true, popup: true, greetings: { diwali: "Happy Diwali" } });
+  assert.equal((await put("festival", { active: null, greetings: {} })).status, 200);
+
+  for (const bad of [{ paths: ["javascript:x"] }, { paths: "about" }, { paths: ["/about"], title: "x".repeat(121) }]) assert.equal((await put("pagesOff", bad)).status, 400);
+  assert.match(await (await api("/sitemap.xml")).text(), /\/about</);
+  assert.equal((await put("pagesOff", { paths: ["/about", "/about", "/pricing"], title: " Back soon ", message: "" })).status, 200);
+  assert.deepEqual((await site()).pagesOff, { paths: ["/about", "/pricing"], title: "Back soon", message: "" });
+  const map = await (await api("/sitemap.xml")).text();
+  assert.doesNotMatch(map, /\/about</);
+  assert.match(map, /\/contact</);
+
+  const bot = { enabled: true, status: "Online", title: "Hi", subtitle: "", questionsTitle: "Questions", bubbles: { default: "a", pricing: "b", services: "c", industries: "d" }, actions: [{ label: "Demo", sub: "", icon: "Mic", href: "demo:" }, { label: "Call", sub: "", icon: "Phone", href: "tel:+911204057109", extra: 1 }], faqs: [{ q: "Q?", a: "A." }] };
+  for (const bad of [
+    { ...bot, title: "" },
+    { ...bot, bubbles: { default: "a" } },
+    { ...bot, actions: [{ label: "Bad", href: "javascript:alert(1)" }] },
+    { ...bot, actions: [{ label: "Bad", href: "chat:" }] },
+    { ...bot, actions: [{ label: "", href: "/contact" }] },
+    { ...bot, faqs: [{ q: "No answer" }] },
+  ]) assert.equal((await put("bot", bad)).status, 400);
+  assert.equal((await put("bot", bot)).status, 200);
+  const savedBot = (await site()).bot;
+  assert.equal(savedBot.actions[1].extra, undefined);
+  assert.equal(savedBot.actions[1].href, "tel:+911204057109");
+
+  // One piece of text sized on its own: only a sensible percentage is accepted.
+  const size = (replacement) => api("/api/admin/overrides", { method: "POST", cookie: owner, body: { kind: "image", scope: "/about", original: "size:Hello there", replacement } });
+  assert.equal((await size("javascript:x")).status, 400);
+  assert.equal((await size("999")).status, 400);
+  assert.equal((await size("130")).status, 200);
+  const { overrides } = await (await api("/api/admin/overrides", { cookie: owner })).json();
+  assert.equal((await api(`/api/admin/overrides/${overrides.find((o) => o.original === "size:Hello there").id}`, { method: "DELETE", cookie: owner })).status, 200);
+
+  // Another admin only with the owner's say-so.
+  await api("/api/admin/admins", { method: "POST", cookie: owner, body: { email: "seasonal@cube-software.com", password: "Long-enough-pass-1", permissions: ["festivals"] } });
+  const editor = await signIn("seasonal@cube-software.com", "Long-enough-pass-1");
+  assert.equal((await put("festival", { active: "holi", greetings: {} }, editor)).status, 200);
+  for (const [key, value] of [["fonts", { all: 100, head: 100, body: 100, nav: 100 }], ["pagesOff", { paths: [] }], ["bot", bot]]) assert.equal((await put(key, value, editor)).status, 403);
+  const { admins } = await (await api("/api/admin/admins", { cookie: owner })).json();
+  await api(`/api/admin/admins/${admins.find((a) => a.email === "seasonal@cube-software.com").id}`, { method: "DELETE", cookie: owner });
+  for (const key of ["fonts", "festival", "pagesOff", "bot"]) await db.run("DELETE FROM settings WHERE key = ?", key);
 });
 
 test("security headers are set", async () => {

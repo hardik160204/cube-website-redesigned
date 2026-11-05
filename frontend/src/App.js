@@ -1,6 +1,9 @@
 import "./App.css";
 import "./components/site-effects.css";
 import { Suspense, lazy, useEffect, useLayoutEffect } from "react";
+import { editing } from "./lib/editable";
+import { currentFestival } from "./lib/festivals";
+import { useSiteData } from "./lib/site";
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { motion, MotionConfig, useReducedMotion } from "framer-motion";
@@ -37,7 +40,6 @@ import ConferenceBridge from "./pages/ConferenceBridge";
 import VisualSupportPage from "./pages/VisualSupportPage";
 import CustomPage from "./pages/CustomPage";
 import PricingPage from "./pages/PricingPage"; 
-import FloatingChatWidget from "./components/FloatingChatWidget";
 import { DEMO_EVENT } from "./components/demo";
 import DemoPage from "./pages/DemoPage";
 import MeetOurTeamPage from "./pages/MeetOurTeamPage";
@@ -68,38 +70,32 @@ import CopyrightBar from "./components/CopyrightBar";
 import CookieConsent from "./components/CookieConsent";
 import SiteContent from "./components/SiteContent";
 import Seo from "./components/Seo";
+import PageGate from "./components/PageGate";
 
 // The admin dashboard is its own bundle, loaded only when someone opens /admin.
 const AdminApp = lazy(() => import("./admin/AdminApp"));
+// So is a festival's theme, loaded only while one is on.
+const Festival = lazy(() => import("./festival/Festival"));
+
+// What the dashboard sets for the whole site: font sizes, and the festival showing now.
+function SiteLook() {
+  const { fonts, festival } = useSiteData();
+  useEffect(() => {
+    if (!fonts) return undefined;
+    const root = document.documentElement;
+    for (const k of ["all", "head", "body", "nav"]) root.style.setProperty(`--fs-${k}`, String((fonts[k] ?? 100) / 100));
+    return () => ["all", "head", "body", "nav"].forEach((k) => root.style.removeProperty(`--fs-${k}`));
+  }, [fonts]);
+  const active = currentFestival(festival);
+  return active && !editing() ? (
+    <Suspense fallback={null}>
+      <Festival key={active.key} festival={active} />
+    </Suspense>
+  ) : null;
+}
 
 // Helper component to manage global layout elements based on the route
 const GlobalLayout = () => {
-  const location = useLocation();
-  const currentPath = location.pathname;
-
-  // Define which paths should NOT have the global floating forms/widgets
-  const hiddenPaths = [
-    "/services/ivr",
-    "/services/auto-dialer",
-    "/services/cloud-contact-center", 
-    "/services/missed-call",
-    "/services/bulk-voice-call",
-    "/services/whatsapp-bot",
-    "/services/web-chat-bot",
-    "/services/crm-integration",
-    "/services/toll-free-number",
-    "/services/virtual-number",
-    "/services/call-recording",
-    "/services/click-to-call",
-    "/services/smart-call-routing",
-    "/services/number-masking",
-    "/services/live-analytics",
-    "/services/quality-analysis",
-    "/meet-our-team",
-    "/career"
-  ];
-
-  const hidden = hiddenPaths.includes(currentPath);
   const navigate = useNavigate();
 
   // Every "Book a demo" button leads to the booking page.
@@ -109,12 +105,7 @@ const GlobalLayout = () => {
     return () => window.removeEventListener(DEMO_EVENT, go);
   }, [navigate]);
 
-  return (
-    <>
-      {/* ContactSection completely removed from here to stop the double-rendering on Home and other pages */}
-      {!hidden && <FloatingChatWidget />}
-    </>
-  );
+  return null;
 };
 
 // Page-to-page transition. The header and footer stay put; the new page rises in while a logo-coloured
@@ -153,6 +144,7 @@ function Site() {
     <div className="App cl-root cube-brand min-h-screen bg-white pb-9 text-[#31343A]">
         <SiteHeader />
         <RouteTransition>
+        <PageGate>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<AboutPage />} />
@@ -221,6 +213,7 @@ function Site() {
           
           <Route path="*" element={<CustomPage />} />
         </Routes>
+        </PageGate>
         </RouteTransition>
         <SiteFooter />
         <CopyrightBar />
@@ -235,6 +228,7 @@ function Site() {
         {/* Text and image edits made in the admin's visual editor */}
         <SiteContent />
         <Seo />
+        <SiteLook />
     </div>
   );
 }

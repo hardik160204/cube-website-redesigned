@@ -30,7 +30,7 @@ export default function PricingStrip() {
           </Link>
         </div>
 
-        <div {...tiers.mark} className="mt-10 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div {...tiers.mark} className="mt-10 cl-fit items-stretch gap-6 [--n:1] md:[--n:2] lg:[--n:3]">
           {tiers.items.map((tier, i) => {
             const yearly = priceOf(tier.yearlyPrice);
             const priced = yearly !== null;

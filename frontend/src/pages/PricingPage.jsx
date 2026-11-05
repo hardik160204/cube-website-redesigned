@@ -205,7 +205,7 @@ export default function PricingPage() {
 
         {/* --- PLANS --- */}
         <section className="px-4 pb-20 pt-4 sm:px-6">
-          <div {...tiers.mark} className="mx-auto grid max-w-[1228px] items-stretch gap-6 lg:grid-cols-3">
+          <div {...tiers.mark} className="mx-auto cl-fit max-w-[1228px] items-stretch gap-6 [--n:1] lg:[--n:3]">
             {tiers.items.map((tier, i) => {
               const dark = tier.highlight;
               const priced = priceOf(tier.monthlyPrice) !== null && priceOf(tier.yearlyPrice) !== null;
@@ -274,7 +274,7 @@ export default function PricingPage() {
 
         {/* --- TRUST --- */}
         <section className="bg-[#F0F3FA] px-4 py-16 sm:px-6 md:py-20">
-          <div {...trust.mark} className="mx-auto grid max-w-[1228px] gap-5 md:grid-cols-3">
+          <div {...trust.mark} className="mx-auto cl-fit max-w-[1228px] gap-5 [--n:1] md:[--n:3]">
             {trust.items.map(({ icon: Icon, title, text }, i) => (
               <div key={`${i}-${title}`} className="rounded-2xl border border-[#E5EAF4] bg-white p-7 transition-colors hover:border-[#B8C5EE]">
                 <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EEF2FB] text-primary">

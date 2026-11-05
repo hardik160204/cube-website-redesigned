@@ -170,7 +170,7 @@ export default function CubeCloudCCS() {
               "End-to-End Communication Platform — From voice infrastructure and dialers to CRM, AI, analytics, WhatsApp/social channels and integrations, customers can build their communication ecosystem with one technology partner.",
             ]}
           />
-          <ul {...benefits.mark} className="mt-8 grid gap-5 sm:grid-cols-2">
+          <ul {...benefits.mark} className="mt-8 cl-fit gap-5 [--n:1] sm:[--n:2]">
             {benefits.items.map((b, i) => (
               <Reveal as="li" key={`${i}-${b.title}`} delay={Math.min(i, 5) * 0.06} className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#D9F3FF] text-[#0047FF]">
@@ -188,7 +188,7 @@ export default function CubeCloudCCS() {
 
       <Section>
         <Heading title="Cloud Contact Center" highlight="Services" body="We provide an end-to-end solution to our users." align="center" />
-        <ul {...services.mark} className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <ul {...services.mark} className="mt-12 cl-fit gap-4 [--n:1] sm:[--n:2] lg:[--n:5]">
           {services.items.map((s, i) => {
             const accent = ACCENTS[i % ACCENTS.length];
             return (
@@ -214,7 +214,7 @@ export default function CubeCloudCCS() {
 
       <Section tone="dark">
         <Heading title="Our" highlight="USP" body="Here are few smart features" align="center" dark />
-        <ul {...usps.mark} className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <ul {...usps.mark} className="mt-12 cl-fit gap-5 [--n:1] md:[--n:2] lg:[--n:4]">
           {usps.items.map((u, i) => {
             const accent = ACCENTS[i % ACCENTS.length];
             return (
@@ -252,7 +252,7 @@ export default function CubeCloudCCS() {
                 94% of Managers state their business security and workflow efficiency have drastically improved after migrating to robust <strong className="font-semibold text-white">cloud telephony services.</strong>
               </p>
             </Reveal>
-            <ul {...facts.mark} className="grid gap-5 sm:grid-cols-3 lg:col-span-8">
+            <ul {...facts.mark} className="cl-fit gap-5 [--n:1] sm:[--n:3] lg:col-span-8">
               {facts.items.map((f, i) => (
                 <Reveal as="li" key={`${i}-${f.title}`} delay={0.1 + Math.min(i, 5) * 0.1} className="h-full">
                   <div className="flex h-full flex-col rounded-[24px] bg-white p-6 shadow-[0_30px_60px_-30px_rgb(10_6_38/0.6)] transition-[translate] duration-300 ease-out-expo hover:[translate:0_-4px]">

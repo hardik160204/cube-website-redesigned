@@ -69,6 +69,21 @@ if (config.enableHealthCheck) {
   healthPluginInstance = new WebpackHealthPlugin();
 }
 
+// Every font size and line height in the site's CSS is multiplied by --fs, which the dashboard's "Font sizes"
+// page controls (site-effects.css gives each kind of text its own). Sizes relative to the parent are left alone.
+const FONT_VALUE = /^(?:[\d.]+(?:px|rem|vw|vh|svh|dvh)|(?:clamp|min|max|calc)\(.*\))$/;
+const scaleFonts = () => ({
+  postcssPlugin: "cube-font-scale",
+  OnceExit(root) {
+    root.walkDecls(/^(font-size|line-height)$/, (decl) => {
+      const value = decl.value.trim();
+      if (!FONT_VALUE.test(value) || value.includes("--fs") || /(^|[\s,])(html|:root)($|[\s,])/.test(decl.parent.selector || "")) return;
+      decl.value = `calc(${value} * var(--fs, 1))`;
+    });
+  },
+});
+scaleFonts.postcss = true;
+
 let webpackConfig = {
   eslint: {
     configure: {
@@ -84,6 +99,18 @@ let webpackConfig = {
       '@': path.resolve(__dirname, 'src'),
     },
     configure: (webpackConfig) => {
+      // Adds the font scaling after the tools the build already runs (Tailwind included).
+      const addFontScaling = (rules) => {
+        for (const rule of rules || []) {
+          addFontScaling(rule.oneOf);
+          for (const use of Array.isArray(rule.use) ? rule.use : []) {
+            const plugins = use?.loader?.includes("postcss-loader") && use.options?.postcssOptions?.plugins;
+            if (Array.isArray(plugins)) plugins.push(scaleFonts);
+          }
+        }
+      };
+      addFontScaling(webpackConfig.module.rules);
+
 
       // Add ignored patterns to reduce watched directories
         webpackConfig.watchOptions = {

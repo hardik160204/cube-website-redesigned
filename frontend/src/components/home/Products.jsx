@@ -147,7 +147,7 @@ export default function Products() {
           </a>
         </div>
 
-        <ul {...mark} className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <ul {...mark} className="mt-12 cl-fit gap-6 [--n:1] sm:[--n:2] lg:[--n:3]">
           {items.map((p, i) => (
             <ProductCard key={`${i}-${p.title}`} p={p} i={i} />
           ))}

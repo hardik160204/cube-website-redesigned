@@ -1,0 +1,196 @@
+/* Loaded only while a festival is on. Colours come from the variables Festival.jsx puts on the page root. */
+
+/* --- The site in festival colours. The page's words, pictures and layout are untouched. ----------------------- */
+html[data-festival] .dark,
+html[data-festival] .cube-brand { --primary: var(--f-primary); }
+html[data-festival] [class*="bg-[#0A0626]"],
+html[data-festival] footer.bg-background { background-color: var(--f-ink); }
+html[data-festival] .cl-hero [class*="linear-gradient(90deg,#0A0626"] { background-image: linear-gradient(90deg, var(--f-ink) 0%, color-mix(in srgb, var(--f-ink) 85%, transparent) 45%, color-mix(in srgb, var(--f-ink) 35%, transparent) 100%); }
+html[data-festival] [class*="from-[#0A0626]"][class*="to-transparent"] { --tw-gradient-from: var(--f-ink) var(--tw-gradient-from-position); --tw-gradient-stops: var(--f-ink), transparent; }
+html[data-festival] [class*="via-[#2300DC]"] { background-image: linear-gradient(90deg, var(--f-ink), var(--f-primary-hex), var(--f-ink)); }
+html[data-festival] .cl-ai-b1 { background: var(--f-accent2); }
+html[data-festival] .cl-ai-b2 { background: var(--f-accent3); }
+html[data-festival] .cl-ai-b3 { background: var(--f-accent); }
+html[data-festival] .cl-ai-glow,
+html[data-festival] .cl-ai-ring,
+html[data-festival] .cl-ai-swirl,
+html[data-festival] .cl-hero .cl-hero-main svg[viewBox]:not(.lucide) { filter: hue-rotate(var(--f-hue)); }
+html[data-festival] .cl-ai-orbit::before { border-color: color-mix(in srgb, var(--f-accent) 35%, transparent); }
+
+html[data-festival] [class*="bg-[#0047FF]/"] { background-color: color-mix(in srgb, var(--f-accent2) 30%, transparent); }
+html[data-festival] [class*="text-[#00B8FF]"] { color: var(--f-accent); }
+html[data-festival] [class*="bg-[#00B8FF]"] { background-color: var(--f-accent); box-shadow: 0 0 10px var(--f-accent); }
+html[data-festival] [class*="text-[#0047FF]"] { color: var(--f-primary-hex); }
+html[data-festival] .cl-dark .cl-hi { color: var(--f-accent); }
+html[data-festival] .cl-hero h1 .cl-hi,
+html[data-festival] .cl-hero h1 span[class*="from-[#00B8FF]"] { background-image: linear-gradient(90deg, var(--f-accent), var(--f-accent2), var(--f-accent3)); }
+html[data-festival] h1[class*="from-[#00B8FF]"] { background-image: linear-gradient(90deg, var(--f-primary-hex), var(--f-accent2), var(--f-primary-hex)); }
+html[data-festival] [class*="linear-gradient"][class*="#0047FF"] { background-image: var(--f-grad); }
+html[data-festival] [class*="shadow-[0_14px_30px"] { box-shadow: 0 14px 30px -14px color-mix(in srgb, var(--f-primary-hex) 90%, transparent); }
+html[data-festival] [class*="hover:bg-[#2300DC]"]:hover { background-color: var(--f-hover); }
+html[data-festival] [class*="bg-[#F0F4FB]"],
+html[data-festival] [class*="bg-[#F5F8FD]"],
+html[data-festival] [class*="bg-[#F6F8FD]"] { background-color: var(--f-tint); }
+html[data-festival] [class*="bg-[#D9F3FF]"] { background-color: color-mix(in srgb, var(--f-accent) 28%, white); }
+html[data-festival] [class*="radial-gradient(60%_45%_at_50%_0%,#E3F6FF"] { background-image: radial-gradient(60% 45% at 50% 0%, color-mix(in srgb, var(--f-accent) 30%, white), transparent); }
+
+/* The footer's cool blues, warmed to the festival. */
+html[data-festival] footer [class*="text-[#5CCBFF]"] { color: var(--f-accent); }
+html[data-festival] footer,
+html[data-festival] footer [class*="text-[#B8E4FF]"],
+html[data-festival] footer [class*="text-[#D6F0FF]"],
+html[data-festival] footer [class*="text-[#7FD8FF]"] { color: var(--f-foot); }
+html[data-festival] footer [class*="from-[#00B8FF]"] { background-image: linear-gradient(to bottom, color-mix(in srgb, var(--f-accent) 48%, transparent), transparent); }
+html[data-festival] [class*="text-[#9FD6FF]"] { color: var(--f-foot); }
+
+/* The pattern behind heroes, turning very slowly. */
+html[data-festival] .cl-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -5;
+  right: -140px;
+  top: 50%;
+  width: 680px;
+  height: 680px;
+  margin-top: -340px;
+  background: var(--f-motif) center / contain no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+  animation: f-turn 180s linear infinite;
+}
+html[data-festival] .cl-home-hero::before,
+html[data-festival] .cl-home-hero::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 40px;
+  width: 460px;
+  height: 460px;
+  background: var(--f-motif) center / contain no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+}
+html[data-festival] .cl-home-hero::before { left: -190px; }
+html[data-festival] .cl-home-hero::after { right: -190px; }
+html[data-festival] .cl-home-hero > * { position: relative; z-index: 1; }
+@keyframes f-turn { to { rotate: 360deg; } }
+
+/* --- The decoration layer ---------------------------------------------------------------------------------- */
+.f-layer { position: fixed; inset: 0; z-index: 45; pointer-events: none; overflow: hidden; }
+.f-garland {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--cl-header, 117px);
+  height: var(--f-garland-h, 40px);
+  background: var(--f-garland) repeat-x top left;
+  filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.22));
+  opacity: 0;
+  transform: translateY(-14px);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.f-at-top .f-garland { opacity: 1; transform: none; }
+
+/* What drifts across the page. */
+.f-particles { position: fixed; inset: 0; z-index: 44; pointer-events: none; overflow: hidden; }
+/* Sparks light up dark bands and all but vanish on white, where they'd only look like specks. */
+.f-particles.f-ember { mix-blend-mode: screen; }
+.f-particles i { position: absolute; display: block; bottom: -8%; will-change: transform, opacity; animation: f-rise linear infinite; }
+.f-ember i { border-radius: 50%; background: radial-gradient(circle, #fff6cf 0%, var(--c) 45%, transparent 72%); box-shadow: 0 0 10px var(--c); animation-name: f-rise; }
+.f-gulal i { border-radius: 50%; background: radial-gradient(circle, var(--c), transparent 70%); opacity: 0.2; animation-name: f-puff; }
+.f-petal i { top: -6%; bottom: auto; border-radius: 80% 0 80% 0; background: var(--c); animation-name: f-fall; }
+.f-snow i { top: -6%; bottom: auto; border-radius: 50%; background: #fff; box-shadow: 0 0 6px rgb(130 170 200 / 0.8); animation-name: f-fall; }
+.f-confetti i { top: -6%; bottom: auto; background: var(--c); aspect-ratio: 1 / 1.7; animation-name: f-tumble; }
+.f-tricolor i { top: -6%; bottom: auto; border-radius: 80% 0 80% 0; background: var(--c); box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12); animation-name: f-fall; }
+.f-star i { clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); background: var(--c); animation-name: f-twinkle; bottom: auto; top: var(--t, 20%); }
+.f-star i:nth-child(3n) { --t: 12%; } .f-star i:nth-child(3n + 1) { --t: 48%; } .f-star i:nth-child(3n + 2) { --t: 76%; }
+.f-kite i { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: var(--c); animation-name: f-rise; opacity: 0.8; }
+@keyframes f-rise { 0% { transform: translate3d(0, 0, 0); opacity: 0; } 10% { opacity: 0.9; } 85% { opacity: 0.5; } 100% { transform: translate3d(30px, -105vh, 0); opacity: 0; } }
+@keyframes f-puff { 0% { transform: translate3d(0, 0, 0) scale(0.6); opacity: 0; } 25% { opacity: 0.2; } 100% { transform: translate3d(-40px, -80vh, 0) scale(1.4); opacity: 0; } }
+@keyframes f-fall { 0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.6; } 100% { transform: translate3d(50px, 108vh, 0) rotate(300deg); opacity: 0; } }
+@keyframes f-tumble { 0% { transform: translate3d(0, 0, 0) rotate3d(1, 1, 0, 0deg); opacity: 0; } 8% { opacity: 0.85; } 92% { opacity: 0.7; } 100% { transform: translate3d(-40px, 108vh, 0) rotate3d(1, 1, 0, 900deg); opacity: 0; } }
+@keyframes f-twinkle { 0%, 100% { opacity: 0.1; transform: scale(0.5); } 50% { opacity: 0.85; transform: scale(1.15); } }
+
+/* Fireworks, at the top of the page only. */
+.f-fireworks { position: absolute; inset: 0; opacity: 0; transition: opacity 0.4s ease; }
+.f-at-top .f-fireworks { opacity: 1; }
+.f-burst { position: absolute; width: 0; height: 0; }
+.f-burst i { position: absolute; left: -2px; top: -1px; width: 28px; height: 2.5px; border-radius: 2px; transform-origin: 2px 1px; opacity: 0; animation: f-burst 7.8s cubic-bezier(0.23, 1, 0.32, 1) infinite; animation-delay: var(--d); rotate: var(--a); }
+@keyframes f-burst { 0% { transform: translateX(0) scaleX(0.1); opacity: 0; } 2% { opacity: 1; } 12% { transform: translateX(46px) scaleX(1); opacity: 0.95; } 20%, 100% { transform: translateX(72px) scaleX(0.2); opacity: 0; } }
+
+/* Down the thread at the page's edge. */
+.f-rail { position: absolute; left: 26px; top: calc(var(--cl-header, 117px) + 84px); bottom: 70px; width: 2px; }
+.f-thread, .f-thread-lit { position: absolute; inset: 0; border-radius: 2px; }
+.f-thread { background: color-mix(in srgb, var(--f-accent) 28%, transparent); }
+.f-thread-lit { background: linear-gradient(180deg, var(--f-accent), var(--f-accent2)); box-shadow: 0 0 8px var(--f-accent); transform-origin: top; }
+.f-thread-lit.f-from-bottom { transform-origin: bottom; }
+.f-lamp { position: absolute; left: -3px; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: color-mix(in srgb, var(--f-accent) 25%, #d7c9b5); transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.23, 1, 0.32, 1); }
+.f-lamp-on { background: var(--f-accent); box-shadow: 0 0 10px 2px var(--f-accent2); transform: scale(1.25); }
+.f-rider-track { position: absolute; inset: 0 auto 0 0; width: 2px; will-change: transform; }
+.f-rider { position: absolute; left: -22px; top: -28px; width: 46px; height: 46px; filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.3)); }
+.f-only-narrow { display: block; }
+.f-only-wide { display: none; }
+@media (min-width: 1320px) {
+  .f-only-narrow { display: none; }
+  .f-only-wide { display: block; }
+}
+
+/* Along the top of the page. */
+.f-top { position: absolute; left: 0; right: 0; top: var(--cl-header, 117px); height: 4px; }
+.f-stream { position: absolute; inset: 0; transform-origin: left; box-shadow: 0 1px 6px rgb(0 0 0 / 0.25); }
+.f-top-track { position: absolute; left: 0; right: 124px; top: 0; height: 0; will-change: transform; }
+.f-top-rider { position: absolute; left: -2px; top: 3px; width: 34px; height: 34px; filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.3)); }
+.f-top-pichkari { top: 5px; width: 84px; height: 32px; }
+@media (min-width: 1024px) { .f-top-pichkari { width: 112px; height: 42px; } }
+.f-plunger { transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1); }
+.f-plunger-on { transform: translateX(11px); }
+.f-spray { position: absolute; left: 100%; top: 50%; width: 0; height: 0; opacity: 0; transition: opacity 0.12s ease; }
+.f-spray-on { opacity: 1; }
+.f-spray i { position: absolute; left: 0; top: -3px; width: 7px; height: 7px; border-radius: 50%; animation: f-spray 0.62s linear infinite; }
+@keyframes f-spray { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(64px, 22px) scale(0.35); opacity: 0; } }
+.f-splat { position: absolute; width: 150px; height: 150px; margin: -75px 0 0 -75px; opacity: 0; }
+
+/* Small lively touches on what rides along. */
+.f-flicker { transform-box: fill-box; transform-origin: 50% 100%; animation: f-flicker 1.6s ease-in-out infinite; }
+@keyframes f-flicker { 0%, 100% { transform: scale(1, 1) skewX(0deg); } 25% { transform: scale(0.94, 1.05) skewX(-2.5deg); } 55% { transform: scale(1.04, 0.96) skewX(2deg); } 80% { transform: scale(0.97, 1.03) skewX(-1deg); } }
+.f-glow { transform-box: fill-box; transform-origin: center; animation: f-glow 2.4s ease-in-out infinite; }
+@keyframes f-glow { 50% { opacity: 0.65; transform: scale(1.12); } }
+.f-spin { animation: f-spin 5s linear infinite; }
+.f-spin-slow { animation: f-spin 14s linear infinite; }
+@keyframes f-spin { to { transform: rotate(360deg); } }
+.f-bob { transform-origin: 50% 0; animation: f-bob 3.2s ease-in-out infinite; }
+@keyframes f-bob { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+.f-wave { transform-box: fill-box; transform-origin: 0 50%; animation: f-wave 2.2s ease-in-out infinite; }
+@keyframes f-wave { 0%, 100% { transform: skewY(-2.5deg) scaleX(1); } 50% { transform: skewY(2.5deg) scaleX(0.97); } }
+
+/* The greeting. */
+.f-greeting {
+  position: absolute;
+  top: calc(var(--cl-header, 117px) + 56px);
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(360px, calc(100vw - 40px));
+  padding: 12px 12px 12px 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--f-accent) 50%, transparent);
+  background: var(--f-ink);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+  box-shadow: 0 24px 48px -18px rgb(0 0 0 / 0.55), 0 0 26px -10px var(--f-accent);
+  pointer-events: auto;
+}
+.f-greeting p { flex: 1; margin: 0; }
+.f-greeting button { flex: none; align-self: flex-start; padding: 4px; border-radius: 8px; color: rgb(255 255 255 / 0.7); transition: background-color 0.15s ease, color 0.15s ease; }
+.f-greeting button:hover { background: rgb(255 255 255 / 0.14); color: #fff; }
+.f-greeting-art { flex: none; display: block; width: 46px; height: 46px; }
+html[data-festival="holi"] .f-greeting-art { width: 66px; height: 26px; }
+/* On a phone it would cover the headline; the greeting still runs in the top bar. */
+@media (max-width: 767px) { .f-greeting { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .f-layer *, html[data-festival] .cl-hero::after { animation: none !important; transition: none !important; }
+}

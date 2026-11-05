@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, CalendarClock, Users, CalendarDays, FileCheck2, FilePlus2, FileText, History, UserSearch, Image, Inbox, LayoutDashboard, ListTree, LogOut, Menu, PencilLine, Settings, ShieldCheck, Trash2, UserCog, X } from "lucide-react";
+import { BarChart3, CalendarClock, Users, CalendarDays, FileCheck2, FilePlus2, FileText, History, UserSearch, Image, Inbox, LayoutDashboard, ListTree, LogOut, Menu, PartyPopper, PencilLine, Bot as BotIcon, Settings, ShieldCheck, Trash2, Type, UserCog, X } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { api } from "../lib/api";
@@ -10,6 +10,9 @@ import MediaAdmin from "./MediaAdmin";
 import ContentAdmin, { startEditing } from "./ContentAdmin";
 import PagesAdmin from "./PagesAdmin";
 import NavAdmin from "./NavAdmin";
+import FontsAdmin from "./FontsAdmin";
+import FestivalsAdmin from "./FestivalsAdmin";
+import BotAdmin from "./BotAdmin";
 import CalendarAdmin from "./CalendarAdmin";
 import ConsentAdmin from "./ConsentAdmin";
 import TeamAdmin from "./TeamAdmin";
@@ -29,6 +32,9 @@ const NAV = [
   ["content", "Site content", PencilLine, "content"],
   ["pages", "Pages", FilePlus2, "pages"],
   ["navigation", "Navigation bar", ListTree, "navigation"],
+  ["fonts", "Font sizes", Type, "fonts"],
+  ["festivals", "Festivals", PartyPopper, "festivals"],
+  ["bot", "Chat bot", BotIcon, "bot"],
   ["media", "Images & videos", Image, "media"],
   ["team", "Team & social links", Users, "team"],
   ["analytics", "Visitor analytics", BarChart3, "analytics"],
@@ -41,7 +47,7 @@ const NAV = [
 const can = (me, need) => !need || me.isOwner || (need !== "owner" && me.permissions.includes(need));
 // What the owner can give other admins, in menu order.
 const SECTION_LABEL = Object.fromEntries(NAV.filter(([, , , need]) => need && need !== "owner").map(([, label, , need]) => [need, label]));
-const DEFAULT_ACCESS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "media", "team"];
+const DEFAULT_ACCESS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "fonts", "festivals", "bot", "media", "team"];
 
 const INTEREST = { "cloud-contact-center": "Cloud Contact Center", "voice-logger": "Voice Logger", "call-billing": "Call Billing Software", ivrs: "IVRS Services", other: "Other" };
 
@@ -194,7 +200,7 @@ function Overview({ me, out }) {
       <PageTitle
         title="Overview"
         desc={`What's happening on the website. Signed in as ${me.email}${me.isOwner ? " (owner)" : ""}.`}
-        actions={can(me, "content") && <Button onClick={startEditing}><PencilLine size={16} /> Edit the website</Button>}
+        actions={can(me, "content") && <Button onClick={() => startEditing()}><PencilLine size={16} /> Edit the website</Button>}
       />
       {tiles.length === 0 && <Empty>Use the menu to open the sections you have access to.</Empty>}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -716,6 +722,9 @@ export default function AdminApp() {
       content: <ContentAdmin {...props} />,
       pages: <PagesAdmin {...props} />,
       navigation: <NavAdmin {...props} />,
+      fonts: <FontsAdmin {...props} />,
+      festivals: <FestivalsAdmin {...props} />,
+      bot: <BotAdmin {...props} />,
       media: <MediaAdmin {...props} />,
       calendar: <CalendarAdmin {...props} />,
       team: <TeamAdmin {...props} />,

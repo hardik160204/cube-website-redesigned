@@ -5,6 +5,7 @@ import { DIAMONDS } from "./cube-diamonds";
 import MediaSlot from "../MediaSlot";
 import { useList } from "../../lib/editable";
 import { ENTERPRISE_FEATURES, MODULES_DATA } from "../../pages/CloudContactCenter";
+import OrbApps from "../page/OrbApps";
 
 // Cube's dark AI band. Copy is Cube's own: the "AI Call Management" pitch and the contact center's
 // "Artificial Intelligence & Automation" module.
@@ -32,16 +33,7 @@ function Scene() {
         {[0, 1.25, 2.5, 3.75].map((d) => (
           <span key={d} className="cl-ai-ring" style={{ animationDelay: `${d}s` }} />
         ))}
-        <span className="cl-ai-orbit">
-          {[0, 120, 240].map((a) => (
-            <i key={a} style={{ transform: `rotate(${a}deg) translateY(-180px)` }} />
-          ))}
-        </span>
-        <span className="cl-ai-orbit cl-outer">
-          {[60, 240].map((a) => (
-            <i key={a} style={{ transform: `rotate(${a}deg) translateY(-230px)` }} />
-          ))}
-        </span>
+        <OrbApps />
         <span className="cl-ai-swirl" />
         {/* At the heart of the orb: the logo's 12 diamonds, small, above the Cube AI wordmark */}
         <span className="cl-ai-core">

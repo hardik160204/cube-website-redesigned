@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { api } from "../lib/api";
 import { isVideo, setContent, useContent } from "../lib/content";
 import { EDIT_FLAG, ICONS, STARTER_ICONS, mounted, watchMounted } from "../lib/editable";
-import { originals, removalContext, removalOptions } from "../components/SiteContent";
+import { originals, removalContext, removalOptions, sizeText } from "../components/SiteContent";
 import { Media } from "../components/MediaSlot";
 import { Button, INPUT, useNatural } from "./ui";
 import { ACCEPT_NOTE, MediaPicker } from "./MediaAdmin";
@@ -386,7 +386,7 @@ export default function EditLayer({ path, overrides, setOverrides }) {
     document.head.appendChild(style);
     document.body.classList.add("cube-editing");
     const onClick = (e) => {
-      if (e.target.closest("[data-cube-ui], [data-sonner-toaster]")) return;
+      if (e.target.closest("[data-cube-ui], [data-sonner-toaster], [data-cube-bot]")) return;
       e.preventDefault();
       e.stopPropagation();
       const slot = e.target.closest("[data-cube-slot]");
@@ -400,7 +400,8 @@ export default function EditLayer({ path, overrides, setOverrides }) {
       const shown = norm(node.nodeValue);
       const prev = originals.get(node);
       const original = prev && prev.shown === shown ? prev.original : shown;
-      setTarget({ kind: "text", original, value: shown, scope: path, el: node.parentElement });
+      const sized = overrides.find((o) => o.original === `size:${original}` && o.scope === path) || overrides.find((o) => o.original === `size:${original}` && o.scope === "*");
+      setTarget({ kind: "text", original, value: shown, shown, scope: sized?.scope || path, el: node.parentElement, size: sized ? Number(sized.replacement) : 100, sizeWas: sized ? Number(sized.replacement) : 100 });
     };
     const onMove = (e) => {
       if (e.target.closest?.("[data-cube-ui]")) return;
@@ -426,7 +427,7 @@ export default function EditLayer({ path, overrides, setOverrides }) {
     };
     // the open* helpers only read `path` and state setters, so re-binding on `path` keeps them current.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, path]);
+  }, [active, path, overrides]);
 
   if (!admin) return null;
 
@@ -477,8 +478,26 @@ export default function EditLayer({ path, overrides, setOverrides }) {
     try {
       const body = { kind: target.kind, scope: target.scope, original: target.original, replacement: target.kind === "text" ? norm(target.value) : target.value };
       if (target.kind === "image" && target.box?.w) Object.assign(body, { width: target.box.w, height: target.box.h });
-      await api("/admin/overrides", { method: "POST", body });
-      setOverrides([...overrides.filter((o) => !(o.kind === body.kind && o.original === body.original && o.scope === body.scope)), body]);
+      let next = overrides;
+      // Changing only a text's size doesn't make a text edit out of it.
+      if (target.kind !== "text" || existing || norm(target.value) !== target.shown) {
+        await api("/admin/overrides", { method: "POST", body });
+        next = [...next.filter((o) => !(o.kind === body.kind && o.original === body.original && o.scope === body.scope)), body];
+      }
+      if (target.kind === "text" && target.size !== target.sizeWas) {
+        const sizeKey = `size:${target.original}`;
+        const { overrides: all } = await api("/admin/overrides");
+        const old = all.filter((o) => o.original === sizeKey && (o.scope === target.scope || o.scope === path || o.scope === "*"));
+        for (const row of old) await api(`/admin/overrides/${row.id}`, { method: "DELETE" });
+        next = next.filter((o) => o.original !== sizeKey);
+        if (target.size !== 100) {
+          const sizeBody = { kind: "image", scope: target.scope, original: sizeKey, replacement: String(target.size) };
+          await api("/admin/overrides", { method: "POST", body: sizeBody });
+          next = [...next, sizeBody];
+        }
+      }
+      target.el?.removeAttribute("data-cube-sizing");
+      setOverrides(next);
       toast.success(target.scope === "*" ? "Saved on every page" : "Saved on this page");
       setTarget(null);
     } catch (e) {
@@ -652,6 +671,27 @@ export default function EditLayer({ path, overrides, setOverrides }) {
                   New text
                 </label>
                 <textarea id="cube-edit-text" autoFocus rows={4} maxLength={5000} value={target.value} onChange={(e) => setTarget((t) => ({ ...t, value: e.target.value }))} className={`${INPUT} mt-1`} />
+                <label className="mt-4 block">
+                  <span className="flex items-baseline justify-between text-[12px] uppercase tracking-[0.08em] text-[#6B6E75]">
+                    Text size
+                    <output className="font-mono text-[13px] normal-case tracking-normal text-primary">{target.size}%</output>
+                  </span>
+                  <input
+                    type="range"
+                    min={50}
+                    max={250}
+                    step={5}
+                    value={target.size}
+                    onChange={(e) => {
+                      const size = Number(e.target.value);
+                      target.el.setAttribute("data-cube-sizing", "");
+                      sizeText(target.el, size);
+                      setTarget((t) => ({ ...t, size }));
+                    }}
+                    className="mt-1 w-full accent-[#0047FF]"
+                  />
+                  <span className="block text-[12px] text-[#6B6E75]">You can see it change on the page behind this box. 100% is the normal size.</span>
+                </label>
               </>
             ) : (
               <div className="mt-4 grid grid-cols-2 gap-3">
@@ -708,7 +748,17 @@ export default function EditLayer({ path, overrides, setOverrides }) {
                 )}
               </div>
               <div className="flex gap-2">
-                <Button variant="ghost" onClick={() => (setPicking(false), setTarget(null))}>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (target.kind === "text") {
+                      target.el.removeAttribute("data-cube-sizing");
+                      sizeText(target.el, target.sizeWas);
+                    }
+                    setPicking(false);
+                    setTarget(null);
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button disabled={busy || (target.kind === "text" ? !norm(target.value) : target.value === target.original)} onClick={save}>

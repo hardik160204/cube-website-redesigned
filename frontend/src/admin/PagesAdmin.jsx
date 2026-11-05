@@ -1,9 +1,12 @@
-import React, { useState } from "react";
-import { ArrowDown, ArrowUp, Copy, ExternalLink, ImagePlus, LayoutTemplate, Plus, Trash2, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { ArrowDown, ArrowUp, Copy, ExternalLink, ImagePlus, LayoutTemplate, PencilLine, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import { ICONS } from "../lib/editable";
-import { Button, Card, Empty, Field, INPUT, PageTitle, act, useResource, utcStamp } from "./ui";
+import { Button, Card, Empty, Field, INPUT, PageTitle, Toggle, act, useResource, utcStamp } from "./ui";
+import { startEditing } from "./ContentAdmin";
+import { DEFAULT_OFF } from "../components/PageGate";
+import ROUTES from "../seo/routes.json";
 import { MediaPicker } from "./MediaAdmin";
 import { COPY_GROUPS, LAYOUTS, SAMPLE, copyPage } from "./blueprints";
 
@@ -539,45 +542,134 @@ export function PagePicker({ name: givenName = "", pages = [], onPick, onClose }
   );
 }
 
-export default function PagesAdmin({ out }) {
+// --- Every page of the website, with its switch and its edit buttons ---------------------------------------------
+const SITE_PAGES = Object.entries(ROUTES)
+  .filter(([, m]) => !m.canonical)
+  .map(([path, m]) => ({ path, name: m.title.split("|")[0].trim() }));
+const PAGE_GROUPS = [
+  ["Main pages", (p) => !/^\/(services|billing|industries|prison-calling|student-calling|terms|privacy)/.test(p)],
+  ["Products and services", (p) => /^\/(services|billing|prison-calling|student-calling)/.test(p)],
+  ["Industries", (p) => p.startsWith("/industries/")],
+  ["Legal", (p) => /^\/(terms|privacy)/.test(p)],
+];
+
+function PageRow({ name, path, status, on, canEdit, onToggle, onBuild }) {
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3 text-[14px]">
+      <span className="flex min-w-0 flex-1 items-center gap-3">
+        <Toggle on={on} label={`${name} page`} onChange={onToggle} />
+        <span className="min-w-[180px]">
+          <span className={`block font-medium ${on ? "text-[#0A0626]" : "text-[#9CA3AF] line-through"}`}>{name}</span>
+          <span className="block text-[12px] text-[#6B6E75]">
+            <span className="font-mono">{path}</span>
+            {!on && <span className="ml-1.5 text-[#9A5B00]">· Off: visitors see the “back soon” message</span>}
+            {status}
+          </span>
+        </span>
+      </span>
+      <span className="flex flex-wrap gap-2">
+        {onBuild && (
+          <Button variant="ghost" onClick={onBuild}>
+            Edit sections
+          </Button>
+        )}
+        {canEdit && (
+          <Button onClick={() => startEditing(path)}>
+            <PencilLine size={15} /> Edit
+          </Button>
+        )}
+        <a href={path} target="_blank" rel="noopener noreferrer" aria-label={`View ${name}`} className="inline-flex items-center rounded-lg border border-[#DCE2EE] bg-white px-2.5 py-2 text-[#0A0626] hover:bg-[#F0F4FB]">
+          <ExternalLink size={15} />
+        </a>
+      </span>
+    </li>
+  );
+}
+
+export default function PagesAdmin({ me, out }) {
   const [data, reload] = useResource("/admin/pages", out);
+  const [settings] = useResource("/admin/settings", out);
+  const [off, setOff] = useState(null);
   const [editing, setEditing] = useState(null);
   const [picking, setPicking] = useState(false);
+  const [search, setSearch] = useState("");
+  const canEdit = me.isOwner || me.permissions.includes("content");
+  useEffect(() => {
+    if (settings) setOff({ paths: [], title: "", message: "", ...(settings.pagesOff || {}) });
+  }, [settings]);
+
   if (editing) return <Editor key={editing.id || "new"} initial={editing} onDone={() => (setEditing(null), reload())} />;
+  if (!off) return <Empty>Loading...</Empty>;
+
+  const store = (next, message) => act(() => api("/admin/settings/pagesOff", { method: "PUT", body: { value: next } }), message);
+  const toggle = async (path, name, on) => {
+    if (!on && path === "/" && !window.confirm("Switch off the homepage? Visitors arriving at your main address will only see the “back soon” message.")) return;
+    const next = { ...off, paths: on ? off.paths.filter((p) => p !== path) : [...off.paths, path] };
+    setOff(next);
+    if (!(await store(next, on ? `${name} is live again` : `${name} is switched off`))) setOff(off);
+  };
+  const match = (p) => !search.trim() || `${p.name} ${p.path}`.toLowerCase().includes(search.trim().toLowerCase());
+  const built = (data?.pages || []).map((p) => ({ ...p, name: p.content.hero.title.replace(/[[\]]/g, "") })).filter(match);
+  const offCount = off.paths.length;
+
   return (
     <>
       <PageTitle
         title="Pages"
-        desc="New pages for the website, built here without code. Put them in the menu from Navigation bar, or link to them from any card (Site content → Edit the website → Edit these cards)."
+        desc={`Every page of the website. Switch a page off to take it away from visitors, or press Edit to change anything on it. ${offCount ? `${offCount} switched off right now.` : "All pages are on."}`}
         actions={<Button onClick={() => setPicking(true)}><Plus size={16} /> New page</Button>}
       />
       {picking && <PagePicker pages={data?.pages || []} onClose={() => setPicking(false)} onPick={(f) => (setPicking(false), setEditing(f))} />}
-      <Card>
-        {!data ? (
-          <Empty>Loading...</Empty>
-        ) : data.pages.length === 0 ? (
-          <Empty>No pages yet. Click “New page” to build one.</Empty>
-        ) : (
-          <ul className="-my-3 divide-y divide-[#EEF1F7]">
-            {data.pages.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-[14px]">
-                <span className="min-w-0">
-                  <span className="block font-medium text-[#0A0626]">{p.content.hero.title.replace(/[[\]]/g, "")}</span>
-                  <span className="block text-[12px] text-[#6B6E75]">
-                    <span className="font-mono">{p.path}</span> · {p.published ? <span className="text-[#0F6B3A]">Live</span> : <span className="text-[#9A5B00]">Draft</span>} · updated {utcStamp(p.updated_at)}
-                  </span>
-                </span>
-                <span className="flex gap-2">
-                  <a href={p.path} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE2EE] bg-white px-3 py-2 text-[13px] font-medium text-[#0A0626] hover:bg-[#F0F4FB]">
-                    {p.published ? "View" : "Preview"} <ExternalLink size={13} />
-                  </a>
-                  <Button onClick={() => setEditing(fromRow(p))}>Edit</Button>
-                </span>
-              </li>
-            ))}
-          </ul>
+
+      <div className="mb-4">
+        <input type="search" placeholder="Find a page..." value={search} onChange={(e) => setSearch(e.target.value)} className={`${INPUT} max-w-md`} aria-label="Find a page" />
+      </div>
+
+      <div className="space-y-4">
+        {built.length > 0 && (
+          <Card title={`Pages you built (${built.length})`}>
+            <ul className="-my-3 divide-y divide-[#EEF1F7]">
+              {built.map((p) => (
+                <PageRow
+                  key={p.id}
+                  name={p.name}
+                  path={p.path}
+                  on={!off.paths.includes(p.path)}
+                  canEdit={canEdit}
+                  status={<span className="ml-1.5">· {p.published ? <span className="text-[#0F6B3A]">Published</span> : <span className="text-[#9A5B00]">Draft</span>} · updated {utcStamp(p.updated_at)}</span>}
+                  onToggle={(on) => toggle(p.path, p.name, on)}
+                  onBuild={() => setEditing(fromRow(p))}
+                />
+              ))}
+            </ul>
+          </Card>
         )}
-      </Card>
+        {PAGE_GROUPS.map(([title, inGroup]) => {
+          const rows = SITE_PAGES.filter((p) => inGroup(p.path) && match(p));
+          if (!rows.length) return null;
+          return (
+            <Card key={title} title={`${title} (${rows.length})`}>
+              <ul className="-my-3 divide-y divide-[#EEF1F7]">
+                {rows.map((p) => (
+                  <PageRow key={p.path} name={p.name} path={p.path} on={!off.paths.includes(p.path)} canEdit={canEdit} onToggle={(on) => toggle(p.path, p.name, on)} />
+                ))}
+              </ul>
+            </Card>
+          );
+        })}
+
+        <Card title="What visitors see on a switched-off page" actions={<Button onClick={() => store(off, "Message saved")}>Save message</Button>}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Headline">
+              <input value={off.title} placeholder={DEFAULT_OFF.title} maxLength={120} onChange={(e) => setOff({ ...off, title: e.target.value })} className={INPUT} />
+            </Field>
+            <Field label="Message">
+              <input value={off.message} placeholder={DEFAULT_OFF.message} maxLength={300} onChange={(e) => setOff({ ...off, message: e.target.value })} className={INPUT} />
+            </Field>
+          </div>
+          <p className="mt-3 text-[12px] text-[#6B6E75]">It appears beside the Cube animation with its revolving app logos, with buttons back to the homepage and to Contact. You can still press Edit on a page while it's off: only visitors are kept out.</p>
+        </Card>
+      </div>
     </>
   );
 }

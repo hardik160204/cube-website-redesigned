@@ -14,7 +14,7 @@ export default function IndustryPicker() {
     <section id="industries" className="scroll-mt-32 bg-white px-4 py-[60px] md:py-24">
       <div className="mx-auto w-full max-w-[1228px]">
         <SectionIntro label="Industries We Serve." title="Our products are designed to perform at" highlight="every arena" />
-        <ul {...mark} className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <ul {...mark} className="mt-10 cl-fit gap-4 [--n:2] lg:[--n:5]">
           {items.map(({ title, href, icon: Icon }, i) => (
             <li key={`${i}-${title}`}>
               <Link

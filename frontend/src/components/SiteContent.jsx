@@ -103,6 +103,37 @@ function applyRemovals(overrides, path) {
   }
 }
 
+// --- One piece of text sized on its own ------------------------------------------------------------------------------
+// Saved as an edit "size:<original words>" with a percentage. It multiplies the element's --fs, so the text keeps its
+// responsive sizes; text that only inherits its size from a parent is sized as a percentage of that instead.
+export function sizeText(el, pct) {
+  el.style.removeProperty("--fs");
+  el.style.removeProperty("font-size");
+  el.removeAttribute("data-cube-sized");
+  if (pct === 100) return;
+  const style = getComputedStyle(el);
+  const before = parseFloat(style.fontSize);
+  el.setAttribute("data-cube-sized", "");
+  el.style.setProperty("--fs", `calc(${style.getPropertyValue("--fs") || 1} * ${pct / 100})`);
+  if (Math.abs(parseFloat(getComputedStyle(el).fontSize) - before) < 0.1) el.style.fontSize = `${pct}%`;
+}
+
+function applySizes(overrides, path) {
+  // Text being sized in the editor's box right now keeps its live preview.
+  for (const el of document.querySelectorAll("[data-cube-sized]:not([data-cube-sizing])")) sizeText(el, 100);
+  const sizes = new Map();
+  for (const o of [...overrides.filter((x) => x.scope === "*"), ...overrides.filter((x) => x.scope === path)]) if (o.kind === "image" && o.original.startsWith("size:")) sizes.set(o.original.slice(5), Number(o.replacement));
+  if (!sizes.size) return;
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    const shown = norm(n.nodeValue);
+    if (!shown || skip(n.parentElement) || n.parentElement.hasAttribute("data-cube-sizing")) continue;
+    const prev = originals.get(n);
+    const pct = sizes.get(prev && prev.shown === shown ? prev.original : shown);
+    if (pct) sizeText(n.parentElement, pct);
+  }
+}
+
 // A phone number edited as text also changes its call links and any mention inside a longer sentence, in
 // whichever format it's written there (+91 80 68 69 44 40, +91 806 869 4440, tel:+918068694440).
 const PHONE = /^\+?[\d\s()-]{7,}$/;
@@ -201,6 +232,7 @@ function apply(overrides, path) {
     }
   }
   applyRemovals(overrides, path);
+  applySizes(overrides, path);
 }
 
 export default function SiteContent() {

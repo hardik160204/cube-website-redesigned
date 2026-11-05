@@ -22,6 +22,22 @@ export function Button({ variant = "primary", className = "", ...props }) {
   );
 }
 
+// An on/off switch.
+export function Toggle({ on, onChange, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={() => onChange(!on)}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-150 ${on ? "bg-[#16A34A]" : "bg-[#C9CED8]"}`}
+    >
+      <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-150 ${on ? "translate-x-5" : ""}`} />
+    </button>
+  );
+}
+
 export function Field({ label, hint, children, className = "" }) {
   return (
     <label className={`block ${className}`}>

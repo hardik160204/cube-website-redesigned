@@ -8,6 +8,7 @@ import { CITIES, CONTACT, tel } from "./home/catalog";
 import { openDemo } from "./demo";
 import { navIcon } from "../lib/nav";
 import { useSiteData } from "../lib/site";
+import { currentFestival } from "../lib/festivals";
 
 // Site header on every page (App.js), a sticky navy announcement bar whose messages ripple
 // in letter by letter, over a white bar with full-width mega panels.
@@ -55,17 +56,21 @@ function WaveText({ parts }) {
 }
 
 function AnnouncementBar({ onClose }) {
+  const { festival } = useSiteData();
+  const greeting = currentFestival(festival)?.greeting;
+  // A festival's greeting leads the messages while it's on.
+  const messages = greeting ? [{ parts: [[greeting, true]] }, ...ANNOUNCEMENTS] : ANNOUNCEMENTS;
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
   // Rotates every 6s; hovering or focusing the bar holds the current message (WCAG 2.2.2).
   useEffect(() => {
     if (paused) return;
-    const t = setInterval(() => setIndex((i) => (i + 1) % ANNOUNCEMENTS.length), ROTATE_MS);
+    const t = setInterval(() => setIndex((i) => (i + 1) % messages.length), ROTATE_MS);
     return () => clearInterval(t);
-  }, [paused]);
+  }, [paused, messages.length]);
 
-  const message = ANNOUNCEMENTS[index];
+  const message = messages[index] || messages[0];
   const plain = message.parts.map(([t]) => t).join("");
   const right = "inline-flex items-center gap-1.5 whitespace-nowrap underline-offset-2 hover:underline";
 
@@ -381,6 +386,13 @@ export default function SiteHeader() {
     watcher.observe(ul);
     return () => watcher.disconnect();
   }, [nav]);
+  // Heroes size themselves to what's left of the screen below this header.
+  const headerRef = useRef(null);
+  useEffect(() => {
+    const watcher = new ResizeObserver(([e]) => document.documentElement.style.setProperty("--cl-header", `${Math.round(e.target.offsetHeight)}px`));
+    watcher.observe(headerRef.current);
+    return () => watcher.disconnect();
+  }, []);
   const [barOpen, setBarOpen] = useState(true);
   const [open, setOpen] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -409,6 +421,7 @@ export default function SiteHeader() {
 
   return (
     <header
+      ref={headerRef}
       className="sticky top-0 z-50"
       onKeyDown={(e) => e.key === "Escape" && closeAll()}
       onBlur={(e) => {

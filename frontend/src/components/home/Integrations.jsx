@@ -32,7 +32,7 @@ export default function Integrations() {
           </Link>
         </div>
 
-        <ul {...mark} className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <ul {...mark} className="mt-10 cl-fit gap-5 [--n:1] sm:[--n:2] lg:[--n:4]">
           {items.map(({ name, kind, icon: Icon, line }, i) => (
             <li key={`${i}-${name}`}>
               <Link

@@ -48,7 +48,7 @@ export default function ContactCenterModules() {
           </Link>
         </div>
 
-        <ul {...modules.mark} className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <ul {...modules.mark} className="mt-14 cl-fit gap-5 [--n:1] sm:[--n:2] lg:[--n:4]">
           {modules.items.map((m, i) => {
             const accent = ACCENTS[i % ACCENTS.length];
             return (

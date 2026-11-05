@@ -10,13 +10,13 @@ import { MediaPicker } from "./MediaAdmin";
 // Every change made with the visual editor — text, pictures, videos, animations and card lists — with the
 // option to adjust or undo each one.
 
-export function startEditing() {
+export function startEditing(path = "/") {
   try {
     sessionStorage.setItem(EDIT_FLAG, "1");
   } catch {
     /* storage blocked */
   }
-  window.location.assign("/");
+  window.location.assign(path);
 }
 
 const where = (scope) =>
@@ -107,6 +107,24 @@ function RemovedRow({ o, onChange }) {
   );
 }
 
+// One piece of text sized on its own in the editor.
+function SizeRow({ o, onChange }) {
+  const undo = async () => window.confirm("Put this text back to its normal size?") && (await act(() => api(`/admin/overrides/${o.id}`, { method: "DELETE" }), "Back to normal size")) && onChange();
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 py-4">
+      <div className="min-w-0 flex-1">
+        <p className="text-[12px] text-[#6B6E75]">
+          Text size {o.replacement}% · {where(o.scope)} · {utcStamp(o.updated_at)}
+        </p>
+        <p className="mt-1 line-clamp-2 text-[14px] text-[#404348]">{o.original.slice(5)}</p>
+      </div>
+      <Button variant="ghost" onClick={undo}>
+        Normal size
+      </Button>
+    </li>
+  );
+}
+
 const LIST_LABEL = { features: "Feature cards", steps: "Steps", checklist: "List items", tiles: "Tiles", faq: "Questions", products: "Product cards", card: "Cards" };
 const firstText = (it) => (typeof it === "string" ? it : it.title || it.q || Object.values(it).find((v) => typeof v === "string" && v) || "");
 
@@ -120,7 +138,7 @@ export default function ContentAdmin({ out }) {
         title="Site content"
         desc="Change any text, picture, video or animation on the website, and add, remove or reorder cards. Open the editor, click what you want to change, and save."
         actions={
-          <Button onClick={startEditing}>
+          <Button onClick={() => startEditing()}>
             <PencilLine size={16} /> Edit the website
           </Button>
         }
@@ -162,7 +180,7 @@ export default function ContentAdmin({ out }) {
           <Empty>No edits yet. Click "Edit the website" to make your first change.</Empty>
         ) : (
           <ul className="-my-4 divide-y divide-[#EEF1F7]">
-            {data.overrides.map((o) => (o.original.startsWith("hide:") ? <RemovedRow key={o.id} o={o} onChange={reload} /> : <Row key={`${o.id}-${o.updated_at}`} o={o} onChange={reload} />))}
+            {data.overrides.map((o) => (o.original.startsWith("hide:") ? <RemovedRow key={o.id} o={o} onChange={reload} /> : o.original.startsWith("size:") ? <SizeRow key={o.id} o={o} onChange={reload} /> : <Row key={`${o.id}-${o.updated_at}`} o={o} onChange={reload} />))}
           </ul>
         )}
       </Card>

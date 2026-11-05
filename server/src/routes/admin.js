@@ -101,6 +101,10 @@ function checkSettings(key, v) {
     return null;
   }
   if (key === "nav") return checkNav(v);
+  if (key === "fonts") return checkFonts(v);
+  if (key === "festival") return checkFestival(v);
+  if (key === "pagesOff") return checkPagesOff(v);
+  if (key === "bot") return checkBot(v);
   if (key === "retention") {
     if (!v || !Number.isInteger(v.enquiryMonths) || v.enquiryMonths < 6 || v.enquiryMonths > 84) return "Keep enquiries for 6 to 84 months.";
     return null;
@@ -125,13 +129,13 @@ function checkSettings(key, v) {
 
 // Dashboard sections the owner can give each admin. The owner always has them all, plus the activity log
 // and admin accounts; the overview and an admin's own password are open to everyone.
-const SECTIONS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "media", "team", "analytics", "consents", "privacy", "settings"];
+const SECTIONS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "fonts", "festivals", "bot", "media", "team", "analytics", "consents", "privacy", "settings"];
 const may = (admin, ...any) => admin.isOwner || any.some((s) => admin.permissions.includes(s));
 const need = (...any) => (req, res, next) => (may(req.admin, ...any) ? next() : res.status(403).json({ error: "You don't have access to this. Ask the owner to give it to you." }));
 const ownerOnly = (req, res, next) => (req.admin.isOwner ? next() : res.status(403).json({ error: "Only the owner can see this." }));
 // Anyone who edits content needs the image library to pick from.
 const MEDIA_USERS = ["media", "blog", "content", "pages", "team"];
-const SETTING_SECTION = { salesEmails: "settings", demo: "settings", retention: "settings", team: "team", socials: "team", nav: "navigation" };
+const SETTING_SECTION = { salesEmails: "settings", demo: "settings", retention: "settings", team: "team", socials: "team", nav: "navigation", fonts: "fonts", festival: "festivals", pagesOff: "pages", bot: "bot" };
 const checkPermissions = (v) => (Array.isArray(v) && v.length <= SECTIONS.length && v.every((s) => SECTIONS.includes(s)) ? null : "Unknown section.");
 
 // Card lists edited on the site. Each kind keeps only its own fields, so nothing unexpected is stored and
@@ -194,6 +198,62 @@ function cleanNav(v) {
     items: v.items.map((m) => (m.groups === undefined ? { label: t(m.label), href: t(m.href) } : { label: t(m.label), layout: m.layout, extras: m.extras === true, groups: m.groups.map(group) })),
     expert: v.expert !== false,
     demo: v.demo !== false,
+  };
+}
+
+// Font sizes as percentages of the design, by kind of text.
+const FONT_KINDS = ["all", "head", "body", "nav"];
+const checkFonts = (v) => (v && typeof v === "object" && FONT_KINDS.every((k) => Number.isInteger(v[k]) && v[k] >= 70 && v[k] <= 140) ? null : "Font sizes must be between 70% and 140%.");
+
+// Festival themes: which one is on (one at a time), what it includes and its greetings. The same keys as the site's.
+const FESTIVALS = ["diwali", "holi", "navratri", "ganesh", "rakhi", "independence", "republic", "sankranti", "eid", "christmas", "newyear"];
+function checkFestival(v) {
+  if (!v || typeof v !== "object") return "Invalid festival settings.";
+  if (v.active !== null && !FESTIVALS.includes(v.active)) return "Unknown festival.";
+  if (!v.greetings || typeof v.greetings !== "object") return "Invalid greetings.";
+  for (const [k, g] of Object.entries(v.greetings)) if (!FESTIVALS.includes(k) || !isStr(g, 140)) return "Greetings can be up to 140 characters.";
+  return null;
+}
+const cleanFestival = (v) => ({
+  active: v.active,
+  scroll: v.scroll !== false,
+  effects: v.effects !== false,
+  popup: v.popup !== false,
+  greetings: Object.fromEntries(Object.entries(v.greetings).map(([k, g]) => [k, g.trim()]).filter(([, g]) => g)),
+});
+
+// Pages switched off, and what visitors see instead.
+function checkPagesOff(v) {
+  if (!v || !Array.isArray(v.paths) || v.paths.length > 300 || !v.paths.every((p) => isStr(p, 120, 1) && /^\/[a-z0-9/-]*$/.test(p))) return "Invalid page list.";
+  if (!isStr(v.title ?? "", 120) || !isStr(v.message ?? "", 300)) return "Headline up to 120 and message up to 300 characters.";
+  return null;
+}
+const cleanPagesOff = (v) => ({ paths: [...new Set(v.paths)], title: (v.title || "").trim(), message: (v.message || "").trim() });
+
+// Cube the bot. A button opens the demo booking ("demo:") or a safe kind of link.
+function checkBot(v) {
+  if (!v || typeof v !== "object") return "Invalid bot settings.";
+  if (!isStr(v.title, 60, 1) || !isStr(v.subtitle ?? "", 100) || !isStr(v.status ?? "", 40) || !isStr(v.questionsTitle ?? "", 60)) return "Check the bot's title and lines.";
+  if (!v.bubbles || !["default", "pricing", "services", "industries"].every((k) => isStr(v.bubbles[k], 160, 1))) return "Every speech bubble needs its text (up to 160 characters).";
+  if (!Array.isArray(v.actions) || v.actions.length > 8) return "The bot can have up to 8 buttons.";
+  for (const a of v.actions) {
+    if (!a || !isStr(a.label, 40, 1) || !isStr(a.sub ?? "", 60) || !navIconOk(a.icon)) return "Every bot button needs a name (up to 40 characters).";
+    if (a.href !== "demo:" && !(isStr(a.href, 500, 1) && (CARD_LINK.test(a.href.trim()) || /^https:\/\/[^\s<>"']{5,500}$/.test(a.href.trim())))) return `“${a.label}” needs a page or a link to open (/page, https://, tel: or mailto:).`;
+  }
+  if (!Array.isArray(v.faqs) || v.faqs.length > 20 || !v.faqs.every((f) => f && isStr(f.q, 160, 1) && isStr(f.a, 1000, 1))) return "Every question needs its answer (up to 20 questions).";
+  return null;
+}
+function cleanBot(v) {
+  const t = (s) => (typeof s === "string" ? s.trim() : "");
+  return {
+    enabled: v.enabled !== false,
+    status: t(v.status),
+    title: t(v.title),
+    subtitle: t(v.subtitle),
+    bubbles: Object.fromEntries(["default", "pricing", "services", "industries"].map((k) => [k, t(v.bubbles[k])])),
+    actions: v.actions.map((a) => ({ label: t(a.label), sub: t(a.sub), icon: t(a.icon), href: t(a.href) })),
+    questionsTitle: t(v.questionsTitle),
+    faqs: v.faqs.map((f) => ({ q: t(f.q), a: t(f.a) })),
   };
 }
 
@@ -474,7 +534,9 @@ module.exports = function adminRoutes(db) {
     if (!(scope === "*" || (isStr(scope, 100) && /^\/[A-Za-z0-9/_\-]*$/.test(scope)))) return res.status(400).json({ error: "Invalid page." });
     if (!isStr(original, 2300, 1)) return res.status(400).json({ error: "Original is required." });
     if (kind === "text" && !isStr(replacement, 5000)) return res.status(400).json({ error: "Text is too long." });
-    if (kind === "image" && !(replacement === "" || (isStr(replacement, 500) && SAFE_URL.test(replacement)))) return res.status(400).json({ error: "Image URL is not valid." });
+    const textSize = kind === "image" && original.startsWith("size:");
+    if (textSize && !(/^\d{2,3}$/.test(replacement) && Number(replacement) >= 50 && Number(replacement) <= 250)) return res.status(400).json({ error: "Text size must be 50% to 250%." });
+    if (kind === "image" && !textSize && !(replacement === "" || (isStr(replacement, 500) && SAFE_URL.test(replacement)))) return res.status(400).json({ error: "Image URL is not valid." });
     await db.run(
       `INSERT INTO overrides (kind, scope, original, replacement, width, height) VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT (kind, scope, original) DO UPDATE SET replacement = excluded.replacement, width = excluded.width, height = excluded.height, updated_at = now()`,
@@ -700,6 +762,10 @@ module.exports = function adminRoutes(db) {
     // Keep only the known fields, so nothing unexpected is stored and served on the public site.
     if (key === "team") value = value.map((m) => ({ name: m.name.trim(), role: m.role || "", image: m.image || "", bio: m.bio || "", linkedin: m.linkedin || "" }));
     if (key === "nav") value = cleanNav(value);
+    if (key === "fonts") value = Object.fromEntries(FONT_KINDS.map((k) => [k, value[k]]));
+    if (key === "festival") value = cleanFestival(value);
+    if (key === "pagesOff") value = cleanPagesOff(value);
+    if (key === "bot") value = cleanBot(value);
     if (key === "socials") value = Object.fromEntries(["facebook", "linkedin", "instagram", "youtube", "x"].map((k) => [k, value[k] || ""]));
     await settings.set(db, key, value);
     res.json({ ok: true });

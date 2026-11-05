@@ -8,7 +8,7 @@ import { Heading, PageHero, Section } from "../components/page/kit";
 export default function ClientVoices() {
   return (
     <>
-      <PageHero
+      <PageHero roomy
         crumbs={["Client Voices"]}
         label="Client Voices & Success Stories"
         title="Trusted by India's Leading"

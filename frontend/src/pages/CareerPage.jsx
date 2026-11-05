@@ -63,7 +63,7 @@ export default function CareerPage() {
   const stories = useCards(STORY_CARDS, STORY_FIELDS);
   return (
     <>
-      <PageHero
+      <PageHero roomy
         crumbs={["Career"]}
         label="Career"
         title={

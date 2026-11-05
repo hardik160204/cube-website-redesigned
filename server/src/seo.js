@@ -91,14 +91,15 @@ async function render(db, pathname) {
 }
 
 async function sitemap(db) {
+  const off = (await settings.get(db, "pagesOff"))?.paths || [];
   const urls = Object.entries(routes())
-    .filter(([, m]) => !m.canonical)
+    .filter(([p, m]) => !m.canonical && !off.includes(p))
     .map(([p]) => ({ loc: `${config.siteUrl}${p}` }));
   for (const p of await db.all("SELECT slug, updated_at FROM posts WHERE published")) {
     urls.push({ loc: `${config.siteUrl}/blog/${p.slug}`, lastmod: p.updated_at.slice(0, 10) });
   }
   for (const p of await db.all("SELECT path, updated_at FROM pages WHERE published")) {
-    urls.push({ loc: `${config.siteUrl}${p.path}`, lastmod: p.updated_at.slice(0, 10) });
+    if (!off.includes(p.path)) urls.push({ loc: `${config.siteUrl}${p.path}`, lastmod: p.updated_at.slice(0, 10) });
   }
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

@@ -10,6 +10,7 @@ import { CLIENT_LOGOS, PARTNER_LOGOS } from "../clients-and-partners";
 import { openDemo } from "../demo";
 import { useCards, useList } from "../../lib/editable";
 import MediaSlot from "../MediaSlot";
+import OrbApps from "./OrbApps";
 
 // The inner pages' building blocks, in the homepage's language: logo palette, Outfit type, dark ink
 // (#0A0626) bands, 28px radii, Emil's ease-out, and reveal-on-scroll that reduced motion turns off.
@@ -70,7 +71,7 @@ export function CtaButtons({ primary = "Book a demo", secondary = "Talk to an ex
 // --- Page hero ----------------------------------------------------------------------------------
 // Dark ink band with the AI section's drifting light and moving grid. `video` plays full-bleed behind the
 // copy; `image` sits framed on the right. `stats` run along the bottom edge.
-export function PageHero({ crumbs = [], label, title, highlight, body, image, imageAlt = "", media, video, backdrop, stats: builtInStats, actions, children }) {
+export function PageHero({ crumbs = [], label, title, highlight, body, image, imageAlt = "", media, video, backdrop, stats: builtInStats, actions, full = false, roomy = false, children }) {
   const reduce = useReducedMotion();
   const { items: stats, mark: statsMark } = useCards(builtInStats, STAT_FIELDS);
   const item = (i) => ({
@@ -79,7 +80,7 @@ export function PageHero({ crumbs = [], label, title, highlight, body, image, im
     transition: { duration: 0.7, ease, delay: 0.08 + i * 0.08 },
   });
   return (
-    <section className="cl-hero relative isolate overflow-hidden bg-[#0A0626] text-white">
+    <section className={`cl-hero relative isolate flex flex-col overflow-hidden bg-[#0A0626] text-white ${stats?.length || full ? "cl-hero-full" : ""} ${roomy ? "cl-hero-roomy" : ""}`}>
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
         {video && (
           <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-45">
@@ -94,10 +95,10 @@ export function PageHero({ crumbs = [], label, title, highlight, body, image, im
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A0626] to-transparent" />
       </div>
 
-      <div className={`mx-auto grid max-w-[1228px] items-center gap-12 px-4 pb-12 pt-10 md:pb-14 md:pt-12 lg:grid-cols-[1.05fr_0.95fr]`}>
+      <div className="cl-hero-main mx-auto grid w-full max-w-[1228px] flex-1 items-center gap-12 px-4 pb-12 pt-10 md:pb-14 md:pt-12 lg:grid-cols-[1.05fr_0.95fr]">
         <div>
           {crumbs.length > 0 && (
-            <motion.nav {...item(0)} aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1.5 text-[13px] text-[#A9B3CC]">
+            <motion.nav {...item(0)} aria-label="Breadcrumb" className="cl-hero-crumbs mb-4 flex flex-wrap items-center gap-1.5 text-[13px] text-[#A9B3CC]">
               <Link to="/" className="transition-colors hover:text-white">
                 Home
               </Link>
@@ -125,11 +126,11 @@ export function PageHero({ crumbs = [], label, title, highlight, body, image, im
             )}
           </motion.h1>
           {body && (
-            <motion.p {...item(3)} className="mt-5 max-w-[600px] text-[17px] leading-7 text-[#C9D2EC]">
+            <motion.p {...item(3)} className="cl-hero-body mt-5 max-w-[600px] text-[17px] leading-7 text-[#C9D2EC]">
               {body}
             </motion.p>
           )}
-          <motion.div {...item(4)} className="mt-7">
+          <motion.div {...item(4)} className="cl-hero-actions mt-7">
             {actions || <CtaButtons dark />}
           </motion.div>
           {children}
@@ -157,7 +158,7 @@ export function PageHero({ crumbs = [], label, title, highlight, body, image, im
       </div>
 
       {stats && (
-        <div className="relative border-t border-white/10 bg-white/[0.03] backdrop-blur-sm">
+        <div className="cl-hero-stats relative shrink-0 border-t border-white/10 bg-white/[0.03] backdrop-blur-sm">
           <dl {...statsMark} className="mx-auto flex max-w-[1228px] flex-wrap divide-x divide-white/10 px-4">
             {stats.map((s, i) => (
               // Flex, not a fixed grid: when a stat is removed or added the others share the row evenly.
@@ -206,7 +207,10 @@ export function Heading({ className = "", ...props }) {
 }
 
 // --- Cards ----------------------------------------------------------------------------------------
-const COLS = { 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" };
+// Cards share each row (cl-fit in site-effects.css), so removing or adding one never leaves a hole. One card
+// alone on the last row would look stranded, so such a set runs one more to the row.
+const COLS = { 2: "[--n:1] sm:[--n:2]", 3: "[--n:1] sm:[--n:2] lg:[--n:3]", 4: "[--n:1] sm:[--n:2] lg:[--n:4]", 5: "[--n:1] sm:[--n:2] lg:[--n:5]" };
+const fitCols = (count, cols) => (count > cols && count % cols === 1 ? cols + 1 : cols);
 
 export function FeatureCard({ icon: Icon, title, desc, i = 0, dark = false, children }) {
   const accent = ACCENTS[i % ACCENTS.length];
@@ -242,7 +246,7 @@ export function FeatureCard({ icon: Icon, title, desc, i = 0, dark = false, chil
 export function FeatureCards({ items: builtIn, cols = 3, dark = false, className = "" }) {
   const { items, mark } = useList("features", builtIn);
   return (
-    <ul {...mark} className={`grid gap-5 ${COLS[cols]} ${className}`}>
+    <ul {...mark} className={`cl-fit gap-5 ${COLS[fitCols(items.length, cols)]} ${className}`}>
       {items.map((f, i) => (
         <FeatureCard key={`${i}-${f.title}`} {...f} desc={f.desc ?? f.description} i={i} dark={dark} />
       ))}
@@ -254,7 +258,7 @@ export function FeatureCards({ items: builtIn, cols = 3, dark = false, className
 export function Steps({ items: builtIn, dark = false, className = "" }) {
   const reduce = useReducedMotion();
   const { items, mark } = useList("steps", builtIn);
-  const cols = { 2: "lg:grid-cols-2", 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5" }[items.length] || "lg:grid-cols-3";
+  const cols = { 2: "lg:[--n:2]", 3: "lg:[--n:3]", 4: "lg:[--n:4]", 5: "lg:[--n:5]" }[items.length] || "lg:[--n:3]";
   return (
     <motion.div className={`relative ${className}`} initial={reduce ? false : "hidden"} whileInView="show" viewport={{ once: true, margin: "-80px" }}>
       <motion.span
@@ -262,7 +266,7 @@ export function Steps({ items: builtIn, dark = false, className = "" }) {
         variants={{ hidden: { transform: "scaleX(0)" }, show: { transform: "scaleX(1)", transition: { duration: 1.2, ease } } }}
         className="absolute left-[8%] right-[8%] top-7 hidden h-[2px] origin-left bg-[linear-gradient(90deg,#FF0000,#2300DC,#0047FF,#00B8FF)] lg:block"
       />
-      <ol {...mark} className={`relative grid gap-5 ${cols}`}>
+      <ol {...mark} className={`cl-fit relative gap-5 [--n:1] ${cols}`}>
         {items.map((s, i) => (
           <Reveal as="li" key={`${i}-${s.title}`} delay={0.15 + i * 0.12} className="flex flex-col items-start lg:items-center lg:text-center">
             <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[linear-gradient(135deg,#00B8FF,#0047FF_55%,#2300DC)] text-lg font-semibold text-white shadow-[0_0_0_6px_rgb(0_71_255/0.12),0_16px_30px_-12px_rgb(0_71_255/0.9)]">
@@ -328,7 +332,7 @@ export function CheckList({ items: builtIn, dark = false, cols = 1, className = 
 export function Tiles({ items: builtIn, className = "", cols = 2 }) {
   const { items, mark } = useList("tiles", builtIn);
   return (
-    <ul {...mark} className={`grid gap-4 ${cols === 4 ? "sm:grid-cols-2 lg:grid-cols-4" : cols === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"} ${className}`}>
+    <ul {...mark} className={`cl-fit gap-4 [--n:1] ${cols === 4 ? "sm:[--n:2] lg:[--n:4]" : cols === 3 ? "sm:[--n:3]" : "sm:[--n:2]"} ${className}`}>
       {items.map((u, i) => (
         <Reveal as="li" key={`${i}-${u}`} delay={Math.min(i, 6) * 0.06}>
           <div className="group h-full rounded-[20px] border border-[#E5EAF4] bg-white p-5 transition-[translate,box-shadow,border-color] duration-300 ease-out-expo hover:border-[#99B5FF] hover:shadow-[0_20px_40px_-24px_rgb(0_71_255/0.45)] hover:[translate:0_-3px]">
@@ -365,9 +369,9 @@ export function Title({ children, highlight, dark = false, className = "" }) {
 export function ModuleCards({ modules: builtIn, className = "" }) {
   const { items: modules, mark } = useCards(moduleCards(builtIn), MODULE_FIELDS);
   const icons = moduleIcons(builtIn);
-  const cols = modules.length >= 4 ? "lg:grid-cols-4" : modules.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2";
+  const cols = modules.length >= 4 ? "lg:[--n:4]" : modules.length === 3 ? "lg:[--n:3]" : "lg:[--n:2]";
   return (
-    <ul {...mark} className={`grid gap-5 sm:grid-cols-2 ${cols} ${className}`}>
+    <ul {...mark} className={`cl-fit gap-5 [--n:1] sm:[--n:2] ${cols} ${className}`}>
       {modules.map((m, i) => {
         const accent = ACCENTS[i % ACCENTS.length];
         return (
@@ -437,24 +441,15 @@ export function IconTiles({ tiles: builtIn, dark = false }) {
 
 // The homepage's Cube orb, for heroes that have no picture of their own: rings, orbits and the logo's
 // 12 diamonds at its heart. Pure CSS loops (site-effects.css), held still under reduced motion.
-export function HeroOrb({ word = "Cube" }) {
+export function HeroOrb({ word = "Cube", always = false }) {
   return (
-    <div aria-hidden="true" className="cl-ai-scene relative mx-auto hidden h-[420px] w-[420px] max-w-full lg:block">
+    <div aria-hidden="true" className={`cl-ai-scene relative mx-auto h-[420px] w-[420px] max-w-full ${always ? "" : "hidden lg:block"}`}>
       <div className="cl-ai-orb cl-orb-static origin-top-left scale-[0.8077]">
         <span className="cl-ai-glow" />
         {[0, 1.25, 2.5, 3.75].map((d) => (
           <span key={d} className="cl-ai-ring" style={{ animationDelay: `${d}s` }} />
         ))}
-        <span className="cl-ai-orbit">
-          {[0, 120, 240].map((a) => (
-            <i key={a} style={{ transform: `rotate(${a}deg) translateY(-180px)` }} />
-          ))}
-        </span>
-        <span className="cl-ai-orbit cl-outer">
-          {[60, 240].map((a) => (
-            <i key={a} style={{ transform: `rotate(${a}deg) translateY(-230px)` }} />
-          ))}
-        </span>
+        <OrbApps />
         <span className="cl-ai-swirl" />
         <span className="cl-ai-core">
           <span className="relative block h-[72px] w-[104px]">
