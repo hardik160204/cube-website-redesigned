@@ -53,7 +53,7 @@ export default function BlogPage() {
 
   return (
     <>
-      <PageHero roomy
+      <PageHero
         crumbs={["Blog"]}
         label="Cube Blog"
         title="Insights on"

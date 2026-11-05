@@ -53,7 +53,7 @@ export default function ContactPage() {
 
   return (
     <>
-      <PageHero roomy
+      <PageHero
         crumbs={["Contact"]}
         label="Thank you for your interest in Cube Software!"
         title="Get in"

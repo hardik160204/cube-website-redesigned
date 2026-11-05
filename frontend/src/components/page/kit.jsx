@@ -71,7 +71,7 @@ export function CtaButtons({ primary = "Book a demo", secondary = "Talk to an ex
 // --- Page hero ----------------------------------------------------------------------------------
 // Dark ink band with the AI section's drifting light and moving grid. `video` plays full-bleed behind the
 // copy; `image` sits framed on the right. `stats` run along the bottom edge.
-export function PageHero({ crumbs = [], label, title, highlight, body, image, imageAlt = "", media, video, backdrop, stats: builtInStats, actions, full = false, roomy = false, children }) {
+export function PageHero({ crumbs = [], label, title, highlight, body, image, imageAlt = "", media, video, backdrop, stats: builtInStats, actions, full = false, children }) {
   const reduce = useReducedMotion();
   const { items: stats, mark: statsMark } = useCards(builtInStats, STAT_FIELDS);
   const item = (i) => ({
@@ -80,7 +80,7 @@ export function PageHero({ crumbs = [], label, title, highlight, body, image, im
     transition: { duration: 0.7, ease, delay: 0.08 + i * 0.08 },
   });
   return (
-    <section className={`cl-hero relative isolate flex flex-col overflow-hidden bg-[#0A0626] text-white ${stats?.length || full ? "cl-hero-full" : ""} ${roomy ? "cl-hero-roomy" : ""}`}>
+    <section className={`cl-hero relative isolate flex flex-col overflow-hidden bg-[#0A0626] text-white ${stats?.length ? "cl-hero-full cl-hero-compact" : full ? "cl-hero-full" : ""}`}>
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
         {video && (
           <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-45">

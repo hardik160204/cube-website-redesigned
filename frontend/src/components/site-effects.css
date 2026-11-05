@@ -222,32 +222,32 @@
 .cl-root header, .cl-root button, .cl-root footer nav { --fs: calc(var(--fs-all, 1) * var(--fs-nav, 1)); }
 .cl-root [data-cube-ui], .cl-root [data-cube-ui] *, [data-sonner-toaster], [data-sonner-toaster] * { --fs: 1; }
 
-/* --- Heroes fit the first screen ------------------------------------------------------------------------------ */
+/* --- Heroes with a stats strip fit the first screen, so the strip is in view. Other heroes keep their full size. - */
 @media (min-width: 1024px) {
   .cl-hero-full { min-height: calc(100svh - var(--cl-header, 117px) - 36px); }
 }
 @media (min-width: 1024px) and (max-height: 880px) {
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-main { padding-top: 1.5rem; padding-bottom: 1.5rem; gap: 2rem; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-crumbs { margin-bottom: 0.5rem; }
-  .cl-hero:not(.cl-hero-roomy) h1 { margin-top: 0.75rem; font-size: 44px; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-body { margin-top: 0.75rem; font-size: 16px; line-height: 1.55; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-actions { margin-top: 1.25rem; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-stats dl > div { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-stats dd:first-of-type { font-size: 28px; }
-  .cl-hero:not(.cl-hero-roomy) .cl-ai-scene { transform: scale(0.8); margin-top: -42px; margin-bottom: -42px; }
-  .cl-hero:not(.cl-hero-roomy) img { max-height: 300px; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-main svg[viewBox]:not(.lucide) { max-height: 320px; }
+  .cl-hero-compact .cl-hero-main { padding-top: 1.5rem; padding-bottom: 1.5rem; gap: 2rem; }
+  .cl-hero-compact .cl-hero-crumbs { margin-bottom: 0.5rem; }
+  .cl-hero-compact h1 { margin-top: 0.75rem; font-size: 44px; }
+  .cl-hero-compact .cl-hero-body { margin-top: 0.75rem; font-size: 16px; line-height: 1.55; }
+  .cl-hero-compact .cl-hero-actions { margin-top: 1.25rem; }
+  .cl-hero-compact .cl-hero-stats dl > div { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  .cl-hero-compact .cl-hero-stats dd:first-of-type { font-size: 28px; }
+  .cl-hero-compact .cl-ai-scene { transform: scale(0.8); margin-top: -42px; margin-bottom: -42px; }
+  .cl-hero-compact img { max-height: 300px; }
+  .cl-hero-compact .cl-hero-main svg[viewBox]:not(.lucide) { max-height: 320px; }
 }
 @media (min-width: 1024px) and (max-height: 660px) {
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-main { padding-top: 1rem; padding-bottom: 1rem; }
-  .cl-hero:not(.cl-hero-roomy) h1 { margin-top: 0.5rem; font-size: 38px; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-body { margin-top: 0.5rem; font-size: 15px; line-height: 1.5; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-actions { margin-top: 0.875rem; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-stats dl > div { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-stats dd:first-of-type { font-size: 24px; }
-  .cl-hero:not(.cl-hero-roomy) .cl-ai-scene { transform: scale(0.72); margin-top: -59px; margin-bottom: -59px; }
-  .cl-hero:not(.cl-hero-roomy) img { max-height: 240px; }
-  .cl-hero:not(.cl-hero-roomy) .cl-hero-main svg[viewBox]:not(.lucide) { max-height: 260px; }
+  .cl-hero-compact .cl-hero-main { padding-top: 1rem; padding-bottom: 1rem; }
+  .cl-hero-compact h1 { margin-top: 0.5rem; font-size: 38px; }
+  .cl-hero-compact .cl-hero-body { margin-top: 0.5rem; font-size: 15px; line-height: 1.5; }
+  .cl-hero-compact .cl-hero-actions { margin-top: 0.875rem; }
+  .cl-hero-compact .cl-hero-stats dl > div { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+  .cl-hero-compact .cl-hero-stats dd:first-of-type { font-size: 24px; }
+  .cl-hero-compact .cl-ai-scene { transform: scale(0.72); margin-top: -59px; margin-bottom: -59px; }
+  .cl-hero-compact img { max-height: 240px; }
+  .cl-hero-compact .cl-hero-main svg[viewBox]:not(.lucide) { max-height: 260px; }
 }
 
 /* --- App logos revolving round the orb, each staying upright as it goes ---------------------------------------- */

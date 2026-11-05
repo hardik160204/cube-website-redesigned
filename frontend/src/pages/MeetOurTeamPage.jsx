@@ -95,7 +95,7 @@ export default function MeetOurTeamPage() {
   const { team } = useSiteData();
   return (
     <>
-      <PageHero roomy
+      <PageHero
         crumbs={["Meet Our Team"]}
         label="Meet Our Team"
         title="The Minds Behind"
