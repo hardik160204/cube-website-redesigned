@@ -388,7 +388,7 @@ test("analytics: page views are stored without identifiers; admin pages and bots
 
 test("team and social links: validated, stripped to known fields, served to the site", async () => {
   const cookie = await signIn();
-  assert.deepEqual(await (await api("/api/site")).json(), { team: null, socials: null });
+  assert.deepEqual(await (await api("/api/site")).json(), { team: null, socials: null, nav: null });
   const put = (key, value) => api(`/api/admin/settings/${key}`, { method: "PUT", cookie, body: { value } });
   assert.equal((await put("team", [{ name: "A", linkedin: "javascript:alert(1)" }])).status, 400);
   assert.equal((await put("team", [{ name: "A", image: "javascript:alert(1)" }])).status, 400);
@@ -565,6 +565,73 @@ test("pages built in the dashboard: validated, can't take over existing addresse
   assert.match(await (await api("/sitemap.xml")).text(), /\/services\/test-page/);
   assert.equal((await api(`/api/admin/pages/${id}`, { method: "DELETE", cookie })).status, 200);
   assert.equal((await api("/api/page?path=/services/test-page")).status, 404);
+});
+
+test("pages keep the parts copied from existing pages: numbers, animation, tiles, questions, dark band", async () => {
+  const cookie = await signIn();
+  const page = (hero, section) => ({ path: "/copied-page", title: "Copied page", description: "", published: true, content: { hero: { title: "Hello", ...hero }, sections: [{ title: "Why", ...section }], cta: null } });
+  const post = (body) => api("/api/admin/pages", { method: "POST", cookie, body });
+  assert.equal((await post(page({ scene: "<script>" }))).status, 400);
+  assert.equal((await post(page({ stats: [{ label: "no value" }] }))).status, 400);
+  assert.equal((await post(page({}, { faqs: [{ q: "No answer" }] }))).status, 400);
+  assert.equal((await post(page({}, { tiles: [{ icon: "bad icon!", label: "x" }] }))).status, 400);
+  const created = await post(page(
+    { scene: "missed-call", stats: [{ value: "35+", label: "Years", extra: "dropped" }], tiles: [{ icon: "Mic", label: "Capture" }] },
+    { dark: true, numbered: ["One", "Two"], faqs: [{ q: "Why?", a: "Because." }], tiles: [{ icon: "Cloud", label: "Store" }] }
+  ));
+  assert.equal(created.status, 201);
+  const { hero, sections } = (await (await api("/api/page?path=/copied-page")).json()).page.content;
+  assert.equal(hero.scene, "missed-call");
+  assert.deepEqual(hero.stats, [{ value: "35+", label: "Years" }]);
+  assert.deepEqual(sections[0].faqs, [{ q: "Why?", a: "Because." }]);
+  assert.deepEqual(sections[0].numbered, ["One", "Two"]);
+  assert.equal(sections[0].dark, true);
+  assert.equal((await api(`/api/admin/pages/${(await created.json()).id}`, { method: "DELETE", cookie })).status, 200);
+});
+
+test("navigation bar: validated, stripped to known fields, served to the site; needs its own access", async () => {
+  const owner = await signIn();
+  const put = (value, cookie = owner) => api("/api/admin/settings/nav", { method: "PUT", cookie, body: { value } });
+  const link = { label: "Screen Logger", desc: "Screens.", href: "/services/screen-logger", icon: "Mic" };
+  const option = { label: "Record", icon: "Mic", featured: null, links: [link] };
+  const menu = { label: "Solutions", layout: "simple", extras: false, groups: [option] };
+  const nav = (items) => ({ items, expert: true, demo: false });
+  for (const bad of [
+    null,
+    { items: [] },
+    nav(Array.from({ length: 9 }, () => ({ label: "A", href: "/a" }))),
+    nav([{ label: "", href: "/a" }]),
+    nav([{ label: "A" }]), // goes nowhere
+    nav([{ label: "A", href: "javascript:alert(1)" }]),
+    nav([{ ...menu, layout: "unknown" }]),
+    nav([{ ...menu, groups: [] }]),
+    nav([{ ...menu, groups: [{ ...option, label: "" }] }]),
+    nav([{ ...menu, groups: [{ ...option, icon: "<b>" }] }]),
+    nav([{ ...menu, groups: [{ ...option, featured: { title: "T", href: "javascript:alert(1)" } }] }]),
+    nav([{ ...menu, groups: [{ ...option, links: [{ ...link, href: "javascript:alert(1)" }] }] }]),
+    nav([{ ...menu, groups: [{ ...option, links: [{ ...link, href: "" }] }] }]),
+  ]) assert.equal((await put(bad)).status, 400, JSON.stringify(bad));
+
+  const ok = nav([{ label: " Features ", href: "/#features", extra: "dropped" }, { ...menu, extra: "dropped", groups: [{ ...option, extra: "dropped", links: [{ ...link, extra: "dropped" }, { label: "Call us", href: "tel:+911204057109" }, { label: "Partner", href: "https://example.com/x" }] }] }]);
+  assert.equal((await put(ok)).status, 200);
+  const saved = (await (await api("/api/site")).json()).nav;
+  assert.deepEqual(saved.items[0], { label: "Features", href: "/#features" });
+  assert.deepEqual(saved.items[1].groups[0].links[0], link);
+  assert.equal(saved.items[1].groups[0].extra, undefined);
+  assert.equal(saved.items[1].extra, undefined);
+  assert.equal(saved.demo, false);
+  assert.equal(saved.expert, true);
+
+  // Another admin can change it only when the owner gives them the section.
+  await api("/api/admin/admins", { method: "POST", cookie: owner, body: { email: "navigator@cube-software.com", password: "Long-enough-pass-1", permissions: ["blog"] } });
+  const editor = await signIn("navigator@cube-software.com", "Long-enough-pass-1");
+  assert.equal((await put(ok, editor)).status, 403);
+  const { admins } = await (await api("/api/admin/admins", { cookie: owner })).json();
+  const id = admins.find((a) => a.email === "navigator@cube-software.com").id;
+  assert.equal((await api(`/api/admin/admins/${id}/permissions`, { method: "PUT", cookie: owner, body: { permissions: ["navigation"] } })).status, 200);
+  assert.equal((await put(ok, editor)).status, 200);
+  await api(`/api/admin/admins/${id}`, { method: "DELETE", cookie: owner });
+  await db.run("DELETE FROM settings WHERE key = 'nav'");
 });
 
 test("security headers are set", async () => {

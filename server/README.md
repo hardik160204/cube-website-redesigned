@@ -247,7 +247,14 @@ Open `/admin`. From there you can:
   that exact original, the edit stops applying (it isn't deleted) until the original is restored or it's redone
 - **build new pages** in "Pages": a top section, any number of sections (text, bullet lists, cards with
   icons, numbered steps, pictures) and a closing call to action, drawn in the same layout as the product
-  pages. Save as a draft (only signed-in admins can preview it) or publish; published pages join the sitemap
+  pages. Save as a draft (only signed-in admins can preview it) or publish; published pages join the sitemap.
+  A new page starts by asking what it should look like: a copy of an existing page (with that page's site
+  edits already applied; the original isn't touched) or a ready layout whose sample text, marked ✎, must be
+  replaced before it can go live
+- **change the navigation bar** in "Navigation bar": add, rename, reorder, move or remove links, dropdown menus,
+  their side options and links, and the two buttons on the right, and start a new page right from a link.
+  Saved in the `nav` setting; until it's saved the site shows the menu built into `frontend/src/lib/nav.js`.
+  It needs its own access ("Navigation bar"), which the owner gives per admin
 - upload and delete **images and videos**: JPG, PNG, WebP, AVIF and GIF up to 10 MB, MP4/WebM up to 50 MB.
   Files go from the browser straight to Storage through a one-file upload link the server signs (so no key
   reaches the browser and big videos aren't limited by Vercel's 4.5 MB request cap); the server then checks

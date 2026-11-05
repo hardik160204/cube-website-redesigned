@@ -233,6 +233,7 @@ export function HeroScene({ name }) {
   const reduce = useReducedMotion();
   const id = useId().replace(/:/g, "");
   const s = SCENES[name];
+  if (!s) return null;
   const paths = s.nodes.map(link);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} aria-hidden="true" className="mx-auto h-auto w-full max-w-[500px]">

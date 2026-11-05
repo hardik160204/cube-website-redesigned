@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, ChevronDown, ChevronRight, Factory, Layers, Mail, Menu, Phone, Receipt, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronRight, Mail, Menu, Phone, Receipt, X } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { PARTNER_LOGOS } from "./clients-and-partners";
-import { CITIES, CONTACT, INDUSTRIES, PLATFORM, RESOURCES, SOLUTIONS, tel } from "./home/catalog";
+import { CITIES, CONTACT, tel } from "./home/catalog";
 import { openDemo } from "./demo";
+import { navIcon } from "../lib/nav";
+import { useSiteData } from "../lib/site";
 
 // Site header on every page (App.js), a sticky navy announcement bar whose messages ripple
 // in letter by letter, over a white bar with full-width mega panels.
@@ -18,14 +20,6 @@ const ANNOUNCEMENTS = [
   { parts: [["Annual billing: "], ["save 20%", true], [" on Starter and Professional plans."]], link: ["See pricing", "/pricing"] },
 ];
 const ROTATE_MS = 6000;
-
-const MENUS = [
-  { label: "Platform", panel: PlatformPanel },
-  { label: "Solutions", panel: SolutionsPanel },
-  { label: "Features", href: "/#features" },
-  { label: "Resources", panel: ResourcesPanel },
-  { label: "Pricing", href: "/pricing" },
-];
 
 // Fast, no bounce: menus are opened dozens of times a session.
 const panelMotion = (reduce) => ({
@@ -117,15 +111,18 @@ function AnnouncementBar({ onClose }) {
 // --- Mega panels ----------------------------------------------------------------------------------
 const RAIL_ITEM = "flex w-full items-center gap-1.5 rounded-[10px] px-2 py-2.5 text-left transition-colors";
 
-function PlatformPanel({ onNavigate }) {
+// Options down the side; the chosen one shows a highlight box and links with descriptions.
+function RichPanel({ menu, onNavigate }) {
   const [active, setActive] = useState(0);
-  const category = PLATFORM[active];
+  const category = menu.groups[active] || menu.groups[0];
   return (
     <div className="mx-auto flex max-w-[1224px]">
       <div className="my-8 flex w-[300px] shrink-0 flex-col gap-1">
-        {PLATFORM.map((c, i) => (
+        {menu.groups.map((c, i) => {
+          const Icon = navIcon(c.icon);
+          return (
           <button
-            key={c.heading}
+            key={i}
             type="button"
             onPointerEnter={() => setActive(i)}
             onFocus={() => setActive(i)}
@@ -133,15 +130,16 @@ function PlatformPanel({ onNavigate }) {
             aria-pressed={i === active}
             className={`${RAIL_ITEM} ${i === active ? "bg-[#F0F3F9] text-primary" : "text-[#404348] hover:text-primary"}`}
           >
-            <c.icon size={20} className="shrink-0" />
-            <span className="flex-1 text-[17px] font-medium">{c.heading}</span>
+            <Icon size={20} className="shrink-0" />
+            <span className="flex-1 text-[17px] font-medium">{c.label}</span>
             {i === active && <ChevronRight size={18} />}
           </button>
-        ))}
+          );
+        })}
       </div>
 
       <div className="ml-5 flex-1 border-l border-[#EDEEEF] px-6 py-8">
-        <motion.div key={category.featured.href} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.15 } }} className="rounded-xl border-2 border-primary bg-white px-7 py-5">
+        {category.featured && <motion.div key={`f${active}`} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.15 } }} className="rounded-xl border-2 border-primary bg-white px-7 py-5">
           <div className="flex items-center justify-between gap-4">
             <p className="text-[22px] font-medium text-[#404348]">{category.featured.title}</p>
             <Link to={category.featured.href} onClick={onNavigate} className="flex shrink-0 items-center gap-1 text-sm font-medium text-primary">
@@ -149,10 +147,12 @@ function PlatformPanel({ onNavigate }) {
             </Link>
           </div>
           <p className="mt-2 text-sm text-[#4A4D53]">{category.featured.desc}</p>
-        </motion.div>
-        <motion.ul key={category.heading} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.15 } }} className="mt-4 grid grid-cols-2 gap-x-6">
-          {category.links.map(({ label, desc, href, icon: Icon }) => (
-            <li key={href}>
+        </motion.div>}
+        <motion.ul key={`l${active}`} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.15 } }} className="mt-4 grid grid-cols-2 gap-x-6">
+          {category.links.map(({ label, desc, href, icon }, k) => {
+            const Icon = navIcon(icon);
+            return (
+            <li key={k}>
               <Link to={href} onClick={onNavigate} className="group flex items-center gap-3 rounded-lg px-3 py-[10px] hover:bg-[#F5F8FF]">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#EDEEEF] text-[#31343A]">
                   <Icon size={20} />
@@ -163,26 +163,26 @@ function PlatformPanel({ onNavigate }) {
                 </span>
               </Link>
             </li>
-          ))}
+            );
+          })}
         </motion.ul>
       </div>
     </div>
   );
 }
 
-const SOLUTION_RAIL = [
-  { label: "Solutions", icon: Layers, items: SOLUTIONS },
-  { label: "Industries", icon: Factory, items: INDUSTRIES },
-];
-
-function SolutionsPanel({ onNavigate }) {
+// Options down the side; the chosen one shows plain links.
+function SimplePanel({ menu, onNavigate }) {
   const [active, setActive] = useState(0);
+  const chosen = menu.groups[active] || menu.groups[0];
   return (
     <div className="mx-auto flex max-w-[1224px]">
       <div className="my-8 flex w-[300px] shrink-0 flex-col gap-1">
-        {SOLUTION_RAIL.map((r, i) => (
+        {menu.groups.map((r, i) => {
+          const Icon = navIcon(r.icon);
+          return (
           <button
-            key={r.label}
+            key={i}
             type="button"
             onPointerEnter={() => setActive(i)}
             onFocus={() => setActive(i)}
@@ -190,48 +190,53 @@ function SolutionsPanel({ onNavigate }) {
             aria-pressed={i === active}
             className={`${RAIL_ITEM} ${i === active ? "bg-[#F0F3F9] text-primary" : "text-[#404348] hover:text-primary"}`}
           >
-            <r.icon size={18} className="shrink-0" />
+            <Icon size={18} className="shrink-0" />
             <span className="flex-1 text-[15px] font-medium uppercase">{r.label}</span>
             {i === active && <ChevronRight size={18} />}
           </button>
-        ))}
+          );
+        })}
       </div>
       <motion.ul key={active} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.15 } }} className="ml-5 grid flex-1 grid-cols-2 content-start gap-x-10 border-l border-[#EDEEEF] px-8 py-7">
-        {SOLUTION_RAIL[active].items.map(({ title, href, icon: Icon }) => (
-          <li key={href}>
+        {chosen.links.map(({ label, href, icon }, k) => {
+          const Icon = navIcon(icon);
+          return (
+          <li key={k}>
             <Link to={href} onClick={onNavigate} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] text-[#31343A] transition-colors hover:bg-[#F5F8FF] hover:text-primary">
               <Icon size={18} className="shrink-0 text-[#4A4D53]" />
-              {title}
+              {label}
             </Link>
           </li>
-        ))}
+          );
+        })}
       </motion.ul>
     </div>
   );
 }
 
-const RESOURCE_COLUMNS = [
-  { heading: "Company", items: RESOURCES.filter((r) => ["/about", "/meet-our-team", "/career", "/blog"].includes(r.href)) },
-  { heading: "Customers", items: RESOURCES.filter((r) => ["/client-voices", "/#faq", "/contact"].includes(r.href)) },
-];
-
-function ResourcesPanel({ onNavigate }) {
+// Links in columns; `extras` adds the contact, pricing, CRM and go-live boxes.
+function ColumnsPanel({ menu, onNavigate }) {
   const link = "flex items-center gap-3 py-2 text-[15px] text-[#31343A] transition-colors hover:text-primary";
   const card = "flex flex-col gap-3 rounded-xl border border-[#EDEEEF] p-4 text-[15px] text-[#31343A] transition-colors hover:border-[#99B5FF]";
+  const columns = menu.groups.map((col, i) => (
+    <div key={i}>
+      <p className="mb-2 text-[13px] uppercase text-[#6B6E75]">{col.label}</p>
+      {col.links.map(({ label, href, icon }, k) => {
+        const Icon = navIcon(icon);
+        return (
+          <Link key={k} to={href} onClick={onNavigate} className={link}>
+            <Icon size={18} className="text-[#4A4D53]" /> {label}
+          </Link>
+        );
+      })}
+    </div>
+  ));
+  if (!menu.extras) return <div className="mx-auto grid max-w-[1224px] grid-cols-4 gap-8 py-8">{columns}</div>;
   return (
     <div className="mx-auto max-w-[1224px] py-8">
       <div className="grid grid-cols-[1fr_1fr_1.15fr] gap-8">
         <div className="col-span-2 grid grid-cols-2 gap-8">
-          {RESOURCE_COLUMNS.map((col) => (
-            <div key={col.heading}>
-              <p className="mb-2 text-[13px] uppercase text-[#6B6E75]">{col.heading}</p>
-              {col.items.map(({ title, href, icon: Icon }) => (
-                <Link key={href} to={href} onClick={onNavigate} className={link}>
-                  <Icon size={18} className="text-[#4A4D53]" /> {title}
-                </Link>
-              ))}
-            </div>
-          ))}
+          {columns}
           <div className="col-span-2 rounded-xl border border-[#EDEEEF] px-5 py-4">
             <p className="text-[15px] font-medium text-[#31343A]">Talk to sales or support</p>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-primary">
@@ -292,31 +297,29 @@ function ResourcesPanel({ onNavigate }) {
   );
 }
 
+const PANELS = { rich: RichPanel, simple: SimplePanel, columns: ColumnsPanel };
+
 // --- Mobile sheet ---------------------------------------------------------------------------------
-function MobileSheet({ onNavigate }) {
-  const groups = [
-    { label: "Platform", items: PLATFORM.flatMap((c) => c.links.map(({ label, href }) => ({ title: label, href }))) },
-    { label: "Solutions", items: SOLUTIONS },
-    { label: "Industries", items: INDUSTRIES },
-    { label: "Resources", items: RESOURCES },
-  ];
+function MobileSheet({ nav, tight, onNavigate }) {
+  // A plain-link menu shows each side option as its own row, as on desktop; the others show one row of all links.
+  const groups = nav.items.flatMap((m) => (!m.groups ? [] : m.layout === "simple" ? m.groups : [{ label: m.label, links: m.groups.flatMap((g) => g.links) }]));
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.18 } }}
       exit={{ opacity: 0, transition: { duration: 0.12 } }}
-      className="absolute inset-x-0 top-full max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain border-t border-[#EDEEEF] bg-white px-5 pb-10 lg:hidden"
+      className={`absolute inset-x-0 top-full max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain border-t border-[#EDEEEF] bg-white px-5 pb-10 ${tight ? "" : "lg:hidden"}`}
     >
       <Accordion type="single" collapsible>
-        {groups.map((g) => (
-          <AccordionItem key={g.label} value={g.label} className="border-[#EDEEEF]">
+        {groups.map((g, i) => (
+          <AccordionItem key={i} value={String(i)} className="border-[#EDEEEF]">
             <AccordionTrigger className="text-lg font-medium text-[#31343A] hover:no-underline">{g.label}</AccordionTrigger>
             <AccordionContent>
               <ul className="grid gap-1 pb-2 sm:grid-cols-2">
-                {g.items.map(({ title, href }) => (
-                  <li key={href}>
+                {g.links.map(({ label, href }, k) => (
+                  <li key={k}>
                     <Link to={href} onClick={onNavigate} className="block rounded-lg px-3 py-2 text-[15px] text-[#404348] hover:bg-[#F5F8FF] hover:text-primary">
-                      {title}
+                      {label}
                     </Link>
                   </li>
                 ))}
@@ -325,18 +328,22 @@ function MobileSheet({ onNavigate }) {
           </AccordionItem>
         ))}
       </Accordion>
-      {[["Features", "/#features"], ["Pricing", "/pricing"]].map(([label, href]) => (
-        <Link key={href} to={href} onClick={onNavigate} className="block border-b border-[#EDEEEF] py-4 text-lg font-medium text-[#31343A]">
+      {nav.items.filter((m) => !m.groups).map(({ label, href }, i) => (
+        <Link key={i} to={href} onClick={onNavigate} className="block border-b border-[#EDEEEF] py-4 text-lg font-medium text-[#31343A]">
           {label}
         </Link>
       ))}
       <div className="mt-6 grid gap-3">
-        <button type="button" onClick={() => { onNavigate(); openDemo(); }} className="rounded-lg bg-primary py-3 text-center font-medium text-white">
-          Book a demo
-        </button>
-        <a href={tel(CONTACT.expert)} className="rounded-lg border border-[#EDEEEF] py-3 text-center font-medium text-primary">
-          Talk to an expert
-        </a>
+        {nav.demo !== false && (
+          <button type="button" onClick={() => { onNavigate(); openDemo(); }} className="rounded-lg bg-primary py-3 text-center font-medium text-white">
+            Book a demo
+          </button>
+        )}
+        {nav.expert !== false && (
+          <a href={tel(CONTACT.expert)} className="rounded-lg border border-[#EDEEEF] py-3 text-center font-medium text-primary">
+            Talk to an expert
+          </a>
+        )}
         <a href={`mailto:${CONTACT.email}`} className="flex items-center justify-center gap-2 py-2 text-sm text-[#6B6E75]">
           <Mail size={14} /> {CONTACT.email}
         </a>
@@ -349,6 +356,31 @@ function MobileSheet({ onNavigate }) {
 export default function SiteHeader() {
   const reduce = useReducedMotion();
   const location = useLocation();
+  const { nav, ready } = useSiteData();
+  // The menu stays hidden for a moment while the saved one loads, so visitors never see the old one flash by.
+  const [waited, setWaited] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setWaited(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
+  // A menu too long to fit beside the logo and buttons gives way to the phone menu instead of overflowing.
+  const menuRef = useRef(null);
+  const [tight, setTight] = useState(false);
+  useEffect(() => {
+    const ul = menuRef.current;
+    const row = ul.parentElement;
+    const check = () => {
+      const style = getComputedStyle(row);
+      const room = row.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 2 * parseFloat(style.columnGap || 0);
+      const others = [...row.children].filter((c) => c !== ul).reduce((n, c) => n + c.offsetWidth, 0);
+      setTight(ul.offsetWidth > 0 && ul.scrollWidth + others > room);
+    };
+    check();
+    const watcher = new ResizeObserver(check);
+    watcher.observe(row);
+    watcher.observe(ul);
+    return () => watcher.disconnect();
+  }, [nav]);
   const [barOpen, setBarOpen] = useState(true);
   const [open, setOpen] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -361,9 +393,9 @@ export default function SiteHeader() {
   useEffect(() => () => clearTimeout(closeTimer.current), []);
 
   // A 120ms grace period lets the pointer cross from a trigger into its panel without it closing.
-  const openMenu = (label) => {
+  const openMenu = (i) => {
     clearTimeout(closeTimer.current);
-    setOpen(label);
+    setOpen(i);
   };
   const scheduleClose = () => {
     clearTimeout(closeTimer.current);
@@ -391,26 +423,27 @@ export default function SiteHeader() {
             <img src="/logo75.png" alt="Cube Software home" className="h-9 w-auto object-contain" />
           </Link>
 
-          <ul className="mx-auto hidden h-full items-center lg:flex">
-            {MENUS.map((menu) => {
-              if (!menu.panel) {
+          <ul ref={menuRef} className={`mx-auto hidden h-full items-center lg:flex ${tight ? "absolute invisible" : ready || waited ? "" : "invisible"}`}>
+            {nav.items.map((menu, i) => {
+              const gap = nav.items.length > 6 ? "px-2.5" : "px-4";
+              if (!menu.groups) {
                 return (
-                  <li key={menu.label}>
-                    <Link to={menu.href} className="px-4 text-base text-black transition-colors hover:text-primary">
+                  <li key={i}>
+                    <Link to={menu.href} className={`${gap} whitespace-nowrap text-base text-black transition-colors hover:text-primary`}>
                       {menu.label}
                     </Link>
                   </li>
                 );
               }
-              const isOpen = open === menu.label;
-              const Panel = menu.panel;
+              const isOpen = open === i;
+              const Panel = PANELS[menu.layout] || SimplePanel;
               return (
-                <li key={menu.label} className="flex h-full items-center" onPointerEnter={() => openMenu(menu.label)} onPointerLeave={scheduleClose}>
+                <li key={i} className="flex h-full items-center" onPointerEnter={() => openMenu(i)} onPointerLeave={scheduleClose}>
                   <button
                     type="button"
                     aria-expanded={isOpen}
-                    onClick={() => (isOpen ? setOpen(null) : openMenu(menu.label))}
-                    className="relative flex h-full items-center gap-1 px-4 text-base"
+                    onClick={() => (isOpen ? setOpen(null) : openMenu(i))}
+                    className={`relative flex h-full items-center gap-1 ${gap} whitespace-nowrap text-base`}
                   >
                     <span className={isOpen ? "font-medium text-primary" : "text-black"}>{menu.label}</span>
                     <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? "rotate-180 text-primary" : "text-black"}`} />
@@ -422,7 +455,7 @@ export default function SiteHeader() {
                   <AnimatePresence>
                     {isOpen && (
                       <motion.div {...panelMotion(reduce)} className="absolute inset-x-0 top-full border-y border-[#F6F6F9] bg-white px-4 shadow-[0_24px_40px_-24px_rgb(0_0_0/0.18)]">
-                        <Panel onNavigate={closeAll} />
+                        <Panel menu={menu} onNavigate={closeAll} />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -432,28 +465,32 @@ export default function SiteHeader() {
           </ul>
 
           <div className="ml-auto flex items-center gap-3 lg:ml-0">
-            <a
-              href={tel(CONTACT.expert)}
-              className="hidden rounded-lg border border-[#EDEEEF] bg-white px-4 py-1.5 font-medium text-primary transition-colors hover:border-primary/40 xl:inline-flex"
-            >
-              Talk to an expert<span className="hidden 2xl:inline">&nbsp;· {CONTACT.expert}</span>
-            </a>
-            <button type="button" onClick={openDemo} className="hidden rounded-lg border border-primary bg-primary px-4 py-1.5 font-medium text-white transition-colors hover:bg-[#2300DC] sm:inline-flex">
-              Book a demo
-            </button>
+            {nav.expert !== false && (
+              <a
+                href={tel(CONTACT.expert)}
+                className="hidden rounded-lg border border-[#EDEEEF] bg-white px-4 py-1.5 font-medium text-primary transition-colors hover:border-primary/40 xl:inline-flex"
+              >
+                Talk to an expert<span className="hidden 2xl:inline">&nbsp;· {CONTACT.expert}</span>
+              </a>
+            )}
+            {nav.demo !== false && (
+              <button type="button" onClick={openDemo} className="hidden rounded-lg border border-primary bg-primary px-4 py-1.5 font-medium text-white transition-colors hover:bg-[#2300DC] sm:inline-flex">
+                Book a demo
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
               aria-label="Toggle menu"
               aria-expanded={mobileOpen}
-              className="rounded-lg p-2 text-[#31343A] hover:bg-[#F5F8FF] lg:hidden"
+              className={`rounded-lg p-2 text-[#31343A] hover:bg-[#F5F8FF] ${tight ? "" : "lg:hidden"}`}
             >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
 
-        <AnimatePresence>{mobileOpen && <MobileSheet onNavigate={closeAll} />}</AnimatePresence>
+        <AnimatePresence>{mobileOpen && <MobileSheet nav={nav} tight={tight} onNavigate={closeAll} />}</AnimatePresence>
       </nav>
     </header>
   );

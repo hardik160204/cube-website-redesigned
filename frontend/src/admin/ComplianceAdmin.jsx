@@ -187,6 +187,7 @@ const CHANGES = [
   [/^PUT \/slot-rules/, "Changed a demo slot"],
   [/^PUT \/days/, "Opened or closed a demo day"],
   [/^PUT \/settings\/(team|socials)/, "Changed the team or social links"],
+  [/^PUT \/settings\/nav/, "Changed the navigation bar"],
   [/^PUT \/settings/, "Changed settings"],
   [/^POST \/privacy\/erase/, "Erased someone's personal data"],
   [/^POST \/retention/, "Ran the automatic deletion"],

@@ -100,6 +100,7 @@ function checkSettings(key, v) {
     }
     return null;
   }
+  if (key === "nav") return checkNav(v);
   if (key === "retention") {
     if (!v || !Number.isInteger(v.enquiryMonths) || v.enquiryMonths < 6 || v.enquiryMonths > 84) return "Keep enquiries for 6 to 84 months.";
     return null;
@@ -124,13 +125,13 @@ function checkSettings(key, v) {
 
 // Dashboard sections the owner can give each admin. The owner always has them all, plus the activity log
 // and admin accounts; the overview and an admin's own password are open to everyone.
-const SECTIONS = ["bookings", "calendar", "leads", "blog", "content", "pages", "media", "team", "analytics", "consents", "privacy", "settings"];
+const SECTIONS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "media", "team", "analytics", "consents", "privacy", "settings"];
 const may = (admin, ...any) => admin.isOwner || any.some((s) => admin.permissions.includes(s));
 const need = (...any) => (req, res, next) => (may(req.admin, ...any) ? next() : res.status(403).json({ error: "You don't have access to this. Ask the owner to give it to you." }));
 const ownerOnly = (req, res, next) => (req.admin.isOwner ? next() : res.status(403).json({ error: "Only the owner can see this." }));
 // Anyone who edits content needs the image library to pick from.
 const MEDIA_USERS = ["media", "blog", "content", "pages", "team"];
-const SETTING_SECTION = { salesEmails: "settings", demo: "settings", retention: "settings", team: "team", socials: "team" };
+const SETTING_SECTION = { salesEmails: "settings", demo: "settings", retention: "settings", team: "team", socials: "team", nav: "navigation" };
 const checkPermissions = (v) => (Array.isArray(v) && v.length <= SECTIONS.length && v.every((s) => SECTIONS.includes(s)) ? null : "Unknown section.");
 
 // Card lists edited on the site. Each kind keeps only its own fields, so nothing unexpected is stored and
@@ -156,6 +157,46 @@ function anyCard(c) {
     return true;
   });
 }
+// The website's navigation bar: links and dropdown menus, each dropdown holding options that hold links.
+// Everything here is shown to every visitor, so each field is checked and links can only be safe kinds.
+const navLabel = (s) => isStr(s, 60, 1);
+const navHref = (h) => isStr(h, 300, 1) && CARD_LINK.test(h.trim());
+const navIconOk = (i) => i === undefined || i === "" || (typeof i === "string" && ICON_NAME.test(i));
+function checkNav(v) {
+  if (!v || typeof v !== "object" || !Array.isArray(v.items) || v.items.length < 1 || v.items.length > 8) return "Keep between 1 and 8 items in the navigation bar.";
+  for (const m of v.items) {
+    if (!m || typeof m !== "object" || !isStr(m.label, 40, 1)) return "Every item in the navigation bar needs a name (up to 40 characters).";
+    if (m.groups === undefined) {
+      if (!navHref(m.href)) return `“${m.label}” needs a page or a link to open.`;
+      continue;
+    }
+    if (!["rich", "simple", "columns"].includes(m.layout)) return `“${m.label}”: choose a layout.`;
+    if (!Array.isArray(m.groups) || m.groups.length < 1 || m.groups.length > 12) return `“${m.label}” needs between 1 and 12 options.`;
+    for (const g of m.groups) {
+      if (!g || typeof g !== "object" || !navLabel(g.label) || !navIconOk(g.icon)) return `“${m.label}”: every option needs a name (up to 60 characters).`;
+      const f = g.featured;
+      if (f && !(isStr(f.title, 120, 1) && isStr(f.desc ?? "", 500) && navHref(f.href))) return `“${g.label}”: the highlight box needs a title and a page or link to open.`;
+      if (!Array.isArray(g.links) || g.links.length > 40) return `“${g.label}” can have up to 40 links.`;
+      for (const l of g.links) {
+        if (!l || typeof l !== "object" || !navLabel(l.label) || !navIconOk(l.icon) || !isStr(l.desc ?? "", 300)) return `“${g.label}”: every link needs a name (up to 60 characters).`;
+        if (!navHref(l.href)) return `“${l.label}” needs a page or a link to open.`;
+      }
+    }
+  }
+  return null;
+}
+// Keeps only the fields the header draws.
+function cleanNav(v) {
+  const t = (s) => (typeof s === "string" ? s.trim() : "");
+  const link = (l) => ({ label: t(l.label), desc: t(l.desc), href: t(l.href), icon: t(l.icon) });
+  const group = (g) => ({ label: t(g.label), icon: t(g.icon), featured: g.featured ? { title: t(g.featured.title), desc: t(g.featured.desc), href: t(g.featured.href) } : null, links: g.links.map(link) });
+  return {
+    items: v.items.map((m) => (m.groups === undefined ? { label: t(m.label), href: t(m.href) } : { label: t(m.label), layout: m.layout, extras: m.extras === true, groups: m.groups.map(group) })),
+    expert: v.expert !== false,
+    demo: v.demo !== false,
+  };
+}
+
 const LIST_KINDS = {
   features: { max: 24, ok: card, clean: (c) => keep(c, ["icon", "title", "desc"]) },
   steps: { max: 12, ok: card, clean: (c) => keep(c, ["icon", "title", "desc"]) },
@@ -179,6 +220,10 @@ const PAGE_PATH = /^\/[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*){0,2
 const paragraphs = (v, max = 12) => v === undefined || (Array.isArray(v) && v.length <= max && v.every((p) => isStr(p, 3000, 1)));
 const lines = (v) => v === undefined || (Array.isArray(v) && v.length <= 30 && v.every((p) => isStr(p, 300, 1)));
 const picture = (v) => !v || (isStr(v, 500) && SAFE_URL.test(v));
+const each = (v, max, ok) => v === undefined || (Array.isArray(v) && v.length <= max && v.every(ok));
+const stat = (s) => s && isStr(s.value, 40, 1) && isStr(s.label ?? "", 60);
+const tile = (t) => t && isStr(t.label, 60, 1) && (!t.icon || ICON_NAME.test(t.icon));
+const faq = (f) => f && isStr(f.q, 300, 1) && isStr(f.a, 2000, 1);
 
 function checkPage(b) {
   if (!b || typeof b !== "object") return "Invalid request.";
@@ -191,6 +236,7 @@ function checkPage(b) {
   const h = c.hero;
   if (!isStr(h.title, 160, 1)) return "The top section needs a headline.";
   if (!isStr(h.label ?? "", 60) || !isStr(h.button ?? "", 60) || !paragraphs(h.body, 4) || !lines(h.list) || !picture(h.image)) return "Check the top section's fields.";
+  if (!each(h.stats, 6, stat) || !each(h.tiles, 12, tile) || !(h.scene === undefined || h.scene === "" || (typeof h.scene === "string" && /^[a-z0-9-]{1,40}$/.test(h.scene)))) return "Check the top section's numbers and animation.";
   if (!Array.isArray(c.sections) || c.sections.length > 20) return "Add up to 20 sections.";
   for (const [i, s] of c.sections.entries()) {
     const at = `Section ${i + 1}`;
@@ -198,7 +244,8 @@ function checkPage(b) {
     if (!isStr(s.label ?? "", 60) || !isStr(s.title ?? "", 160) || !isStr(s.button ?? "", 60)) return `${at}: label up to 60, heading up to 160, button up to 60 characters.`;
     if (!paragraphs(s.body) || !lines(s.list) || !picture(s.image)) return `${at}: check its text, list and picture.`;
     if (s.cards !== undefined && !(Array.isArray(s.cards) && s.cards.length <= 24 && s.cards.every(card))) return `${at}: each card needs a title (up to 160) and text up to 600 characters.`;
-    if (!s.title && !s.body?.length && !s.list?.length && !s.cards?.length && !s.image) return `${at} is empty.`;
+    if (!lines(s.numbered) || !each(s.faqs, 40, faq) || !each(s.tiles, 12, tile)) return `${at}: check its tiles and its questions and answers.`;
+    if (!s.title && !s.body?.length && !s.list?.length && !s.cards?.length && !s.image && !s.numbered?.length && !s.faqs?.length && !s.tiles?.length) return `${at} is empty.`;
   }
   if (c.cta && !(isStr(c.cta.title ?? "", 160) && paragraphs(c.cta.body, 3) && isStr(c.cta.button ?? "", 60))) return "Check the closing call to action.";
   return null;
@@ -209,7 +256,17 @@ function cleanPage(c) {
   const text = (v) => (typeof v === "string" ? v.trim() : "");
   const arr = (v) => (Array.isArray(v) ? v.map((x) => x.trim()) : []);
   return {
-    hero: { label: text(c.hero.label), title: text(c.hero.title), body: arr(c.hero.body), list: arr(c.hero.list), image: text(c.hero.image), button: text(c.hero.button) },
+    hero: {
+      label: text(c.hero.label),
+      title: text(c.hero.title),
+      body: arr(c.hero.body),
+      list: arr(c.hero.list),
+      image: text(c.hero.image),
+      button: text(c.hero.button),
+      scene: text(c.hero.scene),
+      stats: (c.hero.stats || []).map((x) => keep(x, ["value", "label"])),
+      tiles: (c.hero.tiles || []).map((x) => keep(x, ["icon", "label"])),
+    },
     sections: c.sections.map((s) => ({
       label: text(s.label),
       title: text(s.title),
@@ -217,8 +274,12 @@ function cleanPage(c) {
       list: arr(s.list),
       cards: (s.cards || []).map((x) => keep(x, ["icon", "title", "desc"])),
       steps: s.steps === true,
+      dark: s.dark === true,
       image: text(s.image),
       button: text(s.button),
+      numbered: arr(s.numbered),
+      faqs: (s.faqs || []).map((x) => keep(x, ["q", "a"])),
+      tiles: (s.tiles || []).map((x) => keep(x, ["icon", "label"])),
     })),
     cta: c.cta ? { title: text(c.cta.title), body: arr(c.cta.body), button: text(c.cta.button) } : null,
     related: c.related === true,
@@ -638,6 +699,7 @@ module.exports = function adminRoutes(db) {
     let value = req.body.value;
     // Keep only the known fields, so nothing unexpected is stored and served on the public site.
     if (key === "team") value = value.map((m) => ({ name: m.name.trim(), role: m.role || "", image: m.image || "", bio: m.bio || "", linkedin: m.linkedin || "" }));
+    if (key === "nav") value = cleanNav(value);
     if (key === "socials") value = Object.fromEntries(["facebook", "linkedin", "instagram", "youtube", "x"].map((k) => [k, value[k] || ""]));
     await settings.set(db, key, value);
     res.json({ ok: true });

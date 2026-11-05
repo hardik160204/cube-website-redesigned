@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { DEFAULT_NAV } from "./nav";
 
 // Content managed in the admin's "Team & social links" page. Until something is saved there, the server
 // returns null for it and the site shows the built-in defaults below.
@@ -68,5 +69,5 @@ export function useSiteData() {
       live = false;
     };
   }, []);
-  return { team: data?.team || DEFAULT_TEAM, socials: data?.socials || DEFAULT_SOCIALS };
+  return { team: data?.team || DEFAULT_TEAM, socials: data?.socials || DEFAULT_SOCIALS, nav: data?.nav || DEFAULT_NAV, ready: Boolean(data) };
 }

@@ -3,7 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 import { pagePath } from "../lib/content";
 import { ICONS } from "../lib/editable";
-import FlexPage from "../components/page/FlexPage";
+import FlexPage, { Hi } from "../components/page/FlexPage";
 import { setHead } from "../components/Seo";
 
 // Pages built in the admin's Pages section. Any address the site doesn't know comes here: a published page
@@ -11,20 +11,40 @@ import { setHead } from "../components/Seo";
 // preview; anything else sends the visitor to the homepage, as before.
 
 const some = (a) => (a && a.length ? a : undefined);
+const withIcons = (tiles) => some(tiles)?.map((t) => ({ ...t, icon: ICONS.get(t.icon) }));
+// [Words in square brackets] show in the highlight colour.
+const plainTitle = (t) => (t || "").replace(/[[\]]/g, "");
+const heading = (t) => (t ? t.split(/\[(.+?)\]/).map((part, i) => (i % 2 ? <Hi key={i}>{part}</Hi> : part)) : undefined);
 
 // The stored page -> FlexPage's sections (empty parts left out, icons from their names).
 function sectionsOf(c) {
   return [
-    { label: c.hero.label, title: c.hero.title, body: some(c.hero.body), list: some(c.hero.list), image: c.hero.image || undefined, button: c.hero.button || undefined },
+    {
+      label: c.hero.label,
+      title: heading(c.hero.title),
+      body: some(c.hero.body),
+      list: some(c.hero.list),
+      image: c.hero.image || undefined,
+      imageAlt: plainTitle(c.hero.title),
+      button: c.hero.button || undefined,
+      scene: c.hero.scene || undefined,
+      stats: some(c.hero.stats),
+      tiles: withIcons(c.hero.tiles),
+    },
     ...c.sections.map((s) => ({
       label: s.label || undefined,
-      title: s.title || undefined,
+      title: heading(s.title),
       body: some(s.body),
       list: some(s.list),
       cards: s.cards.map((x) => ({ ...x, icon: ICONS.get(x.icon) })),
       steps: s.steps || undefined,
+      dark: s.dark || undefined,
       image: s.image || undefined,
+      imageAlt: plainTitle(s.title),
       button: s.button || undefined,
+      numbered: some(s.numbered),
+      faqs: some(s.faqs),
+      tiles: withIcons(s.tiles),
     })),
     ...(c.cta ? [{ kind: "cta", title: c.cta.title || undefined, body: some(c.cta.body), button: c.cta.button || undefined }] : []),
   ];
@@ -66,7 +86,7 @@ export default function CustomPage() {
           Draft preview — only signed-in admins can see this page. Publish it in the dashboard's Pages section.
         </p>
       )}
-      <FlexPage sections={sectionsOf(c)} crumbs={[c.hero.label || "Pages", c.hero.title]} related={c.related} />
+      <FlexPage sections={sectionsOf(c)} crumbs={[c.hero.label || "Pages", plainTitle(c.hero.title)]} related={c.related} />
     </>
   );
 }

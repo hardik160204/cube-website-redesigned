@@ -7,6 +7,13 @@ import {
   Plug, Rocket, Route, ScreenShare, Server, Settings, ShieldCheck, Smartphone, Sparkles, Star, Target, ThumbsUp, UserCheck, Users,
   Video, Voicemail, Wifi, Workflow, Zap,
 } from "lucide-react";
+import {
+  Activity, AlertCircle, AlertTriangle, ArrowUpRight, AudioLines, BarChart, Bell, BellRing, Bot, Box, BrainCircuit, Building2, CalendarClock, Car, Code, Cpu, DatabaseZap,
+  Disc, Download, Ear, FileAudio, FileSpreadsheet, Filter, Forward, Gauge, GitBranch, GitMerge, HardDrive, Heart, History, Home, Hourglass, ImageIcon, Inbox, Key, Landmark,
+  Languages, LayoutDashboard, LayoutTemplate, LifeBuoy, Link2, LinkIcon, ListChecks, Map as MapIcon, MapPin, Maximize, Megaphone, Monitor, MousePointer, Network, Percent,
+  PhoneForwarded, PhoneOff, PieChart, Play, PlayCircle, Puzzle, Radio, Receipt, RefreshCw, Repeat, Search, Send, Shield, ShoppingBag, ShoppingCart, Stethoscope, TrendingUp,
+  UserCog, UserX,
+} from "lucide-react";
 import { pagePath, useContent } from "./content";
 
 // Card lists an admin can rewrite on the site (add, remove, reorder and change cards). Any list drawn through
@@ -34,6 +41,14 @@ export const ICONS = new Map(
   ].map((C) => [C.displayName, C])
 );
 export const STARTER_ICONS = [...ICONS.keys()].sort();
+// Also available in the page builder and the navigation bar: every icon the site's own pages use.
+for (const C of [
+  Activity, AlertCircle, AlertTriangle, ArrowUpRight, AudioLines, BarChart, Bell, BellRing, Bot, Box, BrainCircuit, Building2, CalendarClock, Car, Code, Cpu, DatabaseZap,
+  Disc, Download, Ear, FileAudio, FileSpreadsheet, Filter, Forward, Gauge, GitBranch, GitMerge, HardDrive, Heart, History, Home, Hourglass, ImageIcon, Inbox, Key, Landmark,
+  Languages, LayoutDashboard, LayoutTemplate, LifeBuoy, Link2, LinkIcon, ListChecks, MapIcon, MapPin, Maximize, Megaphone, Monitor, MousePointer, Network, Percent,
+  PhoneForwarded, PhoneOff, PieChart, Play, PlayCircle, Puzzle, Radio, Receipt, RefreshCw, Repeat, Search, Send, Shield, ShoppingBag, ShoppingCart, Stethoscope, TrendingUp,
+  UserCog, UserX,
+]) ICONS.set(C.displayName, C);
 
 // What each kind of card holds, as plain text (lists may only be edited when every card is plain text).
 const FIELDS = {
@@ -53,6 +68,8 @@ const hash = (s) => {
 
 // Custom cards declare their fields: text, numbers, on/off values, lists of text, and an icon.
 const firstField = (fields) => Object.keys(fields).find((k) => k !== "icon");
+// The address saved edits to a list are stored under: its built-in first-field text.
+export const listKey = (kind, items, fields) => `${kind}:${hash(items.map(fields ? (it) => String(it[firstField(fields)] ?? "") : textOf).join("|"))}`;
 const isCardPlain = (items, fields) =>
   items.every((it) => it && typeof it === "object" && Object.keys(fields).every((k) => k === "icon" || it[k] == null || ["string", "number", "boolean"].includes(typeof it[k]) || (Array.isArray(it[k]) && it[k].every((x) => typeof x === "string"))));
 
@@ -77,7 +94,7 @@ export function useList(kind, items, fields) {
   const { lists } = useContent();
   const ok = Array.isArray(items) && items.length > 0 && (fields ? isCardPlain(items, fields) : isPlain(items));
   const label = fields ? (it) => String(it[firstField(fields)] ?? "") : textOf;
-  const key = ok ? `${kind}:${hash(items.map(label).join("|"))}` : null;
+  const key = ok ? listKey(kind, items, fields) : null;
   if (ok) for (const it of items) if (it?.icon?.displayName) ICONS.set(it.icon.displayName, it.icon);
   const own = key && (lists.find((l) => l.key === key && l.scope === path) || lists.find((l) => l.key === key && l.scope === "*"));
 

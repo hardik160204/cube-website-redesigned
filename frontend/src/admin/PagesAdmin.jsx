@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { ArrowDown, ArrowUp, ExternalLink, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, ExternalLink, ImagePlus, LayoutTemplate, Plus, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "../lib/api";
 import { ICONS } from "../lib/editable";
 import { Button, Card, Empty, Field, INPUT, PageTitle, act, useResource, utcStamp } from "./ui";
 import { MediaPicker } from "./MediaAdmin";
+import { COPY_GROUPS, LAYOUTS, SAMPLE, copyPage } from "./blueprints";
 
 // Build new pages for the website without code. A page has a top section (hero), any number of sections
 // and a closing call to action, and is drawn with the same layout as the site's own product pages: the
@@ -12,21 +14,21 @@ import { MediaPicker } from "./MediaAdmin";
 const toParas = (s) => s.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 const toLines = (s) => s.split("\n").map((p) => p.trim()).filter(Boolean);
 const BLANK_CARD = { icon: "", title: "", desc: "" };
-const BLANK_SECTION = { label: "", title: "", body: "", list: "", image: "", button: "", steps: false, cards: [] };
+const BLANK_SECTION = { label: "", title: "", body: "", list: "", image: "", button: "", steps: false, dark: false, cards: [], numbered: "", faqs: [], tiles: [] };
 const BLANK_PAGE = {
   id: null,
   path: "/services/",
   title: "",
   description: "",
   published: false,
-  hero: { label: "", title: "", body: "", list: "", image: "", button: "Book a demo" },
+  hero: { label: "", title: "", body: "", list: "", image: "", button: "Book a demo", scene: "", stats: [], tiles: [] },
   sections: [{ ...BLANK_SECTION }],
   cta: { title: "", body: "", button: "Book a Free Demo" },
   related: true,
 };
 
 // Database row -> editor fields (paragraphs and lists as plain text boxes).
-function fromRow(p) {
+export function fromRow(p) {
   const c = p.content;
   const text = (s) => ({ ...s, body: (s.body || []).join("\n\n"), list: (s.list || []).join("\n") });
   return {
@@ -35,8 +37,8 @@ function fromRow(p) {
     title: p.title,
     description: p.description,
     published: p.published,
-    hero: text(c.hero),
-    sections: c.sections.map((s) => ({ ...text(s), cards: s.cards || [] })),
+    hero: { ...BLANK_PAGE.hero, ...text(c.hero) },
+    sections: c.sections.map((s) => ({ ...BLANK_SECTION, ...text(s), cards: s.cards || [], numbered: (s.numbered || []).join("\n") })),
     cta: c.cta ? { ...c.cta, body: (c.cta.body || []).join("\n\n") } : { title: "", body: "", button: "" },
     related: c.related,
   };
@@ -45,19 +47,81 @@ function fromRow(p) {
 // Editor fields -> what the server stores. Empty optional parts are left out.
 function toBody(f, published = f.published) {
   const para = (s) => ({ ...s, body: toParas(s.body), list: toLines(s.list) });
+  const some = (rows, key) => (rows || []).filter((r) => (r[key] || "").trim());
+  const hasContent = (s) => s.title.trim() || s.body.trim() || s.list.trim() || s.image || s.numbered.trim() || some(s.cards, "title").length || some(s.faqs, "q").length || some(s.tiles, "label").length;
   return {
     path: f.path.trim(),
     title: f.title.trim(),
     description: f.description.trim(),
     published,
     content: {
-      hero: { ...para(f.hero), body: toParas(f.hero.body).slice(0, 4) },
-      sections: f.sections.map((s) => ({ ...para(s), cards: s.cards.filter((c) => c.title.trim()) })),
+      hero: { ...para(f.hero), body: toParas(f.hero.body).slice(0, 4), stats: some(f.hero.stats, "value"), tiles: some(f.hero.tiles, "label") },
+      // A section left completely empty is simply not part of the page.
+      sections: f.sections.filter(hasContent).map((s) => ({ ...para(s), cards: some(s.cards, "title"), numbered: toLines(s.numbered), faqs: some(s.faqs, "q"), tiles: some(s.tiles, "label") })),
       cta: f.cta.title.trim() || f.cta.body.trim() ? { ...f.cta, body: toParas(f.cta.body).slice(0, 3) } : null,
       related: f.related,
     },
   };
 }
+
+export function IconSelect({ value, onChange }) {
+  const Icon = ICONS.get(value);
+  return (
+    <span className="flex items-start gap-2">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">{Icon && <Icon size={16} />}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className={INPUT} aria-label="Icon">
+        <option value="">No icon</option>
+        {[...ICONS.keys()].sort().map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </select>
+    </span>
+  );
+}
+
+// A short list of rows: the numbers strip, an icon diagram, questions and answers.
+function Rows({ label, hint, rows, blank, max, render, onChange, add }) {
+  const set = (i, patch) => onChange(rows.map((r, k) => (k === i ? { ...r, ...patch } : r)));
+  return (
+    <div>
+      <span className="mb-1 block text-[13px] font-medium text-[#404348]">{label}</span>
+      {hint && <span className="mb-2 block text-[12px] text-[#6B6E75]">{hint}</span>}
+      <ul className="space-y-2">
+        {rows.map((r, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <span className="grid min-w-0 flex-1 gap-2 md:grid-cols-[1fr_1.4fr]">{render(r, (patch) => set(i, patch))}</span>
+            <Button variant="danger" className="px-2" onClick={() => onChange(rows.filter((_, k) => k !== i))} aria-label={`Remove from ${label}`}>
+              <Trash2 size={14} />
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <Button variant="ghost" className="mt-2" disabled={rows.length >= max} onClick={() => onChange([...rows, { ...blank }])}>
+        <Plus size={15} /> {add}
+      </Button>
+    </div>
+  );
+}
+
+const TileRows = ({ rows, onChange }) => (
+  <Rows
+    label="Icon diagram (instead of a picture)"
+    hint="Small labelled icons in a circle. Choosing a picture hides this."
+    rows={rows}
+    blank={{ icon: "", label: "" }}
+    max={12}
+    add="Add an icon"
+    onChange={onChange}
+    render={(r, set) => (
+      <>
+        <IconSelect value={r.icon} onChange={(icon) => set({ icon })} />
+        <input placeholder="Label" value={r.label} maxLength={60} onChange={(e) => set({ label: e.target.value })} className={INPUT} aria-label="Icon label" />
+      </>
+    )}
+  />
+);
 
 function Picture({ value, onPick, onClear, hint }) {
   const [picking, setPicking] = useState(false);
@@ -103,20 +167,9 @@ function Cards({ cards, onChange }) {
       <span className="mb-1.5 block text-[13px] font-medium text-[#404348]">Cards ({cards.length})</span>
       <ul className="space-y-2">
         {cards.map((c, i) => {
-          const Icon = ICONS.get(c.icon);
           return (
             <li key={i} className="grid gap-2 rounded-xl border border-[#E5EAF4] p-3 md:grid-cols-[170px_1fr_auto]">
-              <span className="flex items-start gap-2">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">{Icon && <Icon size={16} />}</span>
-                <select value={c.icon} onChange={(e) => set(i, { icon: e.target.value })} className={INPUT} aria-label="Icon">
-                  <option value="">No icon</option>
-                  {[...ICONS.keys()].sort().map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </span>
+              <IconSelect value={c.icon} onChange={(icon) => set(i, { icon })} />
               <span className="grid gap-2">
                 <input placeholder="Card title" value={c.title} maxLength={160} onChange={(e) => set(i, { title: e.target.value })} className={INPUT} aria-label="Card title" />
                 <textarea placeholder="Card text" rows={2} value={c.desc} maxLength={600} onChange={(e) => set(i, { desc: e.target.value })} className={INPUT} aria-label="Card text" />
@@ -143,9 +196,10 @@ function Cards({ cards, onChange }) {
   );
 }
 
-function Editor({ initial, onDone }) {
+export function Editor({ initial, onDone, backLabel = "Back to pages" }) {
   const [f, setF] = useState(initial);
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(initial.id ? initial.path : null); // the address it's stored at, once it is
   const hero = (patch) => setF({ ...f, hero: { ...f.hero, ...patch } });
   const section = (i, patch) => setF({ ...f, sections: f.sections.map((s, k) => (k === i ? { ...s, ...patch } : s)) });
   const moveSection = (i, d) => {
@@ -155,8 +209,9 @@ function Editor({ initial, onDone }) {
   };
 
   const save = async (published) => {
-    setBusy(true);
     const body = toBody(f, published);
+    if (published && JSON.stringify([body.title, body.description, body.content]).includes(SAMPLE)) return toast.error(`Replace the sample text marked ${SAMPLE} before publishing. You can save a draft in the meantime.`);
+    setBusy(true);
     const r = await act(
       () => (f.id ? api(`/admin/pages/${f.id}`, { method: "PUT", body }) : api("/admin/pages", { method: "POST", body })),
       published ? `Published. It's live at ${body.path}` : "Saved as a draft. Only signed-in admins can see it."
@@ -165,9 +220,10 @@ function Editor({ initial, onDone }) {
     if (!r) return;
     const id = f.id || r.id;
     setF({ ...f, id, published });
+    setSaved(body.path);
   };
   const remove = async () =>
-    window.confirm(`Delete the page ${f.path}? Visitors going there will be sent to the homepage.`) && (await act(() => api(`/admin/pages/${f.id}`, { method: "DELETE" }), "Page deleted")) && onDone();
+    window.confirm(`Delete the page ${f.path}? Visitors going there will be sent to the homepage.`) && (await act(() => api(`/admin/pages/${f.id}`, { method: "DELETE" }), "Page deleted")) && onDone(null);
 
   return (
     <>
@@ -176,8 +232,8 @@ function Editor({ initial, onDone }) {
         desc="Fill in what you need; empty boxes are simply left out. Each section's layout follows from what it holds: text, a list, cards, numbered steps or a picture."
         actions={
           <>
-            <Button variant="ghost" onClick={onDone}>
-              Back to pages
+            <Button variant="ghost" onClick={() => onDone(saved)}>
+              {backLabel}
             </Button>
             {f.id && (
               <a href={f.path} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE2EE] bg-white px-3.5 py-2 text-[14px] font-medium text-[#0A0626] hover:bg-[#F0F4FB]">
@@ -208,7 +264,7 @@ function Editor({ initial, onDone }) {
             <Field label="Small label above the headline" hint="e.g. Visual support">
               <input value={f.hero.label} maxLength={60} onChange={(e) => hero({ label: e.target.value })} className={INPUT} />
             </Field>
-            <Field label="Headline (required)">
+            <Field label="Headline (required)" hint="Put words in [square brackets] to show them in the highlight colour.">
               <input value={f.hero.title} maxLength={160} onChange={(e) => hero({ title: e.target.value })} className={INPUT} />
             </Field>
             <Field label="Introduction" hint="Leave a blank line between paragraphs. The first one is shown largest." className="md:col-span-2">
@@ -221,8 +277,35 @@ function Editor({ initial, onDone }) {
               <Field label="Button text" hint="The button opens the demo booking.">
                 <input value={f.hero.button} maxLength={60} onChange={(e) => hero({ button: e.target.value })} className={INPUT} />
               </Field>
-              <Picture value={f.hero.image} onPick={(image) => hero({ image })} onClear={() => hero({ image: "" })} hint="Shown on the right, about 560 × 380 px: upload 1120 × 760 px or larger. Without one, the Cube animation shows." />
+              <Picture
+                value={f.hero.image}
+                onPick={(image) => hero({ image, scene: "", tiles: [] })}
+                onClear={() => hero({ image: "" })}
+                hint={f.hero.scene ? "This page uses the moving illustration from the page it was copied from. Choosing a picture replaces it." : "Shown on the right, about 560 × 380 px: upload 1120 × 760 px or larger. Without one, the Cube animation shows."}
+              />
             </div>
+            <div className="md:col-span-2">
+              <Rows
+                label="Numbers strip (optional)"
+                hint="Runs along the bottom of the top section, e.g. 35+ Years of Telephony."
+                rows={f.hero.stats}
+                blank={{ value: "", label: "" }}
+                max={6}
+                add="Add a number"
+                onChange={(stats) => hero({ stats })}
+                render={(r, set) => (
+                  <>
+                    <input placeholder="Number" value={r.value} maxLength={40} onChange={(e) => set({ value: e.target.value })} className={INPUT} aria-label="Number" />
+                    <input placeholder="What it counts" value={r.label} maxLength={60} onChange={(e) => set({ label: e.target.value })} className={INPUT} aria-label="What it counts" />
+                  </>
+                )}
+              />
+            </div>
+            {!f.hero.image && !f.hero.scene && (
+              <div className="md:col-span-2">
+                <TileRows rows={f.hero.tiles} onChange={(tiles) => hero({ tiles })} />
+              </div>
+            )}
           </div>
         </Card>
 
@@ -248,7 +331,7 @@ function Editor({ initial, onDone }) {
               <Field label="Small label">
                 <input value={s.label} maxLength={60} onChange={(e) => section(i, { label: e.target.value })} className={INPUT} />
               </Field>
-              <Field label="Heading">
+              <Field label="Heading" hint="Put words in [square brackets] to show them in the highlight colour.">
                 <input value={s.title} maxLength={160} onChange={(e) => section(i, { title: e.target.value })} className={INPUT} />
               </Field>
               <Field label="Text" hint="Leave a blank line between paragraphs." className="md:col-span-2">
@@ -269,7 +352,35 @@ function Editor({ initial, onDone }) {
                   <input type="checkbox" checked={s.steps} onChange={(e) => section(i, { steps: e.target.checked })} className="h-4 w-4 accent-[#0047FF]" />
                   Show the cards as numbered steps (on a dark band)
                 </label>
+                <label className="mt-2 flex items-center gap-2 text-[13px] text-[#404348]">
+                  <input type="checkbox" checked={s.dark} onChange={(e) => section(i, { dark: e.target.checked })} className="h-4 w-4 accent-[#0047FF]" />
+                  Show this section on a dark band
+                </label>
               </div>
+              <Field label="Numbered tiles" hint="Short items such as use cases, one per line." className="md:col-span-2">
+                <textarea rows={2} value={s.numbered} onChange={(e) => section(i, { numbered: e.target.value })} className={INPUT} />
+              </Field>
+              <div className="md:col-span-2">
+                <Rows
+                  label="Questions and answers"
+                  rows={s.faqs}
+                  blank={{ q: "", a: "" }}
+                  max={40}
+                  add="Add a question"
+                  onChange={(faqs) => section(i, { faqs })}
+                  render={(r, set) => (
+                    <>
+                      <input placeholder="Question" value={r.q} maxLength={300} onChange={(e) => set({ q: e.target.value })} className={INPUT} aria-label="Question" />
+                      <textarea placeholder="Answer" rows={2} value={r.a} maxLength={2000} onChange={(e) => set({ a: e.target.value })} className={INPUT} aria-label="Answer" />
+                    </>
+                  )}
+                />
+              </div>
+              {!s.image && (
+                <div className="md:col-span-2">
+                  <TileRows rows={s.tiles} onChange={(tiles) => section(i, { tiles })} />
+                </div>
+              )}
             </div>
           </Card>
         ))}
@@ -311,17 +422,136 @@ function Editor({ initial, onDone }) {
   );
 }
 
+const SKETCH = {
+  hero: "h-5 bg-[#0A0626]",
+  text: "h-3 bg-[#DCE2EE]",
+  split: "h-4 bg-[linear-gradient(90deg,#DCE2EE_55%,#99B5FF_55%)]",
+  cards: "h-4 bg-[repeating-linear-gradient(90deg,#C9D6F5_0_24%,transparent_24%_26%)]",
+  steps: "h-3 bg-[#3D2BD6]",
+  dark: "h-3 bg-[#0A0626]",
+  list: "h-3 bg-[#D9F3FF]",
+  faq: "h-3 bg-[#F0F4FB]",
+  logos: "h-2 bg-[#E5EAF4]",
+  cta: "h-3 bg-primary",
+};
+const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+// Asked whenever a new page is started: what should it look like? A ready layout, a copy of a page the site
+// already has, or a copy of a page built here. `name` comes from the navigation link, when there is one.
+export function PagePicker({ name: givenName = "", pages = [], onPick, onClose }) {
+  const [name, setName] = useState(givenName);
+  const [copyOf, setCopyOf] = useState("");
+  const [busy, setBusy] = useState(false);
+  const title = name.trim();
+  const built = COPY_GROUPS.flatMap((g) => g.pages.map((p) => ({ ...p, base: g.base })));
+  const start = (content, base) => onPick(fromRow({ id: null, path: `${base || "/"}${slug(title)}`, title: `${title.replace(/[[\]]/g, "")} | Cube Software`, description: "", published: false, content }));
+  const needName = () => {
+    if (title) return false;
+    toast.error("First give the page a name.");
+    return true;
+  };
+  const pickLayout = (l) => needName() || start(l.content(title), l.base);
+  const pickCopy = async () => {
+    if (needName() || !copyOf) return;
+    const mine = pages.find((p) => p.path === copyOf);
+    if (mine) return start({ ...mine.content, hero: { ...mine.content.hero, title } }, mine.path.replace(/[^/]*$/, ""));
+    setBusy(true);
+    const source = built.find((p) => p.path === copyOf);
+    const r = await act(() => copyPage(source));
+    setBusy(false);
+    if (!r) return;
+    if (r.skipped) toast.info(`${r.skipped} one-off part${r.skipped > 1 ? "s" : ""} of that page, specially designed for it, couldn't be copied. Everything else is here.`);
+    start({ ...r.content, hero: { ...r.content.hero, title } }, source.base);
+  };
+  return (
+    <div data-cube-ui="" className="fixed inset-0 z-[10000] overflow-y-auto bg-[#0A0626]/60 p-4" role="dialog" aria-modal="true" aria-label="New page">
+      <div className="mx-auto my-6 max-w-[920px] rounded-3xl bg-white p-6 sm:p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-[24px] font-medium text-[#0A0626]">What should the new page look like?</h2>
+            <p className="mt-1 text-[14px] text-[#6B6E75]">Whichever you choose, you can change every word, picture and section next. Nothing goes live until you publish it.</p>
+          </div>
+          <Button variant="ghost" className="px-2" onClick={onClose} aria-label="Close">
+            <X size={16} />
+          </Button>
+        </div>
+        <Field label="Page name" className="mt-5">
+          <input value={name} maxLength={120} onChange={(e) => setName(e.target.value)} placeholder="e.g. Cloud Fax" className={INPUT} />
+        </Field>
+
+        <h3 className="mt-7 flex items-center gap-2 text-[15px] font-medium text-[#0A0626]">
+          <Copy size={16} className="text-primary" /> Make it look like a page you already have
+        </h3>
+        <p className="mt-1 text-[13px] text-[#6B6E75]">You get a separate copy with that page's words, pictures and cards, including your site edits. The original isn't touched.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <select value={copyOf} onChange={(e) => setCopyOf(e.target.value)} className={`${INPUT} min-w-[240px] flex-1`} aria-label="Page to copy">
+            <option value="">Choose a page...</option>
+            {pages.length > 0 && (
+              <optgroup label="Pages you built">
+                {pages.map((p) => (
+                  <option key={p.path} value={p.path}>
+                    {p.content.hero.title.replace(/[[\]]/g, "")}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {COPY_GROUPS.map((g) => (
+              <optgroup key={g.group} label={g.group}>
+                {g.pages.map((p) => (
+                  <option key={p.path} value={p.path}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          {copyOf && (
+            <a href={copyOf} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE2EE] bg-white px-3 py-2 text-[14px] font-medium text-[#0A0626] hover:bg-[#F0F4FB]">
+              See it <ExternalLink size={13} />
+            </a>
+          )}
+          <Button disabled={!copyOf || busy} onClick={pickCopy}>
+            {busy ? "Copying..." : "Use this page"}
+          </Button>
+        </div>
+
+        <h3 className="mt-7 flex items-center gap-2 text-[15px] font-medium text-[#0A0626]">
+          <LayoutTemplate size={16} className="text-primary" /> Or create a whole new page
+        </h3>
+        <p className="mt-1 text-[13px] text-[#6B6E75]">A ready layout with sample text marked {SAMPLE} for you to replace, or a blank page.</p>
+        <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {LAYOUTS.map((l) => (
+            <li key={l.key}>
+              <button type="button" onClick={() => pickLayout(l)} className="group flex h-full w-full flex-col rounded-2xl border border-[#E5EAF4] p-4 text-left transition-colors hover:border-primary">
+                <span aria-hidden="true" className="flex w-full flex-col gap-1 rounded-lg border border-[#EEF1F7] p-2">
+                  {l.sketch.map((k, i) => (
+                    <span key={i} className={`block w-full rounded-sm ${SKETCH[k]}`} />
+                  ))}
+                </span>
+                <span className="mt-3 block text-[15px] font-medium text-[#0A0626] group-hover:text-primary">{l.name}</span>
+                <span className="mt-1 block text-[13px] leading-5 text-[#6B6E75]">{l.desc}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 export default function PagesAdmin({ out }) {
   const [data, reload] = useResource("/admin/pages", out);
   const [editing, setEditing] = useState(null);
+  const [picking, setPicking] = useState(false);
   if (editing) return <Editor key={editing.id || "new"} initial={editing} onDone={() => (setEditing(null), reload())} />;
   return (
     <>
       <PageTitle
         title="Pages"
-        desc="New pages for the website, built here without code. Link to them from any card (Site content → Edit the website → Edit these cards)."
-        actions={<Button onClick={() => setEditing({ ...BLANK_PAGE, sections: [{ ...BLANK_SECTION, cards: [] }] })}><Plus size={16} /> New page</Button>}
+        desc="New pages for the website, built here without code. Put them in the menu from Navigation bar, or link to them from any card (Site content → Edit the website → Edit these cards)."
+        actions={<Button onClick={() => setPicking(true)}><Plus size={16} /> New page</Button>}
       />
+      {picking && <PagePicker pages={data?.pages || []} onClose={() => setPicking(false)} onPick={(f) => (setPicking(false), setEditing(f))} />}
       <Card>
         {!data ? (
           <Empty>Loading...</Empty>
@@ -332,7 +562,7 @@ export default function PagesAdmin({ out }) {
             {data.pages.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-[14px]">
                 <span className="min-w-0">
-                  <span className="block font-medium text-[#0A0626]">{p.content.hero.title}</span>
+                  <span className="block font-medium text-[#0A0626]">{p.content.hero.title.replace(/[[\]]/g, "")}</span>
                   <span className="block text-[12px] text-[#6B6E75]">
                     <span className="font-mono">{p.path}</span> · {p.published ? <span className="text-[#0F6B3A]">Live</span> : <span className="text-[#9A5B00]">Draft</span>} · updated {utcStamp(p.updated_at)}
                   </span>

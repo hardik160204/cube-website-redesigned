@@ -116,9 +116,9 @@ module.exports = function publicRoutes(db) {
     res.status(204).end();
   });
 
-  // Team cards and footer social links set in the admin (null = the site's built-in defaults).
+  // Team cards, footer social links and the navigation bar set in the admin (null = the site's built-in defaults).
   r.get("/site", async (req, res) => {
-    res.set("Cache-Control", "no-cache").json({ team: (await settings.get(db, "team")) ?? null, socials: (await settings.get(db, "socials")) ?? null });
+    res.set("Cache-Control", "no-cache").json({ team: (await settings.get(db, "team")) ?? null, socials: (await settings.get(db, "socials")) ?? null, nav: (await settings.get(db, "nav")) ?? null });
   });
 
   r.get("/content", async (req, res) => {

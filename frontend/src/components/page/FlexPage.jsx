@@ -1,8 +1,9 @@
 import React from "react";
 import ClosingCta from "../home/ClosingCta";
 import { HeroScene } from "./HeroScenes";
+import Faq from "../home/Faq";
 import Products from "../home/Products";
-import { CheckList, CtaButtons, FeatureCard, FeatureCards, Heading, IconTiles, Label, PageHero, Prose, Reveal, Section, Split, Steps, Title, TrustBand } from "./kit";
+import { CheckList, CtaButtons, FeatureCard, FeatureCards, Heading, IconTiles, Label, PageHero, Prose, Reveal, Section, Split, Steps, Tiles, Title, TrustBand } from "./kit";
 import { useList } from "../../lib/editable";
 
 // Renders a page from its sections' data (see any page that imports it). Each section's copy stays exactly
@@ -35,6 +36,19 @@ function StackedCards({ cards }) {
 
 function Block({ s, tone }) {
   if (s.render) return s.render;
+  // Questions and answers follow whatever else the section holds; on their own they take its heading.
+  if (s.faqs) {
+    const { faqs, ...rest } = s;
+    const more = rest.body || rest.list || rest.cards?.length || rest.image || rest.numbered || rest.tiles;
+    return (
+      <>
+        {more && <Block s={rest} tone={tone} />}
+        <div className="bg-[#F0F4FB]">
+          <Faq items={faqs} label={more ? undefined : s.label} title={more ? undefined : s.title} highlight={more ? undefined : ""} />
+        </div>
+      </>
+    );
+  }
   const dark = tone === "dark";
   const cards = s.cards || [];
 
@@ -88,6 +102,7 @@ function Block({ s, tone }) {
       {(s.title || s.label) && <Heading label={s.label} title={s.title} align={cards.length ? "center" : "left"} dark={dark} />}
       <Body s={s} dark={dark} align={cards.length ? "center" : "left"} />
       {s.list && <CheckList items={s.list} dark={dark} cols={s.list.length > 5 ? 2 : 1} className="mt-8" />}
+      {s.numbered && <Tiles items={s.numbered} cols={s.numbered.length % 3 === 0 ? 3 : 2} className="mt-8" />}
       {cards.length > 0 && <FeatureCards items={cards} cols={cardCols(cards)} dark={dark} className="mt-12" />}
       {s.button && <CtaButtons primary={s.button} secondary={null} className={`mt-10 ${cards.length ? "justify-center" : ""}`} />}
     </Section>
@@ -108,6 +123,7 @@ export default function FlexPage({ sections, crumbs, related = false }) {
         body={hero.body && hero.body[0]}
         image={hero.image}
         imageAlt={hero.imageAlt}
+        stats={hero.stats}
         media={hero.scene ? <HeroScene name={hero.scene} /> : !hero.image && hero.tiles ? <IconTiles tiles={hero.tiles} dark /> : null}
         actions={<CtaButtons primary={hero.button || "Book a demo"} dark />}
       >
@@ -116,7 +132,7 @@ export default function FlexPage({ sections, crumbs, related = false }) {
       </PageHero>
 
       {blocks.map((s, i) => (
-        <Block key={i} s={s} tone={s.steps || s.render ? "dark" : light++ % 2 ? "tint" : "white"} />
+        <Block key={i} s={s} tone={s.steps || s.render || s.dark ? "dark" : light++ % 2 ? "tint" : "white"} />
       ))}
 
       {related && <TrustBand />}
