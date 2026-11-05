@@ -183,7 +183,7 @@ function Greeting({ festival, Art }) {
       /* storage blocked: greet anyway */
     }
     if (seen) return undefined;
-    const show = setTimeout(() => setOpen(true), 6000);
+    const show = setTimeout(() => setOpen(true), 60000);
     const hide = setTimeout(() => setOpen(false), 8000);
     return () => {
       clearTimeout(show);
