@@ -106,10 +106,10 @@
 .cl-ai-ring { position: absolute; inset: 170px; border-radius: 50%; border: 1.5px solid rgb(0 184 255 / 0.55); animation: cl-ripple 5s ease-out infinite; }
 @keyframes cl-ripple { from { transform: scale(0.6); opacity: 0.9; } to { transform: scale(2.6); opacity: 0; } }
 .cl-ai-orbit { position: absolute; inset: 0; border-radius: 50%; animation: cl-rotate 16s linear infinite; }
-.cl-ai-orbit::before { content: ""; position: absolute; inset: 80px; border-radius: 50%; border: 1px dashed rgb(0 184 255 / 0.25); }
+.cl-ai-orbit::before { content: ""; position: absolute; inset: 95px; border-radius: 50%; border: 1px dashed rgb(0 184 255 / 0.25); }
 .cl-ai-orbit i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #00B8FF; box-shadow: 0 0 12px #00B8FF; }
 .cl-ai-orbit.cl-outer { animation-duration: 26s; animation-direction: reverse; }
-.cl-ai-orbit.cl-outer::before { inset: 30px; border-style: solid; border-color: rgb(0 184 255 / 0.12); }
+.cl-ai-orbit.cl-outer::before { inset: 24px; border-style: solid; border-color: rgb(0 184 255 / 0.12); }
 .cl-ai-orbit.cl-outer i { background: #FF0000; box-shadow: 0 0 12px #FF0000; }
 .cl-ai-swirl {
   position: absolute;
@@ -234,9 +234,11 @@
   .cl-hero-compact .cl-hero-actions { margin-top: 1.25rem; }
   .cl-hero-compact .cl-hero-stats dl > div { padding-top: 0.75rem; padding-bottom: 0.75rem; }
   .cl-hero-compact .cl-hero-stats dd:first-of-type { font-size: 28px; }
-  .cl-hero-compact .cl-ai-scene { transform: scale(0.8); margin-top: -42px; margin-bottom: -42px; }
-  .cl-hero-compact img { max-height: 300px; }
-  .cl-hero-compact .cl-hero-main svg[viewBox]:not(.lucide) { max-height: 320px; }
+  .cl-hero-compact img { max-height: min(380px, calc(100svh - var(--cl-header, 117px) - 190px)); }
+  .cl-hero-compact .cl-hero-main svg[viewBox]:not(.lucide) { max-height: calc(100svh - var(--cl-header, 117px) - 161px); }
+}
+@media (min-width: 1024px) and (max-height: 700px) {
+  .cl-hero-compact .cl-ai-scene { transform: scale(0.96); margin-top: -8px; margin-bottom: -8px; }
 }
 @media (min-width: 1024px) and (max-height: 660px) {
   .cl-hero-compact .cl-hero-main { padding-top: 1rem; padding-bottom: 1rem; }
@@ -245,9 +247,7 @@
   .cl-hero-compact .cl-hero-actions { margin-top: 0.875rem; }
   .cl-hero-compact .cl-hero-stats dl > div { padding-top: 0.5rem; padding-bottom: 0.5rem; }
   .cl-hero-compact .cl-hero-stats dd:first-of-type { font-size: 24px; }
-  .cl-hero-compact .cl-ai-scene { transform: scale(0.72); margin-top: -59px; margin-bottom: -59px; }
-  .cl-hero-compact img { max-height: 240px; }
-  .cl-hero-compact .cl-hero-main svg[viewBox]:not(.lucide) { max-height: 260px; }
+  .cl-hero-compact .cl-ai-scene { transform: scale(0.88); margin-top: -25px; margin-bottom: -25px; }
 }
 
 /* --- App logos revolving round the orb, each staying upright as it goes ---------------------------------------- */

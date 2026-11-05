@@ -1,5 +1,5 @@
 import React from "react";
-import { Facebook, Instagram, Linkedin, Phone } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Mail, MessageSquareText, Phone } from "lucide-react";
 
 // The apps revolving round the Cube orb, on the orb's two orbits (site-effects.css keeps each one upright).
 const WhatsApp = (props) => (
@@ -11,12 +11,14 @@ const WhatsApp = (props) => (
 const INSTAGRAM = "linear-gradient(45deg,#F58529,#DD2A7B 50%,#8134AF 80%,#515BD4)";
 const INNER = [
   { angle: 0, Icon: Facebook, background: "#1877F2", chip: "#1877F2" },
-  { angle: 120, Icon: Phone, background: "#16A34A", chip: "#22C55E" },
-  { angle: 240, Icon: Instagram, background: INSTAGRAM, chip: "#DD2A7B" },
+  { angle: 90, Icon: Phone, background: "#16A34A", chip: "#22C55E" },
+  { angle: 180, Icon: Instagram, background: INSTAGRAM, chip: "#DD2A7B" },
+  { angle: 270, Icon: Mail, background: "#EA4335", chip: "#EA4335" },
 ];
 const OUTER = [
-  { angle: 60, Icon: Linkedin, background: "#0A66C2", chip: "#0A66C2" },
-  { angle: 240, Icon: WhatsApp, background: "#25D366", chip: "#25D366" },
+  { angle: 45, Icon: Linkedin, background: "#0A66C2", chip: "#0A66C2" },
+  { angle: 165, Icon: WhatsApp, background: "#25D366", chip: "#25D366" },
+  { angle: 285, Icon: MessageSquareText, background: "#7C3AED", chip: "#8B5CF6" },
 ];
 
 function Orbit({ apps, radius, className }) {
@@ -38,8 +40,8 @@ function Orbit({ apps, radius, className }) {
 export default function OrbApps() {
   return (
     <>
-      <Orbit apps={INNER} radius={180} className="cl-ai-orbit" />
-      <Orbit apps={OUTER} radius={230} className="cl-ai-orbit cl-outer" />
+      <Orbit apps={INNER} radius={165} className="cl-ai-orbit" />
+      <Orbit apps={OUTER} radius={236} className="cl-ai-orbit cl-outer" />
     </>
   );
 }
