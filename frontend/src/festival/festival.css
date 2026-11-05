@@ -1,9 +1,12 @@
 /* Loaded only while a festival is on. Colours come from the variables Festival.jsx puts on the page root. */
 
+/* Each rule names the exact class (~=), and leaves an element alone while its own hover colour applies: matching on
+   part of a class name would also catch hover-only and see-through versions of a colour. */
 /* --- The site in festival colours. The page's words, pictures and layout are untouched. ----------------------- */
 html[data-festival] .dark,
 html[data-festival] .cube-brand { --primary: var(--f-primary); }
-html[data-festival] [class*="bg-[#0A0626]"],
+html[data-festival] [class~="bg-[#0A0626]"]:not([class*="hover:bg-"]:hover),
+html[data-festival] [class~="bg-[#0A0626]/95"],
 html[data-festival] footer.bg-background { background-color: var(--f-ink); }
 html[data-festival] .cl-hero [class*="linear-gradient(90deg,#0A0626"] { background-image: linear-gradient(90deg, var(--f-ink) 0%, color-mix(in srgb, var(--f-ink) 85%, transparent) 45%, color-mix(in srgb, var(--f-ink) 35%, transparent) 100%); }
 html[data-festival] [class*="from-[#0A0626]"][class*="to-transparent"] { --tw-gradient-from: var(--f-ink) var(--tw-gradient-from-position); --tw-gradient-stops: var(--f-ink), transparent; }
@@ -18,30 +21,36 @@ html[data-festival] .cl-hero .cl-hero-main svg[viewBox]:not(.lucide) { filter: h
 html[data-festival] .cl-ai-orbit::before { border-color: color-mix(in srgb, var(--f-accent) 35%, transparent); }
 
 html[data-festival] [class*="bg-[#0047FF]/"] { background-color: color-mix(in srgb, var(--f-accent2) 30%, transparent); }
-html[data-festival] [class*="text-[#00B8FF]"] { color: var(--f-accent); }
-html[data-festival] [class*="bg-[#00B8FF]"] { background-color: var(--f-accent); box-shadow: 0 0 10px var(--f-accent); }
-html[data-festival] [class*="text-[#0047FF]"] { color: var(--f-primary-hex); }
+html[data-festival] [class~="text-[#00B8FF]"]:not([class*="hover:text-"]:hover):not(.group:hover [class*="group-hover:text-"]) { color: var(--f-accent); }
+html[data-festival] [class~="bg-[#00B8FF]"]:not([class*="hover:bg-"]:hover) { background-color: var(--f-accent); box-shadow: 0 0 10px var(--f-accent); }
+html[data-festival] [class*="bg-[#00B8FF]/"] { background-color: color-mix(in srgb, var(--f-accent) 25%, transparent); }
+html[data-festival] [class~="text-[#0047FF]"]:not([class*="hover:text-"]:hover):not(.group:hover [class*="group-hover:text-"]) { color: var(--f-primary-hex); }
 html[data-festival] .cl-dark .cl-hi { color: var(--f-accent); }
 html[data-festival] .cl-hero h1 .cl-hi,
 html[data-festival] .cl-hero h1 span[class*="from-[#00B8FF]"] { background-image: linear-gradient(90deg, var(--f-accent), var(--f-accent2), var(--f-accent3)); }
 html[data-festival] h1[class*="from-[#00B8FF]"] { background-image: linear-gradient(90deg, var(--f-primary-hex), var(--f-accent2), var(--f-primary-hex)); }
 html[data-festival] [class*="linear-gradient"][class*="#0047FF"] { background-image: var(--f-grad); }
 html[data-festival] [class*="shadow-[0_14px_30px"] { box-shadow: 0 14px 30px -14px color-mix(in srgb, var(--f-primary-hex) 90%, transparent); }
-html[data-festival] [class*="hover:bg-[#2300DC]"]:hover { background-color: var(--f-hover); }
-html[data-festival] [class*="bg-[#F0F4FB]"],
-html[data-festival] [class*="bg-[#F5F8FD]"],
-html[data-festival] [class*="bg-[#F6F8FD]"] { background-color: var(--f-tint); }
-html[data-festival] [class*="bg-[#D9F3FF]"] { background-color: color-mix(in srgb, var(--f-accent) 28%, white); }
+html[data-festival] [class*="hover:bg-[#2300DC]"]:hover,
+html[data-festival] .group:hover [class*="group-hover:bg-[#2300DC]"] { background-color: var(--f-hover); }
+html[data-festival] [class*=" hover:bg-[#0A0626]"]:hover { background-color: var(--f-ink); }
+html[data-festival] [class*="hover:text-[#0A0626]"]:hover { color: var(--f-ink); }
+html[data-festival] [class~="border-[#0A0626]"] { border-color: var(--f-ink); }
+html[data-festival] [class~="bg-[#F0F4FB]"]:not([class*="hover:bg-"]:hover),
+html[data-festival] [class*="hover:bg-[#F0F4FB]"]:hover,
+html[data-festival] [class~="bg-[#F5F8FD]"],
+html[data-festival] [class~="bg-[#F6F8FD]"] { background-color: var(--f-tint); }
+html[data-festival] [class~="bg-[#D9F3FF]"] { background-color: color-mix(in srgb, var(--f-accent) 28%, white); }
 html[data-festival] [class*="radial-gradient(60%_45%_at_50%_0%,#E3F6FF"] { background-image: radial-gradient(60% 45% at 50% 0%, color-mix(in srgb, var(--f-accent) 30%, white), transparent); }
 
 /* The footer's cool blues, warmed to the festival. */
-html[data-festival] footer [class*="text-[#5CCBFF]"] { color: var(--f-accent); }
+html[data-festival] footer [class~="text-[#5CCBFF]"]:not(.group:hover [class*="group-hover:text-"]) { color: var(--f-accent); }
 html[data-festival] footer,
-html[data-festival] footer [class*="text-[#B8E4FF]"],
-html[data-festival] footer [class*="text-[#D6F0FF]"],
-html[data-festival] footer [class*="text-[#7FD8FF]"] { color: var(--f-foot); }
+html[data-festival] footer [class~="text-[#B8E4FF]"]:not([class*="hover:text-"]:hover),
+html[data-festival] footer [class~="text-[#D6F0FF]"],
+html[data-festival] footer [class~="text-[#7FD8FF]"] { color: var(--f-foot); }
 html[data-festival] footer [class*="from-[#00B8FF]"] { background-image: linear-gradient(to bottom, color-mix(in srgb, var(--f-accent) 48%, transparent), transparent); }
-html[data-festival] [class*="text-[#9FD6FF]"] { color: var(--f-foot); }
+html[data-festival] [class~="text-[#9FD6FF]"] { color: var(--f-foot); }
 
 /* The pattern behind heroes, turning very slowly. */
 html[data-festival] .cl-hero::after {
