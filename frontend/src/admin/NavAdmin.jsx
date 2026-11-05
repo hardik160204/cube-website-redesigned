@@ -13,7 +13,7 @@ import { Editor, IconSelect, PagePicker } from "./PagesAdmin";
 
 const LAYOUTS = [
   ["rich", "Big", "Side options, a highlight box and links with short descriptions (like Platform)."],
-  ["simple", "Simple", "Side options and plain links (like Solutions)."],
+  ["simple", "Simple", "Side options and links with short descriptions (like Solutions)."],
   ["columns", "Columns", "Links in columns with small headings (like Resources)."],
 ];
 const NEW_LINK = { label: "", desc: "", href: "", icon: "Link2" };
@@ -424,7 +424,7 @@ export default function NavAdmin({ me, out }) {
                               <span className="min-w-0">
                                 <input placeholder="Link name" value={l.label} maxLength={60} onChange={(e) => edit((n) => (n.items[at].groups[k].links[x].label = e.target.value))} className={INPUT} aria-label="Link name" />
                                 <Shown text={l.label} edits={edits} />
-                                {item.layout === "rich" && (
+                                {item.layout !== "columns" && (
                                   <>
                                     <input placeholder="Short description" value={l.desc} maxLength={300} onChange={(e) => edit((n) => (n.items[at].groups[k].links[x].desc = e.target.value))} className={`${INPUT} mt-2`} aria-label="Short description" />
                                     <Shown text={l.desc} edits={edits} />

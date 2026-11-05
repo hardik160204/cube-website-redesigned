@@ -176,7 +176,7 @@ function RichPanel({ menu, onNavigate }) {
   );
 }
 
-// Options down the side; the chosen one shows plain links.
+// Options down the side; the chosen one shows its links, each with its short line.
 function SimplePanel({ menu, onNavigate }) {
   const [active, setActive] = useState(0);
   const chosen = menu.groups[active] || menu.groups[0];
@@ -203,13 +203,18 @@ function SimplePanel({ menu, onNavigate }) {
         })}
       </div>
       <motion.ul key={active} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.15 } }} className="ml-5 grid flex-1 grid-cols-2 content-start gap-x-10 border-l border-[#EDEEEF] px-8 py-7">
-        {chosen.links.map(({ label, href, icon }, k) => {
+        {chosen.links.map(({ label, desc, href, icon }, k) => {
           const Icon = navIcon(icon);
           return (
           <li key={k}>
-            <Link to={href} onClick={onNavigate} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] text-[#31343A] transition-colors hover:bg-[#F5F8FF] hover:text-primary">
-              <Icon size={18} className="shrink-0 text-[#4A4D53]" />
-              {label}
+            <Link to={href} onClick={onNavigate} className="group flex items-center gap-3 rounded-lg px-3 py-[10px] hover:bg-[#F5F8FF]">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#EDEEEF] text-[#31343A]">
+                <Icon size={20} />
+              </span>
+              <span>
+                <span className="block text-base font-medium text-[#101828] group-hover:text-primary">{label}</span>
+                {desc && <span className="block text-sm text-[#7E7E7E]">{desc}</span>}
+              </span>
             </Link>
           </li>
           );
