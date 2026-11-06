@@ -233,6 +233,7 @@ export default function Festival({ festival }) {
       "--f-grad": theme.grad,
       "--f-motif": theme.motif,
       "--f-garland": theme.garland,
+      "--f-diyas": theme.diyas || "none",
       "--f-garland-h": `${theme.garlandHeight}px`,
     };
     for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);

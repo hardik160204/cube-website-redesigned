@@ -56,10 +56,13 @@ function WaveText({ parts }) {
 }
 
 function AnnouncementBar({ onClose }) {
-  const { festival } = useSiteData();
+  const { festival, pricing } = useSiteData();
   const greeting = currentFestival(festival)?.greeting;
+  // The annual discount follows the dashboard's Pricing page (none: the message isn't shown).
+  const discount = pricing?.discount ?? 20;
+  const announcements = ANNOUNCEMENTS.flatMap((m) => (!m.parts.some(([t]) => t === "save 20%") ? [m] : discount ? [{ ...m, parts: m.parts.map(([t, hi]) => [t === "save 20%" ? `save ${discount}%` : t, hi]) }] : []));
   // A festival's greeting leads the messages while it's on.
-  const messages = greeting ? [{ parts: [[greeting, true]] }, ...ANNOUNCEMENTS] : ANNOUNCEMENTS;
+  const messages = greeting ? [{ parts: [[greeting, true]] }, ...announcements] : announcements;
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -226,6 +229,7 @@ function SimplePanel({ menu, onNavigate }) {
 
 // Links in columns; `extras` adds the contact, pricing, CRM and go-live boxes.
 function ColumnsPanel({ menu, onNavigate }) {
+  const discount = useSiteData().pricing?.discount ?? 20;
   const link = "flex items-center gap-3 py-2 text-[15px] text-[#31343A] transition-colors hover:text-primary";
   const card = "flex flex-col gap-3 rounded-xl border border-[#EDEEEF] p-4 text-[15px] text-[#31343A] transition-colors hover:border-[#99B5FF]";
   const columns = menu.groups.map((col, i) => (
@@ -262,7 +266,7 @@ function ColumnsPanel({ menu, onNavigate }) {
           <p className="mb-2 text-[13px] uppercase text-[#6B6E75]">Plans</p>
           <Link to="/pricing" onClick={onNavigate} className={`${card} h-[calc(100%-1.75rem)]`}>
             <Receipt size={18} className="text-[#4A4D53]" /> Pricing
-            <span className="text-sm text-[#6B6E75]">Save 20% with annual billing</span>
+            <span className="text-sm text-[#6B6E75]">{discount ? `Save ${discount}% with annual billing` : "Annual billing available"}</span>
           </Link>
         </div>
       </div>

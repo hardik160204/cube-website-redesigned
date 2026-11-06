@@ -388,7 +388,7 @@ test("analytics: page views are stored without identifiers; admin pages and bots
 
 test("team and social links: validated, stripped to known fields, served to the site", async () => {
   const cookie = await signIn();
-  assert.deepEqual(await (await api("/api/site")).json(), { team: null, socials: null, nav: null, bot: null, fonts: null, festival: null, pagesOff: null });
+  assert.deepEqual(await (await api("/api/site")).json(), { team: null, socials: null, nav: null, bot: null, fonts: null, festival: null, pagesOff: null, sectionsOff: null, pricing: null });
   const put = (key, value) => api(`/api/admin/settings/${key}`, { method: "PUT", cookie, body: { value } });
   assert.equal((await put("team", [{ name: "A", linkedin: "javascript:alert(1)" }])).status, 400);
   assert.equal((await put("team", [{ name: "A", image: "javascript:alert(1)" }])).status, 400);
@@ -690,7 +690,7 @@ test("font sizes, festivals, switched-off pages and the bot: validated, cleaned,
 
 test("security headers are set", async () => {
   const res = await api("/api/demo-info");
-  assert.match(res.headers.get("content-security-policy"), /frame-ancestors 'none'/);
+  assert.match(res.headers.get("content-security-policy"), /frame-ancestors 'self'/);
   assert.equal(res.headers.get("x-powered-by"), null);
   assert.equal((await api("/api/nope")).status, 404);
 });

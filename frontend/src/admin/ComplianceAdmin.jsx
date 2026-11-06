@@ -192,6 +192,8 @@ const CHANGES = [
   [/^PUT \/settings\/festival/, "Changed the festival theme"],
   [/^PUT \/settings\/pagesOff/, "Switched pages on or off"],
   [/^PUT \/settings\/bot/, "Changed the chat bot"],
+  [/^PUT \/settings\/sectionsOff/, "Switched sections on or off"],
+  [/^PUT \/settings\/pricing/, "Changed the pricing"],
   [/^PUT \/settings/, "Changed settings"],
   [/^POST \/privacy\/erase/, "Erased someone's personal data"],
   [/^POST \/retention/, "Ran the automatic deletion"],

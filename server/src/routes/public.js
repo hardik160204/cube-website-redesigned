@@ -118,7 +118,7 @@ module.exports = function publicRoutes(db) {
 
   // Team cards, footer social links and the navigation bar set in the admin (null = the site's built-in defaults).
   r.get("/site", async (req, res) => {
-    res.set("Cache-Control", "no-cache").json({ team: (await settings.get(db, "team")) ?? null, socials: (await settings.get(db, "socials")) ?? null, nav: (await settings.get(db, "nav")) ?? null, bot: (await settings.get(db, "bot")) ?? null, fonts: (await settings.get(db, "fonts")) ?? null, festival: (await settings.get(db, "festival")) ?? null, pagesOff: (await settings.get(db, "pagesOff")) ?? null });
+    res.set("Cache-Control", "no-cache").json({ team: (await settings.get(db, "team")) ?? null, socials: (await settings.get(db, "socials")) ?? null, nav: (await settings.get(db, "nav")) ?? null, bot: (await settings.get(db, "bot")) ?? null, fonts: (await settings.get(db, "fonts")) ?? null, festival: (await settings.get(db, "festival")) ?? null, pagesOff: (await settings.get(db, "pagesOff")) ?? null, sectionsOff: (await settings.get(db, "sectionsOff")) ?? null, pricing: (await settings.get(db, "pricing")) ?? null });
   });
 
   r.get("/content", async (req, res) => {

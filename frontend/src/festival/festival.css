@@ -84,6 +84,20 @@ html[data-festival] .cl-home-hero::after { right: -190px; }
 html[data-festival] .cl-home-hero > * { position: relative; z-index: 1; }
 @keyframes f-turn { to { rotate: 360deg; } }
 
+/* A row of lit lamps along the top of the footer (Diwali). */
+html[data-festival] footer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 18px;
+  height: 48px;
+  background: var(--f-diyas) repeat-x center top;
+  pointer-events: none;
+  animation: f-row-glow 2.6s ease-in-out infinite;
+}
+@keyframes f-row-glow { 50% { filter: brightness(1.18) drop-shadow(0 0 6px rgb(255 190 80 / 0.55)); } }
+
 /* --- The decoration layer ---------------------------------------------------------------------------------- */
 .f-layer { position: fixed; inset: 0; z-index: 45; pointer-events: none; overflow: hidden; }
 .f-garland {

@@ -70,5 +70,5 @@ export function useSiteData() {
       live = false;
     };
   }, []);
-  return { team: data?.team || DEFAULT_TEAM, socials: data?.socials || DEFAULT_SOCIALS, nav: data?.nav || DEFAULT_NAV, bot: data?.bot || DEFAULT_BOT, fonts: data?.fonts || null, festival: data?.festival || null, pagesOff: data?.pagesOff || null, ready: Boolean(data) };
+  return { team: data?.team || DEFAULT_TEAM, socials: data?.socials || DEFAULT_SOCIALS, nav: data?.nav || DEFAULT_NAV, bot: data?.bot || DEFAULT_BOT, fonts: data?.fonts || null, festival: data?.festival || null, pagesOff: data?.pagesOff || null, sectionsOff: data?.sectionsOff || null, pricing: data?.pricing || null, ready: Boolean(data) };
 }

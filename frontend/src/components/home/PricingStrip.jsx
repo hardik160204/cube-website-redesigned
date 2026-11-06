@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, RefreshCw, Server, ShieldCheck } from "lucide-react";
-import { PRICING_FIELDS, PRICING_TIERS, priceOf } from "../../pages/PricingPage";
+import { PRICING_FIELDS, moneyIn, priceOf, usePricing } from "../../pages/PricingPage";
 import { useCards } from "../../lib/editable";
 
 // Cube plan strip, filled from the pricing page: annual seat prices, then the page's three guarantees.
@@ -10,10 +10,11 @@ const GUARANTEES = [
   { icon: RefreshCw, label: "Zero Downtime Migration" },
   { icon: Server, label: "On-Premise or Cloud" },
 ];
-const rupees = (n) => `Rs. ${n.toLocaleString("en-IN")}`;
 
 export default function PricingStrip() {
-  const tiers = useCards(PRICING_TIERS, PRICING_FIELDS);
+  const pricing = usePricing();
+  const tiers = useCards(pricing.tiers, PRICING_FIELDS);
+  const rupees = moneyIn(pricing.currency);
   const guarantees = useCards(GUARANTEES, { icon: "Icon", label: "Text" });
   return (
     <section id="pricing" className="scroll-mt-32 bg-white px-4 py-[60px] md:pb-24 lg:pl-[150px] lg:pr-[108px]">
@@ -46,7 +47,7 @@ export default function PricingStrip() {
                 </span>
                 <div className="flex flex-wrap items-baseline gap-x-2">
                   <span className="text-[40px] font-medium leading-[48px] text-[#31343A]">{priced ? rupees(yearly) : "Custom Quote"}</span>
-                  {priced && <span className="text-base leading-6 text-[#5F6062]">/ seat / month, annual billing</span>}
+                  {priced && <span className="text-base leading-6 text-[#5F6062]">{`${pricing.unit}, annual billing`}</span>}
                 </div>
                 <p className="mt-1 text-base leading-6 text-[#404348]">{tier.description}</p>
               </Link>
@@ -56,7 +57,7 @@ export default function PricingStrip() {
 
         <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-[#D9DEEA] bg-[#F0F3F9] px-5 py-[18px] lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-7">
           <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2">
-            <span className="inline-flex h-9 items-center whitespace-nowrap rounded-full bg-primary px-3.5 text-base font-semibold leading-6 text-white">Save 20%</span>
+            {pricing.discount > 0 && <span className="inline-flex h-9 items-center whitespace-nowrap rounded-full bg-primary px-3.5 text-base font-semibold leading-6 text-white">{`Save ${pricing.discount}%`}</span>}
             <span className="whitespace-nowrap text-lg font-medium leading-[26px] text-[#31343A]">with annual billing</span>
           </div>
           <span className="hidden h-8 w-px shrink-0 bg-[#C9D6F2] lg:block" />

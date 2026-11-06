@@ -42,6 +42,21 @@ const lanterns = (a, b) =>
     `<path d='M0 3 Q65 13 130 3' fill='none' stroke='${a}' stroke-width='1.2'/><line x1='32' y1='7' x2='32' y2='16' stroke='${a}'/><path d='M26 16 h12 l3 5 v11 l-3 5 h-12 l-3 -5 v-11Z' fill='${b}' stroke='${a}' stroke-width='1.2'/><path d='M32 21 v11' stroke='${a}'/><line x1='98' y1='8' x2='98' y2='17' stroke='${a}'/><path d='M104 20 a10 10 0 1 0 0 15 a8 8 0 1 1 0 -15Z' fill='${a}'/><path d='M65 8 l1.5 3.8 4 .3 -3 2.6 .9 4 -3.4 -2.2 -3.4 2.2 .9 -4 -3 -2.6 4 -.3Z' fill='${a}'/>`
   );
 
+// A small lit clay lamp, drawn at 40 × 42.
+const diya = (x, y, s = 1) =>
+  `<g transform='translate(${x} ${y}) scale(${s})'><ellipse cx='20' cy='13' rx='10' ry='13' fill='#FFC53D' opacity='.32'/><path d='M20 1C24 8 26 13 24 18 22 22 18 22 16 18 14 13 16 8 20 1Z' fill='#FF9F1C'/><path d='M20 8C22 12 23 15 22 18 21 20 19 20 18 18 17 15 18 12 20 8Z' fill='#FFF3B0'/><path d='M2 25C3 36 12 41 20 41 28 41 37 36 38 25 32 22 30 28 20 28 10 28 8 22 2 25Z' fill='#B4471A'/><path d='M2 25C8 22 10 28 20 28 30 28 32 22 38 25 33 30 27 31 20 31 13 31 7 30 2 25Z' fill='#FFB547'/><circle cx='12' cy='35' r='1.400' fill='#FFE6A8'/><circle cx='20' cy='37' r='1.400' fill='#FFE6A8'/><circle cx='28' cy='35' r='1.400' fill='#FFE6A8'/></g>`;
+// The marigold string with a lamp hanging from every other dip.
+const marigoldWithDiyas = (a, b) =>
+  svg(
+    240,
+    80,
+    `<path d='M0 4 Q30 16 60 4 T120 4 T180 4 T240 4' fill='none' stroke='#8A4B12' stroke-width='1.600'/>${[0, 120]
+      .map((o) => `<g transform='translate(${o} 0)'>${leaf(14, 8, 10)}${leaf(46, 8, -10)}${leaf(74, 8, 10)}${leaf(106, 8, -10)}${flower(30, 11, 10, a, b)}${flower(90, 11, 10, a, b)}${flower(0, 5, 7, b, a)}${flower(120, 5, 7, b, a)}<line x1='90' y1='20' x2='90' y2='32' stroke='#8A4B12'/><circle cx='90' cy='35' r='3.400' fill='${a}'/></g>`)
+      .join("")}${flower(60, 5, 7, b, a)}${flower(180, 5, 7, b, a)}<line x1='30' y1='20' x2='30' y2='40' stroke='#8A4B12'/>${diya(16, 38, 0.72)}<line x1='150' y1='20' x2='150' y2='32' stroke='#8A4B12'/><circle cx='150' cy='35' r='3.400' fill='${a}'/>`
+  );
+// A row of lamps along the top of the footer.
+const diyaRow = svg(170, 48, diya(65, 2, 1));
+
 // --- The pattern behind page heroes --------------------------------------------------------------------------------
 const rangoli = (a, b, c) => {
   const ring = (r, n, rx, ry, fill) => Array.from({ length: n }, (_, i) => `<ellipse cx='0' cy='${-r}' rx='${rx}' ry='${ry}' fill='${fill}' transform='rotate(${(i * 360) / n})'/>`).join("");
@@ -67,7 +82,7 @@ export const THEMES = {
   diwali: {
     primary: "17 88% 40%", primaryHex: "#C2410C", hover: "#9A3412", ink: "#22070E", accent: "#FFC53D", accent2: "#FF8A1F", accent3: "#FF5A5A", tint: "#FFF7EC", foot: "#FFE2B8", hue: "175deg",
     grad: "linear-gradient(110deg,#7F1D1D 0%,#C2410C 55%,#F59E0B 100%)",
-    particles: "ember", burst: true, rider: "diya", garland: marigold("#F59E0B", "#FB923C"), garlandHeight: 50, motif: rangoli("#FFC53D", "#FF8A1F", "#FF5A5A"), swatch: ["#7F1D1D", "#C2410C", "#F59E0B", "#FFC53D"],
+    particles: "ember", burst: true, rider: "diya", garland: marigoldWithDiyas("#F59E0B", "#FB923C"), garlandHeight: 80, diyas: diyaRow, motif: rangoli("#FFC53D", "#FF8A1F", "#FF5A5A"), swatch: ["#7F1D1D", "#C2410C", "#F59E0B", "#FFC53D"],
   },
   holi: {
     primary: "333 78% 42%", primaryHex: "#BE185D", hover: "#9D174D", ink: "#1E0B36", accent: "#FFD23F", accent2: "#FF4FA3", accent3: "#2DD4BF", tint: "#FFF4FA", foot: "#F5D0FE", hue: "100deg",

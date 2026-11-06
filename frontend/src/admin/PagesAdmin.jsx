@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Copy, ExternalLink, ImagePlus, LayoutTemplate, PencilLine, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Copy, ExternalLink, ImagePlus, LayoutTemplate, PencilLine, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import { ICONS } from "../lib/editable";
@@ -542,6 +542,65 @@ export function PagePicker({ name: givenName = "", pages = [], onPick, onClose }
   );
 }
 
+// The sections of one page, read from the page itself in a hidden frame, each with an on/off switch.
+const norm = (s) => s.replace(/\s+/g, " ").trim();
+function SectionSwitches({ path, off, onToggle }) {
+  const [list, setList] = useState(null);
+  useEffect(() => {
+    const frame = document.createElement("iframe");
+    frame.src = path;
+    frame.title = "Reading the page's sections";
+    frame.tabIndex = -1;
+    frame.setAttribute("aria-hidden", "true");
+    Object.assign(frame.style, { position: "fixed", left: "-10000px", top: "0", width: "1440px", height: "900px", border: "0" });
+    document.body.appendChild(frame);
+    let last = -1;
+    let same = 0;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      let els = [];
+      try {
+        els = [...(frame.contentDocument?.querySelectorAll("[data-cube-section]") || [])];
+      } catch {
+        /* not readable yet */
+      }
+      same = els.length && els.length === last ? same + 1 : 0;
+      last = els.length;
+      if (same < 4 && tries < 50) return;
+      clearInterval(timer);
+      setList(
+        els.map((el) => {
+          const head = el.querySelector("h1, h2, h3");
+          return { key: el.getAttribute("data-cube-section"), label: norm(head?.textContent || "") || `“${norm(el.textContent).slice(0, 60)}...”` };
+        })
+      );
+      frame.remove();
+    }, 300);
+    return () => {
+      clearInterval(timer);
+      frame.remove();
+    };
+  }, [path]);
+  if (!list) return <p className="pb-3 pl-14 text-[13px] text-[#6B6E75]">Reading the page's sections...</p>;
+  if (!list.length) return <p className="pb-3 pl-14 text-[13px] text-[#6B6E75]">This page has no sections that can be switched off.</p>;
+  return (
+    <ol className="mb-3 ml-14 space-y-1.5 rounded-xl bg-[#F5F8FD] p-3">
+      {list.map((s, i) => {
+        const on = !off.includes(s.key);
+        return (
+          <li key={s.key} className="flex items-center gap-3 text-[13px]">
+            <Toggle on={on} label={`Section ${i + 1}: ${s.label}`} onChange={(v) => onToggle(s.key, v)} />
+            <span className={on ? "text-[#0A0626]" : "text-[#9CA3AF] line-through"}>
+              <span className="font-mono text-[11px] text-[#9CA3AF]">{String(i + 1).padStart(2, "0")}</span> {s.label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 // --- Every page of the website, with its switch and its edit buttons ---------------------------------------------
 const SITE_PAGES = Object.entries(ROUTES)
   .filter(([, m]) => !m.canonical)
@@ -553,9 +612,11 @@ const PAGE_GROUPS = [
   ["Legal", (p) => /^\/(terms|privacy)/.test(p)],
 ];
 
-function PageRow({ name, path, status, on, canEdit, onToggle, onBuild }) {
+function PageRow({ name, path, status, on, canEdit, onToggle, onBuild, sections }) {
+  const [open, setOpen] = useState(false);
   return (
-    <li className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3 text-[14px]">
+    <li className="py-3">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[14px]">
       <span className="flex min-w-0 flex-1 items-center gap-3">
         <Toggle on={on} label={`${name} page`} onChange={onToggle} />
         <span className="min-w-[180px]">
@@ -568,6 +629,9 @@ function PageRow({ name, path, status, on, canEdit, onToggle, onBuild }) {
         </span>
       </span>
       <span className="flex flex-wrap gap-2">
+        <Button variant="ghost" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          Sections <ChevronDown size={15} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        </Button>
         {onBuild && (
           <Button variant="ghost" onClick={onBuild}>
             Edit sections
@@ -582,6 +646,8 @@ function PageRow({ name, path, status, on, canEdit, onToggle, onBuild }) {
           <ExternalLink size={15} />
         </a>
       </span>
+    </div>
+    {open && <div className="mt-3">{sections}</div>}
     </li>
   );
 }
@@ -590,12 +656,16 @@ export default function PagesAdmin({ me, out }) {
   const [data, reload] = useResource("/admin/pages", out);
   const [settings] = useResource("/admin/settings", out);
   const [off, setOff] = useState(null);
+  const [sectionsOff, setSectionsOff] = useState({});
   const [editing, setEditing] = useState(null);
   const [picking, setPicking] = useState(false);
   const [search, setSearch] = useState("");
   const canEdit = me.isOwner || me.permissions.includes("content");
   useEffect(() => {
-    if (settings) setOff({ paths: [], title: "", message: "", ...(settings.pagesOff || {}) });
+    if (settings) {
+      setOff({ paths: [], title: "", message: "", ...(settings.pagesOff || {}) });
+      setSectionsOff(settings.sectionsOff || {});
+    }
   }, [settings]);
 
   if (editing) return <Editor key={editing.id || "new"} initial={editing} onDone={() => (setEditing(null), reload())} />;
@@ -608,6 +678,14 @@ export default function PagesAdmin({ me, out }) {
     setOff(next);
     if (!(await store(next, on ? `${name} is live again` : `${name} is switched off`))) setOff(off);
   };
+  const toggleSection = async (path, key, on) => {
+    const list = sectionsOff[path] || [];
+    const next = { ...sectionsOff, [path]: on ? list.filter((k) => k !== key) : [...list, key] };
+    if (!next[path].length) delete next[path];
+    setSectionsOff(next);
+    if (!(await act(() => api("/admin/settings/sectionsOff", { method: "PUT", body: { value: next } }), on ? "Section is back on the page" : "Section switched off. The page closes up around it."))) setSectionsOff(sectionsOff);
+  };
+  const sections = (path) => <SectionSwitches path={path} off={sectionsOff[path] || []} onToggle={(key, on) => toggleSection(path, key, on)} />;
   const match = (p) => !search.trim() || `${p.name} ${p.path}`.toLowerCase().includes(search.trim().toLowerCase());
   const built = (data?.pages || []).map((p) => ({ ...p, name: p.content.hero.title.replace(/[[\]]/g, "") })).filter(match);
   const offCount = off.paths.length;
@@ -616,7 +694,7 @@ export default function PagesAdmin({ me, out }) {
     <>
       <PageTitle
         title="Pages"
-        desc={`Every page of the website. Switch a page off to take it away from visitors, or press Edit to change anything on it. ${offCount ? `${offCount} switched off right now.` : "All pages are on."}`}
+        desc={`Every page of the website. Switch a page off to take it away from visitors, open Sections to switch off parts of a page, or press Edit to change anything on it. ${offCount ? `${offCount} switched off right now.` : "All pages are on."}`}
         actions={<Button onClick={() => setPicking(true)}><Plus size={16} /> New page</Button>}
       />
       {picking && <PagePicker pages={data?.pages || []} onClose={() => setPicking(false)} onPick={(f) => (setPicking(false), setEditing(f))} />}
@@ -639,6 +717,7 @@ export default function PagesAdmin({ me, out }) {
                   status={<span className="ml-1.5">· {p.published ? <span className="text-[#0F6B3A]">Published</span> : <span className="text-[#9A5B00]">Draft</span>} · updated {utcStamp(p.updated_at)}</span>}
                   onToggle={(on) => toggle(p.path, p.name, on)}
                   onBuild={() => setEditing(fromRow(p))}
+                  sections={sections(p.path)}
                 />
               ))}
             </ul>
@@ -651,7 +730,7 @@ export default function PagesAdmin({ me, out }) {
             <Card key={title} title={`${title} (${rows.length})`}>
               <ul className="-my-3 divide-y divide-[#EEF1F7]">
                 {rows.map((p) => (
-                  <PageRow key={p.path} name={p.name} path={p.path} on={!off.paths.includes(p.path)} canEdit={canEdit} onToggle={(on) => toggle(p.path, p.name, on)} />
+                  <PageRow key={p.path} name={p.name} path={p.path} on={!off.paths.includes(p.path)} canEdit={canEdit} onToggle={(on) => toggle(p.path, p.name, on)} sections={sections(p.path)} />
                 ))}
               </ul>
             </Card>

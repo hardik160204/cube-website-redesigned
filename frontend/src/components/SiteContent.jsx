@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 
 import { useLocation } from "react-router-dom";
 import { isVideo, pagePath, setContent, useContent } from "../lib/content";
 import { EDIT_FLAG, editing as editMode } from "../lib/editable";
+import { useSiteData } from "../lib/site";
 
 // Applies the text, image and video edits made in the admin's visual editor. Each edit says "on this page
 // (or on every page), show X instead of Y"; matching text nodes, <img> sources and <video> sources are
@@ -134,6 +135,33 @@ function applySizes(overrides, path) {
   }
 }
 
+// --- Sections switched off in the dashboard (Pages) ------------------------------------------------------------------
+// Each top-level section of a page is named by its heading's original words (so editing a heading keeps its switch),
+// or by its place on the page when it has no heading. The name goes on the section for the dashboard to read.
+function originalText(el) {
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let out = "";
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    const shown = norm(n.nodeValue);
+    const prev = originals.get(n);
+    out += ` ${prev && prev.shown === shown ? prev.original : shown}`;
+  }
+  return norm(out);
+}
+function applySections(off) {
+  const seen = new Map();
+  const sections = [...document.querySelectorAll("main section")].filter((s) => !s.parentElement.closest("main section"));
+  sections.forEach((s, i) => {
+    const head = s.querySelector("h1, h2, h3");
+    let key = (head ? originalText(head) : "").slice(0, 120) || `Section ${i + 1}`;
+    const n = (seen.get(key) || 0) + 1;
+    seen.set(key, n);
+    if (n > 1) key += ` #${n}`;
+    if (s.getAttribute("data-cube-section") !== key) s.setAttribute("data-cube-section", key);
+    if (off?.includes(key)) s.setAttribute("data-cube-hidden", "");
+  });
+}
+
 // A phone number edited as text also changes its call links and any mention inside a longer sentence, in
 // whichever format it's written there (+91 80 68 69 44 40, +91 806 869 4440, tel:+918068694440).
 const PHONE = /^\+?[\d\s()-]{7,}$/;
@@ -165,7 +193,7 @@ function applyPhones(texts) {
   }
 }
 
-function apply(overrides, path) {
+function apply(overrides, path, sectionsOff) {
   const texts = new Map();
   const images = new Map();
   // Site-wide edits first, so an edit for this page wins.
@@ -233,23 +261,24 @@ function apply(overrides, path) {
   }
   applyRemovals(overrides, path);
   applySizes(overrides, path);
+  applySections(sectionsOff);
 }
 
 export default function SiteContent() {
   const { pathname } = useLocation();
   const path = pagePath(pathname);
   const { overrides } = useContent();
+  const off = useSiteData().sectionsOff?.[path];
   const setOverrides = useCallback((next) => setContent({ overrides: next }), []);
   const [editing] = useState(editMode);
   const frame = useRef(0);
 
   const run = useCallback(() => {
     cancelAnimationFrame(frame.current);
-    frame.current = requestAnimationFrame(() => apply(overrides, path));
-  }, [overrides, path]);
+    frame.current = requestAnimationFrame(() => apply(overrides, path, off));
+  }, [overrides, path, off]);
 
   useEffect(() => {
-    if (!overrides.length) return undefined;
     run();
     const watch = new MutationObserver(run);
     watch.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["src"] });

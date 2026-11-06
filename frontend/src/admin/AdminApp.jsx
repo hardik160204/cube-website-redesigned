@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, CalendarClock, Users, CalendarDays, FileCheck2, FilePlus2, FileText, History, UserSearch, Image, Inbox, LayoutDashboard, ListTree, LogOut, Menu, PartyPopper, PencilLine, Bot as BotIcon, Settings, ShieldCheck, Trash2, Type, UserCog, X } from "lucide-react";
+import { BarChart3, CalendarClock, Users, CalendarDays, FileCheck2, FilePlus2, FileText, History, UserSearch, Image, Inbox, LayoutDashboard, ListTree, LogOut, Menu, PartyPopper, PencilLine, Bot as BotIcon, Settings, Tags, ShieldCheck, Trash2, Type, UserCog, X } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { api } from "../lib/api";
@@ -13,6 +13,7 @@ import NavAdmin from "./NavAdmin";
 import FontsAdmin from "./FontsAdmin";
 import FestivalsAdmin from "./FestivalsAdmin";
 import BotAdmin from "./BotAdmin";
+import PricingAdmin from "./PricingAdmin";
 import CalendarAdmin from "./CalendarAdmin";
 import ConsentAdmin from "./ConsentAdmin";
 import TeamAdmin from "./TeamAdmin";
@@ -35,6 +36,7 @@ const NAV = [
   ["fonts", "Font sizes", Type, "fonts"],
   ["festivals", "Festivals", PartyPopper, "festivals"],
   ["bot", "Chat bot", BotIcon, "bot"],
+  ["pricing", "Pricing", Tags, "pricing"],
   ["media", "Images & videos", Image, "media"],
   ["team", "Team & social links", Users, "team"],
   ["analytics", "Visitor analytics", BarChart3, "analytics"],
@@ -47,7 +49,7 @@ const NAV = [
 const can = (me, need) => !need || me.isOwner || (need !== "owner" && me.permissions.includes(need));
 // What the owner can give other admins, in menu order.
 const SECTION_LABEL = Object.fromEntries(NAV.filter(([, , , need]) => need && need !== "owner").map(([, label, , need]) => [need, label]));
-const DEFAULT_ACCESS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "fonts", "festivals", "bot", "media", "team"];
+const DEFAULT_ACCESS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "fonts", "festivals", "bot", "pricing", "media", "team"];
 
 const INTEREST = { "cloud-contact-center": "Cloud Contact Center", "voice-logger": "Voice Logger", "call-billing": "Call Billing Software", ivrs: "IVRS Services", other: "Other" };
 
@@ -725,6 +727,7 @@ export default function AdminApp() {
       fonts: <FontsAdmin {...props} />,
       festivals: <FestivalsAdmin {...props} />,
       bot: <BotAdmin {...props} />,
+      pricing: <PricingAdmin {...props} />,
       media: <MediaAdmin {...props} />,
       calendar: <CalendarAdmin {...props} />,
       team: <TeamAdmin {...props} />,

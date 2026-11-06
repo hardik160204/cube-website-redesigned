@@ -105,6 +105,8 @@ function checkSettings(key, v) {
   if (key === "festival") return checkFestival(v);
   if (key === "pagesOff") return checkPagesOff(v);
   if (key === "bot") return checkBot(v);
+  if (key === "sectionsOff") return checkSectionsOff(v);
+  if (key === "pricing") return checkPricing(v);
   if (key === "retention") {
     if (!v || !Number.isInteger(v.enquiryMonths) || v.enquiryMonths < 6 || v.enquiryMonths > 84) return "Keep enquiries for 6 to 84 months.";
     return null;
@@ -129,13 +131,13 @@ function checkSettings(key, v) {
 
 // Dashboard sections the owner can give each admin. The owner always has them all, plus the activity log
 // and admin accounts; the overview and an admin's own password are open to everyone.
-const SECTIONS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "fonts", "festivals", "bot", "media", "team", "analytics", "consents", "privacy", "settings"];
+const SECTIONS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "fonts", "festivals", "bot", "pricing", "media", "team", "analytics", "consents", "privacy", "settings"];
 const may = (admin, ...any) => admin.isOwner || any.some((s) => admin.permissions.includes(s));
 const need = (...any) => (req, res, next) => (may(req.admin, ...any) ? next() : res.status(403).json({ error: "You don't have access to this. Ask the owner to give it to you." }));
 const ownerOnly = (req, res, next) => (req.admin.isOwner ? next() : res.status(403).json({ error: "Only the owner can see this." }));
 // Anyone who edits content needs the image library to pick from.
 const MEDIA_USERS = ["media", "blog", "content", "pages", "team"];
-const SETTING_SECTION = { salesEmails: "settings", demo: "settings", retention: "settings", team: "team", socials: "team", nav: "navigation", fonts: "fonts", festival: "festivals", pagesOff: "pages", bot: "bot" };
+const SETTING_SECTION = { salesEmails: "settings", demo: "settings", retention: "settings", team: "team", socials: "team", nav: "navigation", fonts: "fonts", festival: "festivals", pagesOff: "pages", bot: "bot", sectionsOff: "pages", pricing: "pricing" };
 const checkPermissions = (v) => (Array.isArray(v) && v.length <= SECTIONS.length && v.every((s) => SECTIONS.includes(s)) ? null : "Unknown section.");
 
 // Card lists edited on the site. Each kind keeps only its own fields, so nothing unexpected is stored and
@@ -256,6 +258,38 @@ function cleanBot(v) {
     faqs: v.faqs.map((f) => ({ q: t(f.q), a: t(f.a) })),
   };
 }
+
+// Sections switched off: for each page address, the names of its sections that visitors don't see.
+function checkSectionsOff(v) {
+  if (!v || typeof v !== "object" || Array.isArray(v) || Object.keys(v).length > 300) return "Invalid section list.";
+  for (const [path, keys] of Object.entries(v)) {
+    if (!/^\/[a-z0-9/-]{0,120}$/.test(path) || !Array.isArray(keys) || keys.length > 60 || !keys.every((k) => isStr(k, 200, 1))) return "Invalid section list.";
+  }
+  return null;
+}
+const cleanSectionsOff = (v) => Object.fromEntries(Object.entries(v).map(([p, keys]) => [p, [...new Set(keys)]]).filter(([, keys]) => keys.length));
+
+// Plans and prices: the annual discount, the currency and unit, and up to six plans.
+const price = (x) => x === "Custom" || (Number.isInteger(x) && x >= 0 && x <= 100000000);
+function checkPricing(v) {
+  if (!v || typeof v !== "object") return "Invalid pricing.";
+  if (!Number.isInteger(v.discount) || v.discount < 0 || v.discount > 90) return "The discount must be 0 to 90 percent.";
+  if (!isStr(v.currency, 8, 1) || !isStr(v.unit ?? "", 40)) return "Currency (up to 8 characters) and unit (up to 40) are needed.";
+  if (!Array.isArray(v.tiers) || v.tiers.length < 1 || v.tiers.length > 6) return "Add 1 to 6 plans.";
+  for (const t of v.tiers) {
+    if (!t || !isStr(t.name, 80, 1)) return "Every plan needs a name (up to 80 characters).";
+    if (!isStr(t.badge ?? "", 30) || !isStr(t.description ?? "", 300)) return `“${t.name}”: badge up to 30 and description up to 300 characters.`;
+    if (!price(t.monthlyPrice) || !price(t.yearlyPrice)) return `“${t.name}”: prices must be whole numbers, or a custom quote.`;
+    if (!Array.isArray(t.features) || t.features.length > 20 || !t.features.every((f) => isStr(f, 160))) return `“${t.name}”: up to 20 lines of up to 160 characters.`;
+  }
+  return null;
+}
+const cleanPricing = (v) => ({
+  discount: v.discount,
+  currency: v.currency.trim(),
+  unit: (v.unit || "").trim(),
+  tiers: v.tiers.map((t) => ({ name: t.name.trim(), badge: (t.badge || "").trim(), description: (t.description || "").trim(), monthlyPrice: t.monthlyPrice, yearlyPrice: t.yearlyPrice, highlight: t.highlight === true, features: t.features.map((f) => f.trim()).filter(Boolean) })),
+});
 
 const LIST_KINDS = {
   features: { max: 24, ok: card, clean: (c) => keep(c, ["icon", "title", "desc"]) },
@@ -766,6 +800,8 @@ module.exports = function adminRoutes(db) {
     if (key === "festival") value = cleanFestival(value);
     if (key === "pagesOff") value = cleanPagesOff(value);
     if (key === "bot") value = cleanBot(value);
+    if (key === "sectionsOff") value = cleanSectionsOff(value);
+    if (key === "pricing") value = cleanPricing(value);
     if (key === "socials") value = Object.fromEntries(["facebook", "linkedin", "instagram", "youtube", "x"].map((k) => [k, value[k] || ""]));
     await settings.set(db, key, value);
     res.json({ ok: true });

@@ -541,6 +541,7 @@ export function LogoRows({ className = "" }) {
     <div className={`flex flex-col gap-8 ${className}`}>
       <LogoMarquee logos={CLIENT_LOGOS} alt="Cube customer logo" duration="38s" />
       <LogoMarquee logos={PARTNER_LOGOS} alt="Cube technology partner logo" duration="32s" reverse />
+      <p className="-mt-2 text-center text-xs text-[#6B6E75]">Note: All trademarks are the property of their respective owners.</p>
     </div>
   );
 }

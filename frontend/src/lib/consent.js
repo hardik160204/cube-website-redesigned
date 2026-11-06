@@ -62,7 +62,7 @@ export function useCookieSettingsRequest(handler) {
 // One page view, only with analytics consent: the path, and the referring site's name on the first page
 // of a visit. No cookie or identifier is set or sent.
 export function recordPageView(path) {
-  if (!readConsent()?.analytics || path.startsWith("/admin")) return;
+  if (!readConsent()?.analytics || path.startsWith("/admin") || window.top !== window.self) return;
   let ref = "";
   try {
     if (!sessionStorage.getItem("cube_pv")) {

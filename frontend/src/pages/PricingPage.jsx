@@ -6,6 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "..
 import { CONTACT, tel } from "../components/home/catalog";
 import { TrustBand } from "../components/page/kit";
 import { useCards, useList } from "../lib/editable";
+import { useSiteData } from "../lib/site";
 
 export const PRICING_TIERS = [
   {
@@ -72,6 +73,11 @@ export const PRICING_FIELDS = {
 // Prices are numbers in the code and text once edited; anything that isn't a number is a custom quote.
 export const priceOf = (v) => (typeof v === "number" ? v : /^[\d,]+$/.test(String(v ?? "").trim()) ? Number(String(v).replace(/,/g, "")) : null);
 
+// What the dashboard's Pricing page edits. Annual prices are the monthly price less the discount.
+export const DEFAULT_PRICING = { discount: 20, currency: "Rs.", unit: "/ seat / month", tiers: PRICING_TIERS };
+export const usePricing = () => useSiteData().pricing || DEFAULT_PRICING;
+export const moneyIn = (currency) => (n) => `${currency} ${n.toLocaleString("en-IN")}`;
+
 const PRICING_FAQS = [
   {
     q: "Can we switch between monthly and annual plans?",
@@ -96,12 +102,11 @@ const TRUST = [
   { icon: Zap, title: "Zero Downtime Migration", text: "Our telephony experts assist in porting numbers and configuring agent trunks with no system interruption." },
   { icon: Building2, title: "On-Premise or Cloud", text: "Flexible hosting options tailored directly to your IT team's architecture requirements." },
 ];
-const rupees = (n) => `Rs. ${n.toLocaleString("en-IN")}`;
 // Hero pieces and plan cards rise in one after another
 const delay = (ms) => ({ animationDelay: `${ms}ms` });
 
 // The price rolls out and the new one rolls in when the billing interval changes.
-function Price({ tier, isYearly, dark }) {
+function Price({ tier, isYearly, dark, rupees, unit }) {
   const monthly = priceOf(tier.monthlyPrice);
   const yearly = priceOf(tier.yearlyPrice);
   if (monthly === null || yearly === null) {
@@ -124,7 +129,7 @@ function Price({ tier, isYearly, dark }) {
             </motion.span>
           </AnimatePresence>
         </span>
-        <span className={`text-base ${dark ? "text-[#A9B3CC]" : "text-[#5F6062]"}`}>/ seat / month</span>
+        <span className={`text-base ${dark ? "text-[#A9B3CC]" : "text-[#5F6062]"}`}>{unit}</span>
       </div>
       <p className={`mt-1 h-5 text-sm ${dark ? "text-[#A9B3CC]" : "text-[#6B6E75]"}`}>
         {isYearly && (
@@ -140,7 +145,9 @@ function Price({ tier, isYearly, dark }) {
 
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(true);
-  const tiers = useCards(PRICING_TIERS, PRICING_FIELDS);
+  const pricing = usePricing();
+  const tiers = useCards(pricing.tiers, PRICING_FIELDS);
+  const rupees = moneyIn(pricing.currency);
   const trust = useCards(TRUST, { icon: "Icon", title: "Title", text: "Text" });
   const faqs = useList("faq", PRICING_FAQS);
 
@@ -199,7 +206,7 @@ export default function PricingPage() {
                 </button>
               ))}
             </div>
-            <span className="rounded-full bg-[#E3F5EC] px-3 py-1 text-xs font-semibold uppercase tracking-[0.04em] text-[#0F7A4A]">Save 20%</span>
+            {pricing.discount > 0 && <span className="rounded-full bg-[#E3F5EC] px-3 py-1 text-xs font-semibold uppercase tracking-[0.04em] text-[#0F7A4A]">{`Save ${pricing.discount}%`}</span>}
           </div>
         </section>
 
@@ -237,7 +244,7 @@ export default function PricingPage() {
                   <p className={`relative mt-3 text-[15px] leading-6 ${dark ? "text-[#B8C4E0]" : "text-[#4A4D53]"}`}>{tier.description}</p>
 
                   <div className={`relative my-7 border-y py-6 ${dark ? "border-white/10" : "border-[#EDEEEF]"}`}>
-                    <Price tier={tier} isYearly={isYearly} dark={dark} />
+                    <Price tier={tier} isYearly={isYearly} dark={dark} rupees={rupees} unit={pricing.unit} />
                   </div>
 
                   <p className={`relative mb-4 text-xs font-semibold uppercase tracking-[0.08em] ${dark ? "text-[#8FB0FF]" : "text-[#183cbe]"}`}>
