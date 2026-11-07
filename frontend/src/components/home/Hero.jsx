@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useList } from "../../lib/editable";
 import { Link } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
-import { Check, Mic, Phone, Receipt } from "lucide-react";
+import { Check, Phone } from "lucide-react";
 import { CONTACT, tel } from "./catalog";
 import { initialType, typeDelay, typeStep } from "./typewriter";
 import { openDemo } from "../demo";
@@ -49,14 +49,7 @@ export default function Hero() {
     <section className="cl-home-hero relative flex flex-col items-center overflow-hidden bg-white bg-[radial-gradient(60%_45%_at_50%_0%,#E3F6FF,transparent)] pb-20">
       <div className="flex w-full flex-col items-center px-4">
         <div style={delay(0)} className="cl-hh-badge cl-fade-up mt-16">
-          <div className="inline-flex h-10 items-center gap-3 whitespace-nowrap rounded-full border border-[#e5e7eb] bg-white pl-[7px] pr-[18px] shadow-[0_6px_16px_-10px_rgb(35_0_220/0.25)] transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-[0_10px_22px_-12px_rgb(0_71_255/0.45)]">
-            <span className="hidden items-center sm:inline-flex">
-              {[Phone, Mic, Receipt].map((Icon, i) => (
-                <span key={i} className={`inline-flex h-[26px] w-[26px] items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-primary ${i ? "-ml-2" : ""}`}>
-                  <Icon size={13} />
-                </span>
-              ))}
-            </span>
+          <div className="inline-flex h-10 items-center whitespace-nowrap rounded-full border border-[#e5e7eb] bg-white px-[18px] shadow-[0_6px_16px_-10px_rgb(35_0_220/0.25)] transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-[0_10px_22px_-12px_rgb(0_71_255/0.45)]">
             <span className="text-xs font-semibold text-[#31343a] sm:text-sm">Redefining Communication for the Modern World.</span>
           </div>
         </div>
