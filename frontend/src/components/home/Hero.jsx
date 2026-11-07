@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useList } from "../../lib/editable";
 import { Link } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
@@ -41,8 +41,58 @@ function TypedAudience() {
   );
 }
 
+// On large screens the heading's box is exactly as wide as its first line: the lead text without its last word. So the
+// last word ("for") always starts the second line, where the heading is black, followed by the typed audience. It is
+// measured from the text actually shown (the lead can be edited) in the font actually used (the dashboard's font sizes).
+function useTwoLineHeading(box, lead) {
+  useLayoutEffect(() => {
+    const el = box.current;
+    const text = lead.current;
+    const h1 = el?.querySelector("h1");
+    if (!h1 || !text) return undefined;
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const first = text.textContent.replace(/\s*\S+\s*$/, "");
+        if (!window.matchMedia("(min-width: 1024px)").matches || !first) {
+          el.style.width = "";
+          return;
+        }
+        const cs = getComputedStyle(h1);
+        const probe = document.createElement("span");
+        probe.style.cssText = "position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre";
+        // One by one: Chrome reports the "font" shorthand as empty when font features are set.
+        for (const k of ["fontFamily", "fontSize", "fontWeight", "fontStyle", "fontStretch", "fontFeatureSettings", "fontVariationSettings", "letterSpacing", "wordSpacing", "textTransform"]) probe.style[k] = cs[k];
+        probe.textContent = first;
+        document.body.appendChild(probe);
+        const width = probe.getBoundingClientRect().width;
+        probe.remove();
+        // The heading is 95% of its box; a little room so rounding never pushes a word down.
+        el.style.width = `${Math.min(Math.ceil(width / 0.95) + 12, window.innerWidth - 32)}px`;
+      });
+    };
+    fit();
+    const edits = new MutationObserver(fit);
+    edits.observe(text, { characterData: true, childList: true, subtree: true });
+    const size = new ResizeObserver(fit);
+    size.observe(h1);
+    window.addEventListener("resize", fit);
+    document.fonts?.ready.then(fit);
+    return () => {
+      cancelAnimationFrame(frame);
+      edits.disconnect();
+      size.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, [box, lead]);
+}
+
 export default function Hero() {
   const trust = useList("checklist", TRUST);
+  const titleBox = useRef(null);
+  const lead = useRef(null);
+  useTwoLineHeading(titleBox, lead);
   // Hero pieces rise in one after another, 80ms apart
   const delay = (ms) => ({ animationDelay: `${ms}ms` });
   return (
@@ -54,7 +104,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="cl-hh-title relative mt-6 w-[90%] text-center md:w-[560px] lg:w-[847px]">
+        <div ref={titleBox} className="cl-hh-title relative mt-6 w-[90%] text-center md:w-[560px] lg:w-[847px]">
           <svg aria-hidden="true" viewBox="0 0 30 30" className="absolute -top-4 left-0 h-7 w-7 -translate-x-1/2 text-[#FF0000] sm:left-6 lg:-top-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <path d="M14 3v7M5 9l5 4M22 9l-5 4" />
           </svg>
@@ -63,7 +113,7 @@ export default function Hero() {
             style={{ backgroundSize: "100% 1.2em", ...delay(80) }}
           >
             <span className="sr-only">Business Cloud Telephony System for contact centers & BPO's, Banks & NBFC's, Hotels & Hospitals, OBD & SMS campaigns.</span>
-            <span aria-hidden="true">Business Cloud Telephony System for </span>
+            <span ref={lead} aria-hidden="true">Business Cloud Telephony System for </span>
             <TypedAudience />
           </h1>
         </div>
