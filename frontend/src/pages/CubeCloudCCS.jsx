@@ -134,6 +134,15 @@ const FAQ_DATA = [
 
 const CHIPS = ["Unlimited Channels", "Multi level IVR", "Unlimited Users", "API integration", "Real Time Notification"];
 
+// Also shown on the homepage (StatsBand), with this page's edits to them.
+export const CCS_PATH = "/services/cloud-contact-center";
+export const CCS_STATS = [
+  { value: "35+", label: "Years of Innovation" },
+  { value: "10+", label: "Countries" },
+  { value: "5000+", label: "Active Users" },
+  { value: "99.9%", label: "Uptime Guarantee" },
+];
+
 export default function CubeCloudCCS() {
   const benefits = useCards(BENEFITS_DATA, { title: "Title", desc: "Text" });
   const services = useCards(CLOUD_SERVICES, { icon: "Icon", title: "Title", desc: "Text", path: "Link" });
@@ -149,12 +158,7 @@ export default function CubeCloudCCS() {
         highlight="with an All-in-One Cloud Solution"
         body="Accelerate your team collaboration with powerful cloud dialing, comprehensive features, and SIP trunking solutions — engineered for high-performance enterprises."
         video="/cube-main2.mp4"
-        stats={[
-          { value: "35+", label: "Years of Innovation" },
-          { value: "10+", label: "Countries" },
-          { value: "5000+", label: "Active Users" },
-          { value: "99.9%", label: "Uptime Guarantee" },
-        ]}
+        stats={CCS_STATS}
         actions={<CtaButtons primary="Book Demo" secondary="Talk to Sales" phone={CONTACT.sales} dark />}
       />
 
@@ -166,7 +170,7 @@ export default function CubeCloudCCS() {
           <Prose
             className="mt-6"
             paragraphs={[
-              "Experience. Ownership. Flexibility. Innovation., Best In Class Quality High-efficiency infrastructure with robust quality controls for reliable 24×7 operations.",
+              "Experience. Ownership. Flexibility. Innovation., Quality You Can Rely On High-efficiency infrastructure with robust quality controls for reliable 24×7 operations.",
               "End-to-End Communication Platform — From voice infrastructure and dialers to CRM, AI, analytics, WhatsApp/social channels and integrations, customers can build their communication ecosystem with one technology partner.",
             ]}
           />

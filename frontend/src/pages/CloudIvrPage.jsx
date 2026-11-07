@@ -13,7 +13,7 @@ const SECTIONS = [
       "Give every caller a fast, professional, and personalized start with Cube Software’s intelligent IVR solutions Route calls efficiently, reduce wait times, and ensure customers reach the right team—every time.",
     ],
     image: "/ivr-hero-illustration.png", imageAlt: "Interactive Voice Response (IVR) Illustration",
-    button: "Free Trial",
+    button: "Book a Free Demo",
   },
   {
     title: <>{"How do businesses use "}<Hi>IVRS?</Hi></>,
@@ -32,7 +32,7 @@ const SECTIONS = [
   {
     title: "How It Works",
     body: [
-      "A hassle-free process that guarantees immediate consumer attention in a few simple steps.",
+      "A hassle-free process that gets your customers' attention quickly, in a few simple steps.",
     ],
     cards: [
       { title: "Customer dials a business phone number", desc: "The customer dials a business phone number either on your ad, website, or application." },

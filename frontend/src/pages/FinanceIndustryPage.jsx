@@ -21,7 +21,7 @@ const SECTIONS = [
       "We understand that the financial sector cannot compromise on reliability. Our stack is engineered specifically for the high-stakes demands of banks, insurance firms, and trading floors.",
     ],
     cards: [
-      { icon: ShieldCheck, title: "100% Regulatory Compliance", desc: "Tamper-proof call recording and encrypted voice logging to meet strict RBI and financial telecom regulations." },
+      { icon: ShieldCheck, title: "Built for Regulatory Compliance", desc: "Tamper-proof call recording and encrypted voice logging to meet strict RBI and financial telecom regulations." },
       { icon: PhoneCall, title: "Automated Debt Collection", desc: "Deploy smart outbound auto-dialers and IVRs to automate payment reminders and boost collection rates effortlessly." },
       { icon: Lock, title: "Secure SIP Trunking", desc: "Enterprise-grade encrypted lines ensuring that highly sensitive customer data and transactions remain totally secure." },
       { icon: Headphones, title: "Centralized Support Floors", desc: "Manage customer support across multiple branches and cities from a single, unified cloud dashboard." },

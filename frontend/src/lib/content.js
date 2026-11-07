@@ -19,13 +19,23 @@ export function useContent() {
   useEffect(() => {
     subscribers.add(setS);
     setS(state);
-    loading ||= api("/content")
-      .then((d) => setContent({ overrides: d.overrides || [], lists: d.lists || [] }))
-      .catch(() => {});
+    whenContentLoaded();
     return () => subscribers.delete(setS);
   }, []);
   return s;
 }
+
+// Fetches the edits once; resolves when they are in (or failed to load).
+export const whenContentLoaded = () =>
+  (loading ||= api("/content")
+    .then((d) => setContent({ overrides: d.overrides || [], lists: d.lists || [] }))
+    .catch(() => {}));
+
+// Fetches them again (a tab left open, when the visitor comes back to it); a failure keeps what's shown.
+export const refreshContent = () => {
+  loading = null;
+  return whenContentLoaded();
+};
 
 export const pagePath = (pathname) => pathname.replace(/\/+$/, "") || "/";
 

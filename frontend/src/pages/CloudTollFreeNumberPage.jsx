@@ -49,7 +49,7 @@ const SECTIONS = [
       { icon: Mic, title: "Built-in IVR System", desc: "Every toll-free number comes with a multi-level Interactive Voice Response system to greet customers and qualify leads automatically." },
       { icon: LineChart, title: "Real-Time Analytics", desc: "Access a live dashboard detailing call volumes, missed calls, average hold times, and agent performance metrics." },
       { icon: Database, title: "CRM Integration", desc: "Sync your toll-free traffic directly into Salesforce, Zoho, or HubSpot. Auto-generate tickets and log call recordings natively." },
-      { icon: ShieldCheck, title: "High Availability", desc: "Hosted on enterprise-grade cloud architecture guaranteeing 99.9% uptime. Handle thousands of concurrent callers without infrastructure limits." },
+      { icon: ShieldCheck, title: "High Availability", desc: "Hosted on enterprise-grade cloud architecture built for high availability. Handle thousands of concurrent callers without infrastructure limits." },
     ],
   },
   {

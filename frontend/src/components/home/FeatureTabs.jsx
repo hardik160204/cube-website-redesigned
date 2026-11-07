@@ -140,7 +140,7 @@ export default function FeatureTabs() {
                     onClick={() => setOpen(i)}
                     className="flex w-full items-center gap-4 px-[22px] py-[15px] text-left"
                   >
-                    <span className={`font-mono text-xs tabular-nums ${isOpen ? "text-primary" : "text-[#9CA3AF]"}`}>{String(i + 1).padStart(2, "0")}</span>
+                    <span className={`font-mono text-xs tabular-nums ${isOpen ? "text-primary" : "text-[#6B6E75]"}`}>{String(i + 1).padStart(2, "0")}</span>
                     <h3 className={`flex-1 text-[18px] font-medium leading-7 md:text-[20px] ${isOpen ? "text-[#0A0626]" : "text-[#3B414A]"}`}>{f.title}</h3>
                     <ChevronDown size={20} className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-primary" : "text-[#3B414A]"}`} />
                   </button>
@@ -152,7 +152,7 @@ export default function FeatureTabs() {
                       <div className="cl-describe px-[22px] pb-5 pt-4">
                         <p className="text-base leading-[140%] text-[#4A4D53]">{f.desc}</p>
                         <Link to={f.href || "/"} className="group mt-4 inline-flex items-center gap-2 text-base font-medium text-primary">
-                          Learn more <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                          Learn more<span className="sr-only"> about {f.title}</span> <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
                         </Link>
                         <FlowChart key={f.title} stages={flowOf(i)} title={f.title} className="mt-5 lg:hidden" />
                       </div>

@@ -12,7 +12,7 @@ const SECTIONS = [
       "Capture high-quality leads at zero cost to your customers. Run instant verification campaigns, gather feedback, and generate instant opt-ins with a single missed call.",
     ],
     image: "/missed-call-service-hero.png", imageAlt: "Missed Call Service Illustration",
-    button: "Start Free Trial",
+    button: "Book a Free Demo",
   },
   {
     title: <>{"Zero-Cost "}<Hi>Lead Generation</Hi></>,
@@ -49,7 +49,7 @@ const SECTIONS = [
       { icon: Smartphone, title: "Accessible to Everyone", desc: "Works flawlessly on feature phones and smartphones alike without requiring internet access." },
       { icon: PhoneCall, title: "Automated Callbacks", desc: "Integrate directly with an auto-dialer to trigger instant reverse calls the moment a missed call drops." },
       { icon: Globe, title: "National Reach", desc: "Procure regional virtual numbers to give your brand a localized presence across various territories." },
-      { icon: ShieldCheck, title: "100% Genuine Leads", desc: "Since users must physically dial from their device, you automatically verify their active phone number." },
+      { icon: ShieldCheck, title: "Genuine, Verified Leads", desc: "Since users must physically dial from their device, you automatically verify their active phone number." },
       { icon: BarChart, title: "Detailed Dashboard", desc: "Track incoming volumes, unique vs repeat callers, and campaign performance in a live analytics dashboard." },
     ],
   },

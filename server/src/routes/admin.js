@@ -1,8 +1,11 @@
 // Admin API behind /api/admin. Every route except login needs a valid session (requireAdmin), and every
 // change also needs the X-Cube-Admin header. All input is validated here before it touches the database.
 const express = require("express");
-const rateLimit = require("express-rate-limit");
+const { limit } = require("../limits");
 const crypto = require("node:crypto");
+const dns = require("node:dns").promises;
+const net = require("node:net");
+const config = require("../config");
 const settings = require("../settings");
 const slots = require("../slots");
 const sec = require("../security");
@@ -10,9 +13,10 @@ const supabase = require("../supabase");
 const seo = require("../seo");
 const { isUnique } = require("../db");
 const { EMAIL } = require("../validate");
+const mailRoutes = require("./admin-mail");
 
 // 10 failed sign-in requests per IP per 15 minutes (LOGIN_RATE_LIMIT exists so the test suite can run many).
-const loginLimit = rateLimit({ windowMs: 15 * 60_000, limit: Number(process.env.LOGIN_RATE_LIMIT) || 10, skipSuccessfulRequests: true, standardHeaders: "draft-7", legacyHeaders: false, message: { error: "Too many sign-in attempts. Try again in 15 minutes." } });
+const loginLimit = limit("login", { windowMs: 15 * 60_000, limit: Number(process.env.LOGIN_RATE_LIMIT) || 10, skipSuccessfulRequests: true, message: { error: "Too many sign-in attempts. Try again in 15 minutes." } });
 
 const ICONS = ["Workflow", "PhoneOutgoing", "Mic", "Cloud", "PhoneMissed", "Database", "Newspaper", "BarChart3", "MessageSquare", "ShieldCheck", "Headset", "Globe"];
 const isStr = (v, max, min = 0) => typeof v === "string" && v.trim().length >= min && v.length <= max;
@@ -107,6 +111,14 @@ function checkSettings(key, v) {
   if (key === "bot") return checkBot(v);
   if (key === "sectionsOff") return checkSectionsOff(v);
   if (key === "pricing") return checkPricing(v);
+  if (key === "google") return checkGoogle(v);
+  if (key === "emailSender") {
+    if (!v || !isStr(v.name, 60, 1)) return "The sender name is needed (up to 60 characters).";
+    if (!["bookings", "promotions"].every((k) => isStr(v[k], 254) && EMAIL.test(v[k]))) return "Both sender addresses must be valid email addresses.";
+    return null;
+  }
+  if (key === "visitorTracking") return v && typeof v.on === "boolean" ? null : "Invalid setting.";
+  if (key === "legal") return checkLegal(v);
   if (key === "retention") {
     if (!v || !Number.isInteger(v.enquiryMonths) || v.enquiryMonths < 6 || v.enquiryMonths > 84) return "Keep enquiries for 6 to 84 months.";
     return null;
@@ -131,13 +143,13 @@ function checkSettings(key, v) {
 
 // Dashboard sections the owner can give each admin. The owner always has them all, plus the activity log
 // and admin accounts; the overview and an admin's own password are open to everyone.
-const SECTIONS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "fonts", "festivals", "bot", "pricing", "media", "team", "analytics", "consents", "privacy", "settings"];
+const SECTIONS = ["bookings", "calendar", "leads", "blog", "content", "pages", "navigation", "fonts", "festivals", "bot", "pricing", "seo", "emails", "legal", "media", "team", "analytics", "consents", "privacy", "settings"];
 const may = (admin, ...any) => admin.isOwner || any.some((s) => admin.permissions.includes(s));
 const need = (...any) => (req, res, next) => (may(req.admin, ...any) ? next() : res.status(403).json({ error: "You don't have access to this. Ask the owner to give it to you." }));
 const ownerOnly = (req, res, next) => (req.admin.isOwner ? next() : res.status(403).json({ error: "Only the owner can see this." }));
 // Anyone who edits content needs the image library to pick from.
-const MEDIA_USERS = ["media", "blog", "content", "pages", "team"];
-const SETTING_SECTION = { salesEmails: "settings", demo: "settings", retention: "settings", team: "team", socials: "team", nav: "navigation", fonts: "fonts", festival: "festivals", pagesOff: "pages", bot: "bot", sectionsOff: "pages", pricing: "pricing" };
+const MEDIA_USERS = ["media", "blog", "content", "pages", "team", "emails"];
+const SETTING_SECTION = { salesEmails: "settings", demo: "settings", retention: "settings", team: "team", socials: "team", nav: "navigation", fonts: "fonts", festival: "festivals", pagesOff: "pages", bot: "bot", sectionsOff: "pages", pricing: "pricing", google: "seo", emailSender: "emails", legal: "legal", visitorTracking: "analytics" };
 const checkPermissions = (v) => (Array.isArray(v) && v.length <= SECTIONS.length && v.every((s) => SECTIONS.includes(s)) ? null : "Unknown section.");
 
 // Card lists edited on the site. Each kind keeps only its own fields, so nothing unexpected is stored and
@@ -269,6 +281,46 @@ function checkSectionsOff(v) {
 }
 const cleanSectionsOff = (v) => Object.fromEntries(Object.entries(v).map(([p, keys]) => [p, [...new Set(keys)]]).filter(([, keys]) => keys.length));
 
+// The organisation's domain in a reverse DNS name: "abts-123.airtelbroadband.in" → "airtelbroadband.in",
+// "mail.acme.co.in" → "acme.co.in".
+const domainOf = (host) => {
+  const p = host.toLowerCase().replace(/\.$/, "").split(".");
+  return p.slice(p.length > 2 && /^(co|com|net|org|gov|ac|edu)$/.test(p[p.length - 2]) ? -3 : -2).join(".");
+};
+
+// The legal pages (Privacy Policy, Terms, Refund Policy) as edited in the dashboard: for each, its sections, each a
+// title and a list of paragraphs or bullet lists. Empty means the built-in text is shown.
+const LEGAL_PAGES = ["privacy", "terms", "refund"];
+function checkLegal(v) {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return "Invalid legal pages.";
+  for (const [k, doc] of Object.entries(v)) {
+    if (!LEGAL_PAGES.includes(k)) return "Unknown legal page.";
+    if (doc === null) continue;
+    if (!isStr(doc.updated ?? "", 40) || !isStr(doc.intro ?? "", 600)) return "The date and the introduction are too long.";
+    if (!Array.isArray(doc.sections) || doc.sections.length < 1 || doc.sections.length > 40) return "Each legal page needs 1 to 40 sections.";
+    for (const s of doc.sections) {
+      if (!s || !isStr(s.title, 160, 1)) return "Every section needs a title (up to 160 characters).";
+      if (!Array.isArray(s.body) || s.body.length > 40) return `“${s.title}”: up to 40 paragraphs.`;
+      for (const b of s.body) {
+        const ok = isStr(b, 5000) || (Array.isArray(b) && b.length <= 40 && b.every((x) => isStr(x, 2000)));
+        if (!ok) return `“${s.title}”: paragraphs up to 5,000 characters, lists up to 40 points.`;
+      }
+    }
+  }
+  return null;
+}
+const cleanLegal = (v) =>
+  Object.fromEntries(
+    Object.entries(v).map(([k, doc]) => [
+      k,
+      doc && {
+        updated: (doc.updated || "").trim(),
+        intro: (doc.intro || "").trim(),
+        sections: doc.sections.map((s) => ({ title: s.title.trim(), body: s.body.map((b) => (Array.isArray(b) ? b.map((x) => x.trim()).filter(Boolean) : b.trim())).filter((b) => b.length) })),
+      },
+    ])
+  );
+
 // Plans and prices: the annual discount, the currency and unit, and up to six plans.
 const price = (x) => x === "Custom" || (Number.isInteger(x) && x >= 0 && x <= 100000000);
 function checkPricing(v) {
@@ -284,6 +336,27 @@ function checkPricing(v) {
   }
   return null;
 }
+// Google & SEO: the Analytics measurement ID (only this goes to the public site), the Search Console ownership
+// file's name, and Looker Studio reports shown in the dashboard.
+const GA_ID = /^G-[A-Z0-9]{4,20}$/;
+const SEARCH_CONSOLE_FILE = /^google[a-z0-9]{6,40}\.html$/;
+const GOOGLE_META = /^[A-Za-z0-9_-]{20,80}$/;
+const BING_CODE = /^[A-Za-z0-9]{16,64}$/;
+const LOOKER = /^https:\/\/lookerstudio\.google\.com\/(embed\/)?(u\/\d+\/)?reporting\/[A-Za-z0-9-]+(\/page\/[A-Za-z0-9_-]+)?\/?(\?[^\s<>"']*)?$/;
+function checkGoogle(v) {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return "Invalid settings.";
+  if (v.gaId && !(typeof v.gaId === "string" && GA_ID.test(v.gaId))) return "The Measurement ID looks like G-ABC123XYZ.";
+  if (v.searchConsole && !(typeof v.searchConsole === "string" && SEARCH_CONSOLE_FILE.test(v.searchConsole))) return "The ownership file name looks like google1a2b3c4d5e6f7a8b.html.";
+  if (v.googleMeta && !(typeof v.googleMeta === "string" && GOOGLE_META.test(v.googleMeta))) return "Paste only the code from Google's meta tag (the part inside content=\"...\").";
+  if (v.bing && !(typeof v.bing === "string" && BING_CODE.test(v.bing))) return "Paste only Bing's code (the part inside content=\"...\" or between <user> and </user>).";
+  if (!Array.isArray(v.reports ?? []) || (v.reports ?? []).length > 4) return "Add up to 4 reports.";
+  for (const r of v.reports ?? []) {
+    if (!r || !isStr(r.name ?? "", 60) || !(isStr(r.url, 300) && LOOKER.test(r.url))) return "Each report needs a Looker Studio link (https://lookerstudio.google.com/...).";
+  }
+  return null;
+}
+const cleanGoogle = (v) => ({ gaId: v.gaId || "", searchConsole: v.searchConsole || "", googleMeta: v.googleMeta || "", bing: v.bing || "", reports: (v.reports ?? []).map((r) => ({ name: (r.name || "").trim() || "Report", url: r.url })) });
+
 const cleanPricing = (v) => ({
   discount: v.discount,
   currency: v.currency.trim(),
@@ -455,6 +528,7 @@ module.exports = function adminRoutes(db) {
   r.get("/stats", async (req, res) => {
     const one = async (sql, ...p) => (await db.get(sql, ...p)).n;
     res.json({
+      pending: await one("SELECT COUNT(*)::int n FROM bookings WHERE status = 'pending'"),
       upcoming: await one("SELECT COUNT(*)::int n FROM bookings WHERE status = 'scheduled' AND slot_start >= ?", new Date().toISOString()),
       bookings: await one("SELECT COUNT(*)::int n FROM bookings"),
       leads: await one("SELECT COUNT(*)::int n FROM leads"),
@@ -476,6 +550,7 @@ module.exports = function adminRoutes(db) {
   r.use("/consents", need("consents"));
   r.use(["/privacy", "/retention"], need("privacy"));
   r.use("/analytics", need("analytics"));
+  mailRoutes(r, db, { need, notFound, idOf });
 
   r.get("/bookings", async (req, res) => res.json({ bookings: await db.all("SELECT * FROM bookings ORDER BY slot_start DESC LIMIT 1000") }));
 
@@ -484,6 +559,9 @@ module.exports = function adminRoutes(db) {
     const status = req.body?.status;
     if (!id) return notFound(res);
     if (!["scheduled", "completed", "cancelled"].includes(status)) return res.status(400).json({ error: "Invalid status." });
+    // A new request is confirmed or declined with its email (admin-mail.js), not by changing its status.
+    const was = await db.get("SELECT status FROM bookings WHERE id = ?", id);
+    if (was?.status === "pending") return res.status(409).json({ error: "Confirm or decline this request first (✓ or ✗)." });
     try {
       const { changes } = await db.run("UPDATE bookings SET status = ? WHERE id = ?", status, id);
       if (!changes) return notFound(res);
@@ -747,6 +825,8 @@ module.exports = function adminRoutes(db) {
       email,
       bookings: await db.all("SELECT * FROM bookings WHERE lower(email) = lower(?) ORDER BY id", email),
       leads: await db.all("SELECT * FROM leads WHERE lower(email) = lower(?) ORDER BY id", email),
+      contacts: await db.all("SELECT * FROM contacts WHERE lower(email) = lower(?) ORDER BY id", email),
+      deletionRequests: await db.all("SELECT * FROM deletion_requests WHERE lower(email) = lower(?) ORDER BY id", email),
     });
   });
 
@@ -755,6 +835,9 @@ module.exports = function adminRoutes(db) {
     if (!email) return res.status(400).json({ error: "Enter a valid email address." });
     const bookings = (await db.run("DELETE FROM bookings WHERE lower(email) = lower(?)", email)).changes;
     const leads = (await db.run("DELETE FROM leads WHERE lower(email) = lower(?)", email)).changes;
+    // Off the newsletter list too; only a hash stays, so they are never emailed again by mistake.
+    if ((await db.run("DELETE FROM contacts WHERE lower(email) = lower(?)", email)).changes)
+      await db.run("INSERT INTO email_suppressions (email_hash) VALUES (?) ON CONFLICT DO NOTHING", require("../mailing").hash(email));
     // The log keeps that an erasure happened, not whose data it was.
     await sec.audit(db, req, "privacy_erase", { admin: req.admin, detail: `erased ${bookings} bookings and ${leads} enquiries for ${sec.sha256(email.toLowerCase()).slice(0, 12)}` });
     res.json({ ok: true, bookings, leads });
@@ -776,7 +859,34 @@ module.exports = function adminRoutes(db) {
       devices: await top("device"),
       browsers: await top("browser"),
       systems: await top("os"),
+      cities: await top("city"),
+      countries: await top("country"),
+      tracking: Boolean((await settings.get(db, "visitorTracking"))?.on),
+      // Each visitor's IP address with where it is, their device and how much they looked at (when switched on).
+      visitors: await db.all(
+        `SELECT v.ip, max(v.city) city, max(v.region) region, max(v.country) country, max(v.device) device, max(v.browser) browser, max(v.os) os,
+                COUNT(*)::int views, COUNT(DISTINCT v.path)::int pages, max(v.at) last_seen, min(n.network) network
+         FROM page_views v LEFT JOIN ip_networks n ON n.ip = v.ip WHERE ${since.replace("at", "v.at")} AND v.ip <> '' GROUP BY v.ip ORDER BY last_seen DESC LIMIT 300`,
+        days
+      ),
     });
+  });
+
+  // The network an IP address belongs to, from its reverse DNS name (the ISP, or a company's own network).
+  // Looked up only when an admin asks, and kept 90 days.
+  r.post("/analytics/networks", async (req, res) => {
+    const ips = (Array.isArray(req.body?.ips) ? req.body.ips : []).filter((ip) => typeof ip === "string" && net.isIP(ip)).slice(0, 50);
+    const known = new Set((await db.all("SELECT ip FROM ip_networks")).map((r) => r.ip));
+    await Promise.all(
+      ips
+        .filter((ip) => !known.has(ip))
+        .map(async (ip) => {
+          const names = await Promise.race([dns.reverse(ip).catch(() => []), new Promise((r) => setTimeout(() => r([]), 2500))]);
+          const network = names[0] ? domainOf(names[0]) : "";
+          await db.run("INSERT INTO ip_networks (ip, network) VALUES (?, ?) ON CONFLICT (ip) DO UPDATE SET network = excluded.network, looked_up_at = now()", ip, network.slice(0, 120));
+        })
+    );
+    res.json({ networks: await db.all("SELECT ip, network FROM ip_networks WHERE ip = ANY(?)", ips) });
   });
 
   // --- Settings -----------------------------------------------------------------------------------------
@@ -802,9 +912,31 @@ module.exports = function adminRoutes(db) {
     if (key === "bot") value = cleanBot(value);
     if (key === "sectionsOff") value = cleanSectionsOff(value);
     if (key === "pricing") value = cleanPricing(value);
+    if (key === "google") value = cleanGoogle(value);
+    if (key === "emailSender") value = { name: value.name.trim(), bookings: value.bookings.trim(), promotions: value.promotions.trim() };
+    if (key === "visitorTracking") value = { on: value.on };
+    if (key === "legal") value = cleanLegal(value);
     if (key === "socials") value = Object.fromEntries(["facebook", "linkedin", "instagram", "youtube", "x"].map((k) => [k, value[k] || ""]));
     await settings.set(db, key, value);
     res.json({ ok: true });
+  });
+
+  // Tells Bing, Yandex and the other IndexNow search engines about every page in the sitemap (free, no account).
+  // The key proves the list comes from this site: it is served at /<key>.txt (app.js).
+  r.post("/seo/indexnow", need("seo"), async (req, res) => {
+    const host = new URL(config.siteUrl).host;
+    if (/^(localhost|127\.|\[::1\])/.test(host)) return res.status(400).json({ error: "Set the website's real address (SITE_URL) first: search engines can't reach this one." });
+    let key = await settings.get(db, "indexNowKey");
+    if (!key) await settings.set(db, "indexNowKey", (key = crypto.randomBytes(16).toString("hex")));
+    const urlList = (await seo.siteUrls(db)).map((u) => u.loc).slice(0, 10000);
+    const sent = await fetch("https://api.indexnow.org/indexnow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ host, key, keyLocation: `${config.siteUrl}/${key}.txt`, urlList }),
+      signal: AbortSignal.timeout(15000),
+    }).catch(() => null);
+    if (!sent || sent.status >= 300) return res.status(502).json({ error: `IndexNow didn't accept the list (${sent ? sent.status : "no answer"}). Try again in a few minutes.` });
+    res.json({ ok: true, count: urlList.length });
   });
 
   // --- Admin accounts (passwords live in Supabase Auth; authenticator secrets are our own) ------------------

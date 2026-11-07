@@ -57,18 +57,29 @@ export const DEFAULT_SOCIALS = {
 
 let cache = null;
 let pending = null;
+const listeners = new Set();
+// Fetches the settings again (a tab left open, when the visitor comes back to it); a failure keeps what's shown.
+export const refreshSiteData = () =>
+  api("/site")
+    .then((d) => {
+      cache = d;
+      listeners.forEach((fn) => fn(d));
+    })
+    .catch(() => {});
 export function useSiteData() {
   const [data, setData] = useState(cache);
   useEffect(() => {
-    if (cache) return undefined;
+    listeners.add(setData);
     let live = true;
-    (pending ||= api("/site").catch(() => ({}))).then((d) => {
-      cache = d;
-      if (live) setData(d);
-    });
+    if (!cache)
+      (pending ||= api("/site").catch(() => ({}))).then((d) => {
+        cache ||= d;
+        if (live) setData(cache);
+      });
     return () => {
       live = false;
+      listeners.delete(setData);
     };
   }, []);
-  return { team: data?.team || DEFAULT_TEAM, socials: data?.socials || DEFAULT_SOCIALS, nav: data?.nav || DEFAULT_NAV, bot: data?.bot || DEFAULT_BOT, fonts: data?.fonts || null, festival: data?.festival || null, pagesOff: data?.pagesOff || null, sectionsOff: data?.sectionsOff || null, pricing: data?.pricing || null, ready: Boolean(data) };
+  return { team: data?.team || DEFAULT_TEAM, socials: data?.socials || DEFAULT_SOCIALS, nav: data?.nav || DEFAULT_NAV, bot: data?.bot || DEFAULT_BOT, fonts: data?.fonts || null, festival: data?.festival || null, pagesOff: data?.pagesOff || null, sectionsOff: data?.sectionsOff || null, pricing: data?.pricing || null, google: data?.google || null, tracking: Boolean(data?.tracking), ready: Boolean(data) };
 }

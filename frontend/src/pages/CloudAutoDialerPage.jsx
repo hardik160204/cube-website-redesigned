@@ -12,7 +12,7 @@ const SECTIONS = [
       "Automate outbound calls and maximize your agents' talk time. Eliminate manual dialing, detect voicemails, and boost your sales team's productivity.",
     ],
     image: "/auto-dialer-hero.png", imageAlt: "Auto Dialer Illustration",
-    button: "Start Free Trial",
+    button: "Book a Free Demo",
   },
   {
     title: <>{"Supercharge your "}<Hi>Outbound Campaigns</Hi></>,

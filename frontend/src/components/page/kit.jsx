@@ -382,7 +382,7 @@ export function ModuleCards({ modules: builtIn, className = "" }) {
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-white" style={{ background: accent, boxShadow: `0 12px 24px -10px ${accent}` }}>
                   {m.icon && <m.icon size={22} />}
                 </span>
-                <span className="font-mono text-xs text-[#9CA3AF]">Module {String(i + 1).padStart(2, "0")}</span>
+                <span className="font-mono text-xs text-[#6B6E75]">Module {String(i + 1).padStart(2, "0")}</span>
               </div>
               <h3 className="mt-5 text-xl font-medium leading-snug text-[#0A0626]">{m.title}</h3>
               <ul className="mt-4 flex flex-1 flex-col gap-3 border-t border-[#EDEEEF] pt-4">

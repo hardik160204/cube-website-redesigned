@@ -22,9 +22,11 @@ export function readConsent() {
   }
 }
 
-export function saveConsent({ functional, analytics }) {
+// `ga` / `ip`: the notice named Google Analytics / visitor details (IP address and place) when analytics was
+// allowed. Each is used only then.
+export function saveConsent({ functional, analytics, ga, ip }) {
   const prev = readConsent();
-  const c = { id: prev?.id, functional: Boolean(functional), analytics: Boolean(analytics), version: VERSION, at: new Date().toISOString() };
+  const c = { id: prev?.id, functional: Boolean(functional), analytics: Boolean(analytics), ga: Boolean(analytics && ga), ip: Boolean(analytics && ip), version: VERSION, at: new Date().toISOString() };
   const store = (v) => {
     try {
       localStorage.setItem(KEY, JSON.stringify(v));
@@ -34,7 +36,7 @@ export function saveConsent({ functional, analytics }) {
   };
   store(c);
   window.dispatchEvent(new CustomEvent(CHANGED, { detail: c }));
-  api("/consents", { method: "POST", body: { id: c.id, functional: c.functional, analytics: c.analytics, marketing: false, version: VERSION } })
+  api("/consents", { method: "POST", body: { id: c.id, functional: c.functional, analytics: c.analytics, marketing: false, version: `${VERSION}${c.ga ? "+ga" : ""}${c.ip ? "+ip" : ""}` } })
     .then(({ id }) => store({ ...c, id }))
     .catch(() => {});
   return c;
@@ -60,7 +62,7 @@ export function useCookieSettingsRequest(handler) {
 }
 
 // One page view, only with analytics consent: the path, and the referring site's name on the first page
-// of a visit. No cookie or identifier is set or sent.
+// of a visit. No cookie or identifier is set or sent; the IP address is used only as described above.
 export function recordPageView(path) {
   if (!readConsent()?.analytics || path.startsWith("/admin") || window.top !== window.self) return;
   let ref = "";
@@ -73,5 +75,6 @@ export function recordPageView(path) {
   } catch {
     /* storage or referrer unavailable */
   }
-  fetch("/api/pv", { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path, ref }) }).catch(() => {});
+  // ip: this visitor allowed visitor details after being told about them (the server records them only if switched on).
+  fetch("/api/pv", { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path, ref, ip: Boolean(readConsent()?.ip) }) }).catch(() => {});
 }

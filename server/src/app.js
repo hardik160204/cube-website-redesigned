@@ -6,6 +6,7 @@ const compression = require("compression");
 const path = require("node:path");
 const config = require("./config");
 const seo = require("./seo");
+const settings = require("./settings");
 const publicRoutes = require("./routes/public");
 const adminRoutes = require("./routes/admin");
 
@@ -22,13 +23,14 @@ function createApp(db) {
         useDefaults: false,
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
+          // Google Analytics, when it is switched on in the dashboard and the visitor allowed it.
+          scriptSrc: ["'self'", "https://www.googletagmanager.com"],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
           imgSrc: ["'self'", "data:", "blob:", "https:"],
           mediaSrc: ["'self'", ...storage],
-          connectSrc: ["'self'", ...storage],
-          frameSrc: ["'self'", "https://maps.google.com", "https://www.google.com"],
+          connectSrc: ["'self'", ...storage, "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com"],
+          frameSrc: ["'self'", "https://maps.google.com", "https://www.google.com", "https://lookerstudio.google.com"],
           frameAncestors: ["'self'"],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
@@ -62,6 +64,24 @@ function createApp(db) {
   app.get(["/robots.txt", "/api/robots.txt"], (req, res) => res.type("text/plain").send(seo.robots()));
   app.get(["/sitemap.xml", "/api/sitemap.xml"], async (req, res) => res.type("application/xml").send(await seo.sitemap(db)));
 
+  // Google Search Console's ownership check: answers only for the file named in the dashboard (Google & SEO).
+  app.get(/^\/(?:api\/)?(google[a-z0-9]{6,40}\.html)$/, async (req, res, next) => {
+    const file = req.params[0];
+    if ((await settings.get(db, "google"))?.searchConsole !== file) return next();
+    res.type("text/html").set("Cache-Control", "no-cache").send(`google-site-verification: ${file}`);
+  });
+
+  // Bing Webmaster Tools' ownership file, and the IndexNow key file (lets Bing and others accept our list of pages).
+  app.get(["/BingSiteAuth.xml", "/api/BingSiteAuth.xml"], async (req, res, next) => {
+    const code = (await settings.get(db, "google"))?.bing;
+    if (!code) return next();
+    res.type("application/xml").set("Cache-Control", "no-cache").send(`<?xml version="1.0"?>\n<users>\n\t<user>${code}</user>\n</users>\n`);
+  });
+  app.get(/^\/(?:api\/)?([a-f0-9]{32})\.txt$/, async (req, res, next) => {
+    if ((await settings.get(db, "indexNowKey")) !== req.params[0]) return next();
+    res.type("text/plain").send(req.params[0]);
+  });
+
   app.use("/api/admin", adminRoutes(db));
   app.use("/api", publicRoutes(db));
   app.use("/api", (req, res) => res.status(404).json({ error: "Not found." }));
@@ -81,8 +101,14 @@ function createApp(db) {
   app.use(async (req, res, next) => {
     if (req.method !== "GET" && req.method !== "HEAD") return next();
     if (path.extname(req.path)) return res.status(404).type("text/plain").send("Not found");
-    const page = await seo.render(db, req.path);
-    res.status(page.status).set("Cache-Control", "no-cache").type("html").send(page.html);
+    const page = await seo.render(db, req.path, `${req.protocol}://${req.get("host")}`);
+    // Pages are the same for everyone, so Vercel's edge may keep them for a few minutes (new deploys clear it).
+    // The dashboard is never kept.
+    const admin = req.path.startsWith("/admin");
+    res.set("Cache-Control", admin ? "no-store" : page.status === 200 ? "public, max-age=0, s-maxage=300, stale-while-revalidate=86400" : "public, max-age=0, s-maxage=60");
+    // Only the real address is indexed: the same site on another address (e.g. *.vercel.app) asks not to be.
+    if (config.production && req.hostname !== new URL(config.siteUrl).hostname) res.set("X-Robots-Tag", "noindex");
+    res.status(page.status).type("html").send(page.html);
   });
 
   app.use((req, res) => res.status(404).type("text/plain").send("Not found"));

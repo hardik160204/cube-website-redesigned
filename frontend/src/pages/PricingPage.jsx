@@ -98,7 +98,7 @@ const PRICING_FAQS = [
 ];
 
 const TRUST = [
-  { icon: ShieldCheck, title: "100% Encrypted & Compliant", text: "Enterprise security standards protecting sensitive banking, healthcare, and corporate call archives." },
+  { icon: ShieldCheck, title: "Encrypted & Compliance-Ready", text: "Enterprise security standards protecting sensitive banking, healthcare, and corporate call archives." },
   { icon: Zap, title: "Zero Downtime Migration", text: "Our telephony experts assist in porting numbers and configuring agent trunks with no system interruption." },
   { icon: Building2, title: "On-Premise or Cloud", text: "Flexible hosting options tailored directly to your IT team's architecture requirements." },
 ];

@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, CalendarClock, Users, CalendarDays, FileCheck2, FilePlus2, FileText, History, UserSearch, Image, Inbox, LayoutDashboard, ListTree, LogOut, Menu, PartyPopper, PencilLine, Bot as BotIcon, Settings, Tags, ShieldCheck, Trash2, Type, UserCog, X } from "lucide-react";
+import { BarChart3, CalendarClock, Check, Mail, Scale, Users, CalendarDays, FileCheck2, FilePlus2, FileText, History, UserSearch, Image, Inbox, LayoutDashboard, ListTree, LogOut, Menu, PartyPopper, PencilLine, Search, Bot as BotIcon, Settings, Tags, ShieldCheck, Trash2, Type, UserCog, X } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { api } from "../lib/api";
-import { Button, Card, Empty, Field, INPUT, PageTitle, act, downloadCsv, istTime, useResource, utcStamp } from "./ui";
+import { Button, Card, Dialog, EmailPreview, Empty, Field, INPUT, PageTitle, act, downloadCsv, istTime, useResource, utcStamp } from "./ui";
 import BlogAdmin from "./BlogAdmin";
 import MediaAdmin from "./MediaAdmin";
 import ContentAdmin, { startEditing } from "./ContentAdmin";
@@ -14,6 +14,9 @@ import FontsAdmin from "./FontsAdmin";
 import FestivalsAdmin from "./FestivalsAdmin";
 import BotAdmin from "./BotAdmin";
 import PricingAdmin from "./PricingAdmin";
+import GoogleAdmin from "./GoogleAdmin";
+import EmailsAdmin from "./EmailsAdmin";
+import LegalAdmin from "./LegalAdmin";
 import CalendarAdmin from "./CalendarAdmin";
 import ConsentAdmin from "./ConsentAdmin";
 import TeamAdmin from "./TeamAdmin";
@@ -37,6 +40,9 @@ const NAV = [
   ["festivals", "Festivals", PartyPopper, "festivals"],
   ["bot", "Chat bot", BotIcon, "bot"],
   ["pricing", "Pricing", Tags, "pricing"],
+  ["seo", "Google & SEO", Search, "seo"],
+  ["emails", "Emails", Mail, "emails"],
+  ["legal", "Legal pages", Scale, "legal"],
   ["media", "Images & videos", Image, "media"],
   ["team", "Team & social links", Users, "team"],
   ["analytics", "Visitor analytics", BarChart3, "analytics"],
@@ -189,6 +195,7 @@ function Overview({ me, out }) {
   const upcoming = (data?.bookings || []).filter((b) => b.status === "scheduled" && new Date(b.slot_start) >= new Date()).reverse().slice(0, 8);
   const tiles = stats
     ? [
+        ["Demo requests to confirm", stats.pending, "bookings"],
         ["Upcoming demos", stats.upcoming, "bookings"],
         ["All demo bookings", stats.bookings, "bookings"],
         ["Enquiries this week", stats.leadsWeek, "leads"],
@@ -233,23 +240,78 @@ function Overview({ me, out }) {
   );
 }
 
+// Confirming or declining a demo request: shows the exact email the visitor will get, and sends it on confirm.
+function Decide({ booking: b, confirm, onClose, onDone }) {
+  const [preview, setPreview] = useState(null);
+  const [email, setEmail] = useState(true);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    api(`/admin/bookings/${b.id}/email?confirm=${confirm ? 1 : 0}`)
+      .then(setPreview)
+      .catch((e) => toast.error(e.message));
+  }, [b.id, confirm]);
+  const go = async () => {
+    setBusy(true);
+    const r = await act(() => api(`/admin/bookings/${b.id}/decision`, { method: "POST", body: { confirm, email: confirm || email } }));
+    setBusy(false);
+    if (!r) return;
+    toast.success(confirm ? (r.emailed ? `Confirmed. ${b.email} has been emailed.` : "Confirmed. (Email sending isn't set up yet, so no email went out.)") : email ? "Declined, and they've been emailed." : "Declined.");
+    onDone();
+  };
+  return (
+    <Dialog title={confirm ? `Confirm the demo with ${b.name}?` : `Decline the demo request from ${b.name}?`} onClose={onClose} wide>
+      <p className="text-[14px] text-[#404348]">
+        {istTime(b.slot_start)} IST · {b.company}.{" "}
+        {confirm ? "They'll get this email with a calendar invite, and the demo goes into the sales team's calendars." : "The time slot becomes free again."}
+      </p>
+      {!confirm && (
+        <label className="mt-3 flex items-center gap-2 text-[14px] text-[#404348]">
+          <input type="checkbox" checked={email} onChange={(e) => setEmail(e.target.checked)} className="h-4 w-4 accent-[#0047FF]" /> Email them this message, inviting them to pick another time
+        </label>
+      )}
+      {preview && (confirm || email) && (
+        <div className="mt-4">
+          <p className="text-[13px] text-[#6B6E75]">
+            From <b className="font-medium text-[#0A0626]">{preview.from}</b> to <b className="font-medium text-[#0A0626]">{preview.to}</b> · {preview.subject}
+          </p>
+          {!preview.ready && <p className="mt-1 text-[13px] text-[#9A5B00]">Email sending isn't set up on the server yet (SMTP settings), so this won't actually be sent.</p>}
+          <div className="mt-2">
+            <EmailPreview html={preview.html} />
+          </div>
+        </div>
+      )}
+      <div className="mt-5 flex justify-end gap-2">
+        <Button variant="ghost" onClick={onClose}>
+          Back
+        </Button>
+        <Button variant={confirm ? "primary" : "danger"} disabled={busy || !preview} onClick={go}>
+          {busy ? "Working..." : confirm ? "Confirm and send email" : email ? "Decline and send email" : "Decline"}
+        </Button>
+      </div>
+    </Dialog>
+  );
+}
+
 function Bookings({ out }) {
   const [data, reload] = useResource("/admin/bookings", out);
   const [filter, setFilter] = useState("upcoming");
+  const [deciding, setDeciding] = useState(null);
   const all = data?.bookings || [];
   const now = new Date();
-  const rows = filter === "all" ? all : all.filter((b) => b.status === "scheduled" && new Date(b.slot_start) >= now).reverse();
+  const waiting = all.filter((b) => b.status === "pending");
+  const rows = filter === "all" ? all : filter === "pending" ? waiting.slice().reverse() : all.filter((b) => (b.status === "scheduled" || b.status === "pending") && new Date(b.slot_start) >= now).reverse();
   const setStatus = async (b, status) => (await act(() => api(`/admin/bookings/${b.id}`, { method: "PATCH", body: { status } }), "Status updated")) && reload();
   const remove = async (b) => window.confirm(`Delete the booking from ${b.name}? This cannot be undone.`) && (await act(() => api(`/admin/bookings/${b.id}`, { method: "DELETE" }), "Deleted")) && reload();
   return (
     <>
       <PageTitle
         title="Demo bookings"
-        desc="Every booking is also emailed to the sales team with a calendar invite. Times are India Standard Time."
+        desc={`New requests wait for you: ✓ confirms the demo and emails the visitor, ✗ declines it. ${waiting.length ? `${waiting.length} waiting for you. ` : ""}Times are India Standard Time.`}
         actions={
           <>
             <select value={filter} onChange={(e) => setFilter(e.target.value)} className={`${INPUT} w-auto`} aria-label="Show">
               <option value="upcoming">Upcoming</option>
+              <option value="pending">Waiting for confirmation ({waiting.length})</option>
               <option value="all">All bookings</option>
             </select>
             <Button
@@ -323,11 +385,23 @@ function Bookings({ out }) {
                       {b.message && <span className="mt-1 block whitespace-pre-wrap text-[13px] text-[#6B6E75]">{b.message}</span>}
                     </td>
                     <td className="px-5 py-3">
+                      {b.status === "pending" ? (
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-[#FFF4D6] px-2.5 py-1 text-[12px] font-medium text-[#7A4A00]">Waiting</span>
+                          <Button className="px-2.5" onClick={() => setDeciding({ booking: b, confirm: true })} aria-label={`Confirm the demo with ${b.name}`} title="Confirm">
+                            <Check size={16} strokeWidth={3} />
+                          </Button>
+                          <Button variant="danger" className="px-2.5" onClick={() => setDeciding({ booking: b, confirm: false })} aria-label={`Decline the demo request from ${b.name}`} title="Decline">
+                            <X size={16} strokeWidth={3} />
+                          </Button>
+                        </div>
+                      ) : (
                       <select value={b.status} onChange={(e) => setStatus(b, e.target.value)} className={`${INPUT} w-auto`} aria-label="Status">
                         <option value="scheduled">Scheduled</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled (frees the slot)</option>
                       </select>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <Button variant="danger" onClick={() => remove(b)} aria-label={`Delete booking from ${b.name}`}>
@@ -341,6 +415,7 @@ function Bookings({ out }) {
           </div>
         )}
       </Card>
+      {deciding && <Decide {...deciding} onClose={() => setDeciding(null)} onDone={() => (setDeciding(null), reload())} />}
     </>
   );
 }
@@ -728,6 +803,9 @@ export default function AdminApp() {
       festivals: <FestivalsAdmin {...props} />,
       bot: <BotAdmin {...props} />,
       pricing: <PricingAdmin {...props} />,
+      seo: <GoogleAdmin {...props} />,
+      emails: <EmailsAdmin {...props} />,
+      legal: <LegalAdmin {...props} />,
       media: <MediaAdmin {...props} />,
       calendar: <CalendarAdmin {...props} />,
       team: <TeamAdmin {...props} />,

@@ -22,7 +22,7 @@ const CREATE = "__create";
 const OTHER = "__other";
 const SECTIONS_ON_HOME = [["/#features", "Homepage: Features"], ["/#faq", "Homepage: FAQ"]];
 const SITE_PAGES = Object.entries(ROUTES)
-  .filter(([, m]) => !m.canonical)
+  .filter(([, m]) => !m.canonical && !m.noindex)
   .map(([path, m]) => [path, m.title.split("|")[0].trim()])
   .sort((a, b) => a[1].localeCompare(b[1]));
 

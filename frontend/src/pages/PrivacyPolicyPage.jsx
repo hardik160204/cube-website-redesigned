@@ -1,5 +1,7 @@
 import React from "react";
 import LegalDoc from "../components/page/LegalDoc";
+import { useSiteData } from "../lib/site";
+import { useLegal } from "../lib/legal";
 
 // Privacy policy for the website's forms, written for India's Digital Personal Data Protection Act, 2023 and
 // the IT Act, 2000. Draft wording for the company's legal review before launch.
@@ -70,7 +72,7 @@ const SECTIONS = [
   {
     title: "How we protect it",
     body: [
-      "Your data is encrypted in transit, stored in a database that is closed to public access, and readable only by our website's server. Our admin area requires a password and a one-time code sent by email, signs staff out after inactivity, and logs every sign-in and change. We review these measures regularly.",
+      "Your data is encrypted in transit, stored in a database that is closed to public access, and readable only by our website's server. Our admin area requires a password and a one-time code from an authenticator app, signs staff out after inactivity, and logs every sign-in and change. We review these measures regularly.",
     ],
   },
   {
@@ -84,7 +86,7 @@ const SECTIONS = [
         "have a grievance about our handling of your data addressed;",
         "nominate another person to exercise these rights for you in the event of your death or incapacity.",
       ],
-      "To exercise these rights, contact us using the details below. We respond within 30 days. If you are not satisfied with our response, you may complain to the Data Protection Board of India or, in the UAE, to the UAE Data Office.",
+      "To exercise these rights, contact us using the details below, or ask for your data to be deleted with the form on our Data deletion page (linked at the bottom of every page). We respond within 30 days. If you are not satisfied with our response, you may complain to the Data Protection Board of India or, in the UAE, to the UAE Data Office.",
     ],
   },
   {
@@ -93,10 +95,17 @@ const SECTIONS = [
       "When you first visit, we ask which optional cookies you allow. Nothing optional is switched on until you agree, and you can change your choice at any time from \"Cookie settings\" at the bottom of every page.",
       [
         "Strictly necessary (always on, no consent needed): your cookie choice, kept in your browser for 12 months; and, for our own staff only, a sign-in cookie for the admin area that is deleted when the browser closes. These hold no tracking data.",
-        "Analytics (optional, off until you allow it): we count which pages are visited, the website you came from and your type of device, browser and language. We do not store your IP address, set an analytics cookie or give you an identifier, and we delete these counts after 13 months.",
+        "Analytics (optional, off until you allow it): we count which pages are visited, the website you came from and your type of device, browser and language. Except as listed just below, we do not store your IP address, set an analytics cookie or give you an identifier, and we delete these counts after 13 months.",
         "Maps (optional, off until you allow it): the Google Maps view of our office on the Contact page. When it loads, Google sets its own cookies under Google's privacy policy. If you say no, the map is replaced by a link you can open yourself.",
       ],
       "We do not use advertising, profiling or cross-site tracking cookies. Your choice expires after 12 months and we ask again. We keep a receipt of each choice (a random identifier, your choices, the notice version and the time) for 13 months so we can show what you agreed to. You can change your choice any time, or block and delete cookies in your browser settings.",
+    ],
+  },
+  {
+    title: "Product news (optional)",
+    body: [
+      "If you tick \"send me occasional product news\" on one of our forms, or agree to it in another way, we email you news about our products from our own address. We send these emails ourselves; your address isn't shared with or sold to anyone.",
+      "Every such email has an unsubscribe link. Unsubscribing stops them at once. We then delete your details from our list and keep only a scrambled (hashed) copy of your email address, so you are never added again by mistake.",
     ],
   },
   {
@@ -112,14 +121,22 @@ const SECTIONS = [
   },
 ];
 
+// The built-in text; the dashboard's Legal pages can replace it.
+export const PRIVACY = { intro: "How Cube Software collects, uses and protects the information you share with us through this website.", updated: "6 November 2026", sections: SECTIONS };
+
+// Added to the cookie list while Google Analytics is switched on in the dashboard.
+const GA_ITEM =
+  "Google Analytics (part of Analytics, only if you allow it): Google counts the pages you visit and how you found us, and sets its own cookies (_ga) kept for up to 13 months. Advertising features are switched off. Google processes this data for us under Google's privacy policy.";
+// And this one while visitor details are switched on (Visitor analytics in the dashboard).
+const IP_ITEM =
+  "Visitor details (part of Analytics, only if you allow it): your IP address, the city, region and country it points to (looked up by our hosting provider, Vercel), the name of the network you use, your type of device and browser, and the pages you view. We use this to understand where our visitors come from. Kept for 90 days, then deleted.";
+// Shown in the cookie list with whatever is switched on now.
+const withExtras = (sections, extras) =>
+  extras.length ? sections.map((s) => (s.title === "Cookies" ? { ...s, body: s.body.map((b) => (Array.isArray(b) ? [...b.slice(0, 2), ...extras, ...b.slice(2)] : b)) } : s)) : sections;
+
 export default function PrivacyPolicyPage() {
-  return (
-    <LegalDoc
-      title="Privacy"
-      highlight="Policy"
-      intro="How Cube Software collects, uses and protects the information you share with us through this website."
-      updated="27 October 2026"
-      sections={SECTIONS}
-    />
-  );
+  const { google, tracking } = useSiteData();
+  const doc = useLegal("privacy") || PRIVACY;
+  const extras = [google?.gaId && GA_ITEM, tracking && IP_ITEM].filter(Boolean);
+  return <LegalDoc title="Privacy" highlight="Policy" {...doc} sections={withExtras(doc.sections, extras)} />;
 }

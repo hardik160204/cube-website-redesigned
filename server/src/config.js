@@ -40,6 +40,11 @@ module.exports = {
   // The schema is created/updated on start-up. Serverless starts constantly, so there it is applied by
   // running the SQL in supabase/schema.sql yourself (see the README) instead of on every cold start.
   applySchema: env.APPLY_SCHEMA ? env.APPLY_SCHEMA === "true" : !serverless,
+  // Shared request limits (limits.js): Upstash Redis over HTTPS, or the same keys from Vercel's Redis integration.
+  redis: {
+    url: (/^https:\/\//.test(env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL || "") && (env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL).replace(/\/$/, "")) || "",
+    token: filled(env.UPSTASH_REDIS_REST_TOKEN) || filled(env.KV_REST_API_TOKEN) || "",
+  },
   // Vercel Cron calls /api/cron/retention with this secret, since serverless has no long-running timer.
   cronSecret: filled(env.CRON_SECRET),
   supabase: {
@@ -65,5 +70,7 @@ module.exports = {
   salesEmails: (env.SALES_EMAILS || "sales@cube-software.com").split(",").map((s) => s.trim()).filter(Boolean),
   sessionHours: Number(env.SESSION_HOURS || 12),
   // Stored with every booking and enquiry. Update it when the Terms or Privacy Policy pages change.
-  termsVersion: "Terms 26 Oct 2026 / Privacy 27 Oct 2026 rev 2",
+  // The dates on the built-in Terms and Privacy Policy (the frontend's pages show the same). Edited pages use theirs.
+  termsDate: "26 October 2026",
+  privacyDate: "6 November 2026",
 };

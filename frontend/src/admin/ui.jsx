@@ -74,6 +74,32 @@ export function PageTitle({ title, desc, actions }) {
   );
 }
 
+// A pop-up that asks before something is done. Escape or the backdrop closes it; focus starts inside it.
+export function Dialog({ title, children, onClose, wide = false }) {
+  const box = React.useRef(null);
+  useEffect(() => {
+    const was = document.activeElement;
+    box.current?.querySelector("button, [href], input, select, textarea")?.focus();
+    const key = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", key);
+    return () => {
+      window.removeEventListener("keydown", key);
+      was?.focus?.();
+    };
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-[10010] flex items-center justify-center bg-[#0A0626]/60 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div ref={box} role="dialog" aria-modal="true" aria-label={title} className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl ${wide ? "max-w-[760px]" : "max-w-[480px]"}`}>
+        <h2 className="text-[18px] font-medium text-[#0A0626]">{title}</h2>
+        <div className="mt-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// An email exactly as it will look, in a frame that can't run anything.
+export const EmailPreview = ({ html, title = "Email preview" }) => <iframe title={title} srcDoc={html} sandbox="" className="h-[420px] w-full rounded-xl border border-[#E5EAF4] bg-[#F3F6FB]" />;
+
 export const Empty = ({ children }) => <p className="rounded-xl bg-[#F5F8FD] p-6 text-center text-[14px] text-[#6B6E75]">{children}</p>;
 
 // GET a resource, with reload (no path = nothing to load). Errors become a toast; 401 sends the admin back

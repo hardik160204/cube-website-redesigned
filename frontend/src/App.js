@@ -4,6 +4,8 @@ import { Suspense, lazy, useEffect, useLayoutEffect } from "react";
 import { editing } from "./lib/editable";
 import { currentFestival } from "./lib/festivals";
 import { useSiteData } from "./lib/site";
+import { useConsent } from "./lib/consent";
+import { googleAnalytics } from "./lib/ga";
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { motion, MotionConfig, useReducedMotion } from "framer-motion";
@@ -11,59 +13,62 @@ import { ease } from "./lib/motion";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import Home from "./pages/Home";
-import AboutPage from "./pages/AboutPage";
-import ClientVoices from "./pages/ClientVoices";
-import CubeCloudCCS from './pages/CubeCloudCCS';
-import CloudContactCenter from "./pages/CloudContactCenter";
-import VoiceLoggerInSync from "./pages/VoiceLoggerInSync";
-import CubeVoiceMail from "./pages/CubeVoiceMail";
-import ScreenLogger from "./pages/ScreenLogger";
-import CallBillingSoftware from "./pages/CallBillingSoftware";
-import CallistoVoiceLogger from "./pages/CallistoVoiceLogger";
-import IvrsServices from "./pages/IvrsServices";
-import CloudIvrPage from "./pages/CloudIvrPage"; 
-import CloudMissedCallPage from "./pages/CloudMissedCallPage";
-import CloudAutoDialerPage from "./pages/CloudAutoDialerPage";
-import CloudBulkVoiceCallPage from "./pages/CloudBulkVoiceCallPage";
-import CloudWhatsappBotPage from "./pages/CloudWhatsappBotPage";
-import CloudWebChatBotPage from "./pages/CloudWebChatBotPage";
-import CloudTollFreeNumberPage from "./pages/CloudTollFreeNumberPage";
-import CloudCrmIntegrationPage from "./pages/CloudCrmIntegrationPage";
-import CloudVirtualNumberPage from "./pages/CloudVirtualNumberPage";
-import CloudCallRecordingPage from "./pages/CloudCallRecordingPage";
-import CloudClickToCallPage from "./pages/CloudClickToCallPage";
-import CloudSmartCallRoutingPage from "./pages/CloudSmartCallRoutingPage";
-import CloudNumberMaskingPage from "./pages/CloudNumberMaskingPage";
-import CloudLiveAnalyticsPage from "./pages/CloudLiveAnalyticsPage";
-import CloudQualityAnalysisPage from "./pages/CloudQualityAnalysisPage";
-import ConferenceBridge from "./pages/ConferenceBridge";
-import VisualSupportPage from "./pages/VisualSupportPage";
-import CustomPage from "./pages/CustomPage";
-import PricingPage from "./pages/PricingPage"; 
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const ClientVoices = lazy(() => import("./pages/ClientVoices"));
+const CubeCloudCCS = lazy(() => import("./pages/CubeCloudCCS"));
+const CloudContactCenter = lazy(() => import("./pages/CloudContactCenter"));
+const VoiceLoggerInSync = lazy(() => import("./pages/VoiceLoggerInSync"));
+const CubeVoiceMail = lazy(() => import("./pages/CubeVoiceMail"));
+const ScreenLogger = lazy(() => import("./pages/ScreenLogger"));
+const CallBillingSoftware = lazy(() => import("./pages/CallBillingSoftware"));
+const CallistoVoiceLogger = lazy(() => import("./pages/CallistoVoiceLogger"));
+const IvrsServices = lazy(() => import("./pages/IvrsServices"));
+const CloudIvrPage = lazy(() => import("./pages/CloudIvrPage"));
+const CloudMissedCallPage = lazy(() => import("./pages/CloudMissedCallPage"));
+const CloudAutoDialerPage = lazy(() => import("./pages/CloudAutoDialerPage"));
+const CloudBulkVoiceCallPage = lazy(() => import("./pages/CloudBulkVoiceCallPage"));
+const CloudWhatsappBotPage = lazy(() => import("./pages/CloudWhatsappBotPage"));
+const CloudWebChatBotPage = lazy(() => import("./pages/CloudWebChatBotPage"));
+const CloudTollFreeNumberPage = lazy(() => import("./pages/CloudTollFreeNumberPage"));
+const CloudCrmIntegrationPage = lazy(() => import("./pages/CloudCrmIntegrationPage"));
+const CloudVirtualNumberPage = lazy(() => import("./pages/CloudVirtualNumberPage"));
+const CloudCallRecordingPage = lazy(() => import("./pages/CloudCallRecordingPage"));
+const CloudClickToCallPage = lazy(() => import("./pages/CloudClickToCallPage"));
+const CloudSmartCallRoutingPage = lazy(() => import("./pages/CloudSmartCallRoutingPage"));
+const CloudNumberMaskingPage = lazy(() => import("./pages/CloudNumberMaskingPage"));
+const CloudLiveAnalyticsPage = lazy(() => import("./pages/CloudLiveAnalyticsPage"));
+const CloudQualityAnalysisPage = lazy(() => import("./pages/CloudQualityAnalysisPage"));
+const ConferenceBridge = lazy(() => import("./pages/ConferenceBridge"));
+const VisualSupportPage = lazy(() => import("./pages/VisualSupportPage"));
+const CustomPage = lazy(() => import("./pages/CustomPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
 import { DEMO_EVENT } from "./components/demo";
-import DemoPage from "./pages/DemoPage";
-import MeetOurTeamPage from "./pages/MeetOurTeamPage";
-import CareerPage from "./pages/CareerPage";
-import ContactPage from './pages/ContactPage';
-import BlogPage from "./pages/BlogPage";
-import BlogPostPage from "./pages/BlogPostPage";
-import TermsPage from "./pages/TermsPage";
-import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import FinanceIndustryPage from './pages/FinanceIndustryPage';
-import BPOIndustryPage from './pages/BPOIndustryPage';
-import HealthcareIndustryPage from './pages/HealthcareIndustryPage';
-import RealEstateIndustryPage from './pages/RealEstateIndustryPage';
-import TelecomIndustryPage from './pages/TelecomIndustryPage';
-import TravelIndustryPage from './pages/TravelIndustryPage';
-import AdvertisingIndustryPage from './pages/AdvertisingIndustryPage';
-import NGOIndustryPage from './pages/NGOIndustryPage';
-import ElectionIndustryPage from './pages/ElectionIndustryPage';
-import EducationIndustryPage from './pages/EducationIndustryPage';
-import PrisonCallingSystem from './pages/PrisonCallingSystem';
-import StudentCallingSystem from './pages/StudentCallingSystem';
-import CallBillingBasic from './pages/CallBillingBasic'; // update path if needed
-import CallBillingStandard from './pages/CallBillingStandard';
-import CallBillingEnterprise from './pages/CallBillingEnterprise';
+const DemoPage = lazy(() => import("./pages/DemoPage"));
+const MeetOurTeamPage = lazy(() => import("./pages/MeetOurTeamPage"));
+const CareerPage = lazy(() => import("./pages/CareerPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const BlogPage = lazy(() => import("./pages/BlogPage"));
+const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
+const DataDeletionPage = lazy(() => import("./pages/DataDeletionPage"));
+const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
+const FinanceIndustryPage = lazy(() => import("./pages/FinanceIndustryPage"));
+const BPOIndustryPage = lazy(() => import("./pages/BPOIndustryPage"));
+const HealthcareIndustryPage = lazy(() => import("./pages/HealthcareIndustryPage"));
+const RealEstateIndustryPage = lazy(() => import("./pages/RealEstateIndustryPage"));
+const TelecomIndustryPage = lazy(() => import("./pages/TelecomIndustryPage"));
+const TravelIndustryPage = lazy(() => import("./pages/TravelIndustryPage"));
+const AdvertisingIndustryPage = lazy(() => import("./pages/AdvertisingIndustryPage"));
+const NGOIndustryPage = lazy(() => import("./pages/NGOIndustryPage"));
+const ElectionIndustryPage = lazy(() => import("./pages/ElectionIndustryPage"));
+const EducationIndustryPage = lazy(() => import("./pages/EducationIndustryPage"));
+const PrisonCallingSystem = lazy(() => import("./pages/PrisonCallingSystem"));
+const StudentCallingSystem = lazy(() => import("./pages/StudentCallingSystem"));
+const CallBillingBasic = lazy(() => import("./pages/CallBillingBasic"));
+const CallBillingStandard = lazy(() => import("./pages/CallBillingStandard"));
+const CallBillingEnterprise = lazy(() => import("./pages/CallBillingEnterprise"));
 
 import CubeMascot from "./components/CubeMascot";
 import CopyrightBar from "./components/CopyrightBar";
@@ -77,9 +82,17 @@ const AdminApp = lazy(() => import("./admin/AdminApp"));
 // So is a festival's theme, loaded only while one is on.
 const Festival = lazy(() => import("./festival/Festival"));
 
-// What the dashboard sets for the whole site: font sizes, and the festival showing now.
+// What the dashboard sets for the whole site: font sizes, the festival showing now, and Google Analytics (only for
+// visitors who allowed analytics after being told about it; never while editing or inside the dashboard's preview).
 function SiteLook() {
-  const { fonts, festival } = useSiteData();
+  const { fonts, festival, google } = useSiteData();
+  const consent = useConsent();
+  const gaId = google?.gaId;
+  useEffect(() => {
+    if (!gaId || editing() || window.top !== window.self) return undefined;
+    googleAnalytics(gaId, Boolean(consent?.analytics && consent?.ga));
+    return () => googleAnalytics(gaId, false);
+  }, [gaId, consent]);
   useEffect(() => {
     if (!fonts) return undefined;
     const root = document.documentElement;
@@ -129,6 +142,9 @@ const RouteTransition = ({ children }) => {
       />
       <motion.main
         key={pathname}
+        id="main"
+        tabIndex={-1}
+        className="focus:outline-none"
         initial={reduce ? false : { opacity: 0, transform: "translateY(16px)" }}
         animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
         transition={{ duration: 0.5, ease }}
@@ -142,9 +158,22 @@ const RouteTransition = ({ children }) => {
 function Site() {
   return (
     <div className="App cl-root cube-brand min-h-screen bg-white pb-9 text-[#31343A]">
+        {/* First thing a keyboard user reaches: jumps past the menus to the page itself. */}
+        <a
+          href="#main"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById("main")?.focus();
+          }}
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2.5 focus:font-medium focus:text-[#0A0626] focus:shadow-lg"
+        >
+          Skip to content
+        </a>
         <SiteHeader />
         <RouteTransition>
         <PageGate>
+        {/* Pages arrive as their own small files; the space is held so the footer doesn't jump while one loads. */}
+        <Suspense fallback={<div className="min-h-screen" />}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<AboutPage />} />
@@ -194,6 +223,9 @@ function Site() {
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/data-deletion" element={<DataDeletionPage />} />
+          <Route path="/unsubscribe" element={<UnsubscribePage />} />
           <Route path="/industries/finance" element={<FinanceIndustryPage />} />
           <Route path="/industries/bpo" element={<BPOIndustryPage />} />
           <Route path="/industries/healthcare" element={<HealthcareIndustryPage />} />
@@ -213,6 +245,7 @@ function Site() {
           
           <Route path="*" element={<CustomPage />} />
         </Routes>
+        </Suspense>
         </PageGate>
         </RouteTransition>
         <SiteFooter />

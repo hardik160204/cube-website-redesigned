@@ -1,5 +1,6 @@
 import React from "react";
 import LegalDoc from "../components/page/LegalDoc";
+import { useLegal } from "../lib/legal";
 
 // Standard website terms for Cube Software. Draft wording for the company's legal review before launch.
 const SECTIONS = [
@@ -68,14 +69,10 @@ const SECTIONS = [
   },
 ];
 
+// The built-in text; the dashboard's Legal pages can replace it.
+export const TERMS = { intro: "The terms that apply when you use the Cube Software website and its forms.", updated: "26 October 2026", sections: SECTIONS };
+
 export default function TermsPage() {
-  return (
-    <LegalDoc
-      title="Terms &"
-      highlight="Conditions"
-      intro="The terms that apply when you use the Cube Software website and its forms."
-      updated="26 October 2026"
-      sections={SECTIONS}
-    />
-  );
+  const doc = useLegal("terms") || TERMS;
+  return <LegalDoc title="Terms &" highlight="Conditions" {...doc} />;
 }

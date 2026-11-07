@@ -381,14 +381,30 @@ test("analytics: page views are stored without identifiers; admin pages and bots
   assert.equal(rows.length, 1);
   assert.equal(rows[0].device, "Mobile");
   assert.equal(rows[0].referrer, "google.com");
-  assert.ok(!("ip" in rows[0]));
-  const stats = await (await api("/api/admin/analytics?days=30", { cookie: await signIn() })).json();
+  assert.equal(rows[0].ip, "");
+  const cookie = await signIn();
+  const stats = await (await api("/api/admin/analytics?days=30", { cookie })).json();
   assert.ok(stats.pages.some((p) => p.label === "/pricing"));
+  // Visitor details only when switched on in the dashboard AND the visitor allowed it after being told (ip: true).
+  await pv({ path: "/about", ip: true });
+  assert.equal((await db.get("SELECT ip FROM page_views WHERE path = '/about'")).ip, "");
+  assert.equal((await api("/api/admin/settings/visitorTracking", { method: "PUT", cookie, body: { value: { on: true } } })).status, 200);
+  await fetch(base + "/api/pv", { method: "POST", headers: { "Content-Type": "application/json", "x-vercel-ip-city": "New%20Delhi", "x-vercel-ip-country": "IN" }, body: JSON.stringify({ path: "/contact", ip: true }) });
+  await pv({ path: "/careers" }); // no ip: true from the browser, so nothing personal
+  const row = await db.get("SELECT ip, city, country FROM page_views WHERE path = '/contact'");
+  assert.ok(row.ip.length > 0);
+  assert.deepEqual([row.city, row.country], ["New Delhi", "IN"]);
+  assert.equal((await db.get("SELECT ip FROM page_views WHERE path = '/careers'")).ip, "");
+  const report = await (await api("/api/admin/analytics?days=30", { cookie })).json();
+  assert.ok(report.tracking && report.visitors.some((v) => v.city === "New Delhi"));
+  assert.ok(report.cities.some((c) => c.label === "New Delhi"));
+  await api("/api/admin/settings/visitorTracking", { method: "PUT", cookie, body: { value: { on: false } } });
+  await db.run("DELETE FROM page_views WHERE path IN ('/about', '/contact', '/careers')");
 });
 
 test("team and social links: validated, stripped to known fields, served to the site", async () => {
   const cookie = await signIn();
-  assert.deepEqual(await (await api("/api/site")).json(), { team: null, socials: null, nav: null, bot: null, fonts: null, festival: null, pagesOff: null, sectionsOff: null, pricing: null });
+  assert.deepEqual(await (await api("/api/site")).json(), { team: null, socials: null, nav: null, bot: null, fonts: null, festival: null, pagesOff: null, sectionsOff: null, pricing: null, google: null, tracking: false });
   const put = (key, value) => api(`/api/admin/settings/${key}`, { method: "PUT", cookie, body: { value } });
   assert.equal((await put("team", [{ name: "A", linkedin: "javascript:alert(1)" }])).status, 400);
   assert.equal((await put("team", [{ name: "A", image: "javascript:alert(1)" }])).status, 400);
@@ -694,3 +710,108 @@ test("security headers are set", async () => {
   assert.equal(res.headers.get("x-powered-by"), null);
   assert.equal((await api("/api/nope")).status, 404);
 });
+
+test("Google & SEO: validated, only the Analytics ID reaches the site, the ownership file answers only for its own name", async () => {
+  const cookie = await signIn();
+  const put = (value) => api("/api/admin/settings/google", { method: "PUT", cookie, body: { value } });
+  assert.equal((await put({ gaId: "UA-12345" })).status, 400);
+  assert.equal((await put({ gaId: "G-ABC<script>" })).status, 400);
+  assert.equal((await put({ searchConsole: "../index.html" })).status, 400);
+  assert.equal((await put({ reports: [{ name: "x", url: "https://evil.example/lookerstudio.google.com/reporting/1" }] })).status, 400);
+  assert.equal((await put({ reports: [{ name: "x", url: "javascript:alert(1)" }] })).status, 400);
+  const report = { name: " Visitors ", url: "https://lookerstudio.google.com/reporting/abc-123/page/p_1" };
+  assert.equal((await put({ gaId: "G-ABC123XYZ", searchConsole: "google1a2b3c4d5e6f7a8b.html", reports: [report], extra: 1 })).status, 200);
+  assert.deepEqual((await (await api("/api/site")).json()).google, { gaId: "G-ABC123XYZ" });
+  assert.deepEqual((await (await api("/api/admin/settings", { cookie })).json()).google, { gaId: "G-ABC123XYZ", searchConsole: "google1a2b3c4d5e6f7a8b.html", googleMeta: "", bing: "", reports: [{ name: "Visitors", url: report.url }] });
+  for (const p of ["/google1a2b3c4d5e6f7a8b.html", "/api/google1a2b3c4d5e6f7a8b.html"]) assert.equal(await (await api(p)).text(), "google-site-verification: google1a2b3c4d5e6f7a8b.html");
+  assert.notEqual(await (await api("/google0000000000000000.html")).text(), "google-site-verification: google0000000000000000.html");
+  assert.match((await api("/api/demo-info")).headers.get("content-security-policy"), /script-src 'self' https:\/\/www\.googletagmanager\.com;/);
+});
+
+test("demo requests wait for the team: confirm or decline sends the visitor's email; the status can't skip it", async () => {
+  const cookie = await signIn();
+  const slot = (await (await api("/api/availability?days=14")).json()).slots[3];
+  assert.equal((await api("/api/bookings", { method: "POST", body: { ...person, email: "visitor@example.com", slot, timezone: "Asia/Kolkata", marketing: true } })).status, 201);
+  const b = await db.get("SELECT * FROM bookings WHERE slot_start = ?", slot);
+  assert.equal(b.status, "pending");
+  assert.ok(b.marketing);
+  assert.ok((await db.get("SELECT subscribed FROM contacts WHERE email = 'visitor@example.com'")).subscribed);
+  // Still holds its slot while waiting.
+  assert.ok(!(await (await api("/api/availability?days=14")).json()).slots.includes(slot));
+  assert.equal((await api(`/api/admin/bookings/${b.id}`, { method: "PATCH", cookie, body: { status: "scheduled" } })).status, 409);
+  const preview = await (await api(`/api/admin/bookings/${b.id}/email?confirm=1`, { cookie })).json();
+  assert.match(preview.from, /info@cube-software\.com/);
+  assert.match(preview.subject, /confirmed/);
+  assert.match(preview.html, /\/unsubscribe\?e=/);
+  assert.equal((await api(`/api/admin/bookings/${b.id}/decision`, { method: "POST", cookie, body: { confirm: true } })).status, 200);
+  assert.equal((await db.get("SELECT status FROM bookings WHERE id = ?", b.id)).status, "scheduled");
+  assert.equal((await api(`/api/admin/bookings/${b.id}/decision`, { method: "POST", cookie, body: { confirm: false } })).status, 409);
+});
+
+test("unsubscribe: only signed links work, it stops newsletters at once, and removal keeps just a hash", async () => {
+  const cookie = await signIn();
+  const mailing = require("../src/mailing");
+  const link = new URL(mailing.unsubscribeUrl("visitor@example.com"));
+  const e = link.searchParams.get("e");
+  assert.equal((await api("/api/unsubscribe", { method: "POST", body: { e, t: "forged-signature-forged-signatur" } })).status, 400);
+  assert.equal((await api("/api/unsubscribe", { method: "POST", body: { e: Buffer.from("other@example.com").toString("base64url"), t: link.searchParams.get("t") } })).status, 400);
+  // One-click from a mail app: the address is in the link itself.
+  assert.equal((await api(`/api/unsubscribe?${link.searchParams}`, { method: "POST", raw: "List-Unsubscribe=One-Click" })).status, 200);
+  const c = await db.get("SELECT id, subscribed, unsubscribed_at FROM contacts WHERE email = 'visitor@example.com'");
+  assert.equal(c.subscribed, false);
+  assert.ok(c.unsubscribed_at);
+  assert.equal((await api(`/api/admin/contacts/${c.id}`, { method: "DELETE", cookie })).status, 200);
+  assert.equal(await db.get("SELECT 1 FROM contacts WHERE email = 'visitor@example.com'"), undefined);
+  assert.ok(await db.get("SELECT 1 FROM email_suppressions WHERE email_hash = ?", mailing.hash("visitor@example.com")));
+  // They can't be added back, by a form or in the dashboard.
+  assert.equal((await api("/api/admin/contacts", { method: "POST", cookie, body: { email: "Visitor@Example.com", agreed: true } })).status, 409);
+});
+
+test("newsletters: validated, sent once to each subscribed person, with an unsubscribe link from the sender set in the dashboard", async () => {
+  const cookie = await signIn();
+  const sent = [];
+  const mail = require("../src/mail");
+  const realSend = mail.send;
+  const realReady = mail.configured;
+  mail.configured = true;
+  mail.send = async (m) => sent.push(m);
+  try {
+    for (const email of ["a@example.com", "b@example.com"]) assert.equal((await api("/api/admin/contacts", { method: "POST", cookie, body: { email, agreed: true } })).status, 201);
+    assert.equal((await api("/api/admin/contacts", { method: "POST", cookie, body: { email: "c@example.com" } })).status, 400); // agreement needed
+    await api("/api/admin/contacts", { method: "POST", cookie, body: { email: "gone@example.com", agreed: true } });
+    await db.run("UPDATE contacts SET subscribed = false WHERE email = 'gone@example.com'");
+    assert.equal((await api("/api/admin/settings/emailSender", { method: "PUT", cookie, body: { value: { name: "Cube", bookings: "info@cube-software.com", promotions: "news@cube-software.com" } } })).status, 200);
+    const bad = { subject: "Hi", content: { body: "x", buttonLabel: "Go", buttonUrl: "javascript:alert(1)" } };
+    assert.equal((await api("/api/admin/campaigns", { method: "POST", cookie, body: bad })).status, 400);
+    const { id } = await (await api("/api/admin/campaigns", { method: "POST", cookie, body: { subject: "New: Cube Voice Mail", content: { heading: "<b>Hello</b>", body: "First line\n\nSecond", buttonLabel: "See it", buttonUrl: "/services/voice-mail" } } })).json();
+    const r = await (await api(`/api/admin/campaigns/${id}/send`, { method: "POST", cookie })).json();
+    assert.equal(r.remaining, 0);
+    assert.deepEqual(sent.map((m) => m.to).sort(), ["a@example.com", "b@example.com"]);
+    assert.match(sent[0].from, /news@cube-software\.com/);
+    assert.ok(sent[0].headers["List-Unsubscribe"].includes("/api/unsubscribe?e="));
+    assert.ok(!sent[0].html.includes("<b>Hello</b>")); // escaped
+    await api(`/api/admin/campaigns/${id}/send`, { method: "POST", cookie });
+    assert.equal(sent.length, 2); // nobody twice
+    assert.equal((await db.get("SELECT status, sent_count FROM campaigns WHERE id = ?", id)).sent_count, 2);
+    assert.equal((await api(`/api/admin/campaigns/${id}`, { method: "PUT", cookie, body: { subject: "Changed", content: { body: "x" } } })).status, 409);
+  } finally {
+    mail.send = realSend;
+    mail.configured = realReady;
+  }
+});
+
+test("data deletion requests are stored for the team; pages get their own title, and unknown ones a real 404", async () => {
+  const cookie = await signIn();
+  assert.equal((await api("/api/deletion-requests", { method: "POST", body: { email: "not-an-email" } })).status, 400);
+  assert.equal((await api("/api/deletion-requests", { method: "POST", body: { email: "asha@example.com", name: "Asha", details: "Please delete my enquiry" } })).status, 201);
+  const reqs = (await (await api("/api/admin/deletion-requests", { cookie })).json()).requests;
+  assert.equal(reqs[0].email, "asha@example.com");
+  assert.equal((await api(`/api/admin/deletion-requests/${reqs[0].id}`, { method: "PATCH", cookie, body: { status: "done" } })).status, 200);
+  const about = await fetch(base + "/about");
+  assert.equal(about.status, 200);
+  assert.match(await about.text(), /<title>About Cube Software/);
+  const missing = await fetch(base + "/no-such-page-here");
+  assert.equal(missing.status, 404);
+  assert.match(await missing.text(), /noindex/);
+});
+

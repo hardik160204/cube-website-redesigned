@@ -440,9 +440,9 @@ export default function SiteHeader() {
       {barOpen && <AnnouncementBar onClose={() => setBarOpen(false)} />}
 
       <nav aria-label="Main" className="relative border-b border-[#EDEEEF] bg-white">
-        <div className="mx-auto flex h-[62px] max-w-[1280px] items-center gap-6 px-4 xl:px-6">
+        <div className="mx-auto flex h-[62px] max-w-[1536px] items-center gap-6 px-4 lg:h-[82px] xl:px-6">
           <Link to="/" className="flex shrink-0 items-center">
-            <img src="/logo75.png" alt="Cube Software home" className="h-9 w-auto object-contain" />
+            <img src="/logo-nav.png" alt="Cube Software home" width="804" height="220" className="h-11 w-auto object-contain lg:h-12 xl:h-[56px] 2xl:h-[66px]" />
           </Link>
 
           <ul ref={menuRef} className={`mx-auto hidden h-full items-center lg:flex ${tight ? "absolute invisible" : ready || waited ? "" : "invisible"}`}>
@@ -486,7 +486,7 @@ export default function SiteHeader() {
             })}
           </ul>
 
-          <div className="ml-auto flex items-center gap-3 lg:ml-0">
+          <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap lg:ml-0">
             {nav.expert !== false && (
               <a
                 href={tel(CONTACT.expert)}

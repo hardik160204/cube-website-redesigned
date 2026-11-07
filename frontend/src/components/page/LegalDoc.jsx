@@ -14,7 +14,7 @@ export default function LegalDoc({ title, highlight, intro, updated, sections })
               {sections.map((s, i) => (
                 <li key={s.title}>
                   <a href={`#s${i + 1}`} className="flex gap-2 text-[#4A4D53] transition-colors hover:text-primary">
-                    <span className="font-mono text-[#9CA3AF]">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="font-mono text-[#6B6E75]">{String(i + 1).padStart(2, "0")}</span>
                     {s.title}
                   </a>
                 </li>

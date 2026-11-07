@@ -48,7 +48,7 @@ export default function Hero() {
   return (
     <section className="cl-home-hero relative flex flex-col items-center overflow-hidden bg-white bg-[radial-gradient(60%_45%_at_50%_0%,#E3F6FF,transparent)] pb-20">
       <div className="flex w-full flex-col items-center px-4">
-        <div style={delay(0)} className="cl-fade-up mt-16">
+        <div style={delay(0)} className="cl-hh-badge cl-fade-up mt-16">
           <div className="inline-flex h-10 items-center gap-3 whitespace-nowrap rounded-full border border-[#e5e7eb] bg-white pl-[7px] pr-[18px] shadow-[0_6px_16px_-10px_rgb(35_0_220/0.25)] transition-[border-color,box-shadow] duration-150 hover:border-primary hover:shadow-[0_10px_22px_-12px_rgb(0_71_255/0.45)]">
             <span className="hidden items-center sm:inline-flex">
               {[Phone, Mic, Receipt].map((Icon, i) => (
@@ -61,7 +61,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="relative mt-6 w-[90%] text-center md:w-[560px] lg:w-[847px]">
+        <div className="cl-hh-title relative mt-6 w-[90%] text-center md:w-[560px] lg:w-[847px]">
           <svg aria-hidden="true" viewBox="0 0 30 30" className="absolute -top-4 left-0 h-7 w-7 -translate-x-1/2 text-[#FF0000] sm:left-6 lg:-top-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <path d="M14 3v7M5 9l5 4M22 9l-5 4" />
           </svg>
@@ -75,11 +75,11 @@ export default function Hero() {
           </h1>
         </div>
 
-        <p style={delay(160)} className="cl-fade-up mb-7 mt-5 w-full max-w-[619px] text-center text-base text-[#31343A] xl:text-xl">
+        <p style={delay(160)} className="cl-hh-body cl-fade-up mb-7 mt-5 w-full max-w-[619px] text-center text-base text-[#31343A] xl:text-xl">
           One software platform, one provider, and every communication function you need, fully integrated in the cloud.
         </p>
 
-        <ul {...trust.mark} style={delay(240)} className="cl-fade-up mb-8 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8">
+        <ul {...trust.mark} style={delay(240)} className="cl-hh-trust cl-fade-up mb-8 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8">
           {trust.items.map((t, i) => (
             <li key={`${i}-${t}`} className="flex items-center gap-1.5 text-sm font-medium text-[#31343A] md:text-base">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#D9F3FF] text-[#0047FF]">
@@ -90,7 +90,7 @@ export default function Hero() {
           ))}
         </ul>
 
-        <div style={delay(320)} className="cl-fade-up flex w-full max-w-[260px] flex-col gap-2 lg:w-auto lg:max-w-none lg:flex-row lg:gap-5">
+        <div style={delay(320)} className="cl-hh-actions cl-fade-up flex w-full max-w-[260px] flex-col gap-2 lg:w-auto lg:max-w-none lg:flex-row lg:gap-5">
           <button
             type="button"
             onClick={openDemo}

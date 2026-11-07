@@ -5,7 +5,7 @@ import { PageHero, Reveal, Section } from "../components/page/kit";
 import { api } from "../lib/api";
 import { readConsent, saveConsent, useConsent } from "../lib/consent";
 
-const EMPTY = { name: "", email: "", phone: "", company: "", jobTitle: "", website: "", interest: "", users: "", message: "", company_website: "" };
+const EMPTY = { name: "", email: "", phone: "", company: "", jobTitle: "", website: "", interest: "", users: "", message: "", company_website: "", marketing: false };
 
 const FIELD =
   "w-full rounded-xl border border-[#E5EAF4] bg-[#F7F9FD] px-4 py-3.5 text-base text-[#0A0626] transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-[#9CA3AF] focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10";
@@ -142,6 +142,10 @@ export default function ContactPage() {
                   and{" "}
                   <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Privacy Policy</a>, and consent to Cube Software using these details to contact me about my enquiry, including storing them on servers outside my country (EU).
                 </span>
+              </label>
+              <label htmlFor="c-news" className="mt-3 flex items-start gap-3 text-[13px] leading-5 text-[#4A4D53]">
+                <input id="c-news" type="checkbox" checked={form.marketing} onChange={(e) => setForm({ ...form, marketing: e.target.checked })} className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-[#0047FF]" />
+                <span>Optional: send me occasional product news from Cube Software. Unsubscribe any time with the link in every email.</span>
               </label>
               <div className="mt-2 flex flex-col items-center gap-5 sm:flex-row">
                 <button

@@ -603,7 +603,7 @@ function SectionSwitches({ path, off, onToggle }) {
 
 // --- Every page of the website, with its switch and its edit buttons ---------------------------------------------
 const SITE_PAGES = Object.entries(ROUTES)
-  .filter(([, m]) => !m.canonical)
+  .filter(([, m]) => !m.canonical && !m.noindex)
   .map(([path, m]) => ({ path, name: m.title.split("|")[0].trim() }));
 const PAGE_GROUPS = [
   ["Main pages", (p) => !/^\/(services|billing|industries|prison-calling|student-calling|terms|privacy)/.test(p)],

@@ -6,7 +6,7 @@ import { useCards } from "../../lib/editable";
 
 // Cube plan strip, filled from the pricing page: annual seat prices, then the page's three guarantees.
 const GUARANTEES = [
-  { icon: ShieldCheck, label: "100% Encrypted & Compliant" },
+  { icon: ShieldCheck, label: "Encrypted & Compliance-Ready" },
   { icon: RefreshCw, label: "Zero Downtime Migration" },
   { icon: Server, label: "On-Premise or Cloud" },
 ];

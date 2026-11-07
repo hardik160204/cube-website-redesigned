@@ -68,7 +68,7 @@ export default function CareerPage() {
         label="Career"
         title={
           <>
-            Join Cube Software, a global <span className="cl-hi">telecom tech leader,</span> and drive innovation with us!
+            Join Cube Software, building <span className="cl-hi">telecom technology</span> since 1990, and drive innovation with us!
           </>
         }
         actions={

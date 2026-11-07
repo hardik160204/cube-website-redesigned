@@ -51,6 +51,8 @@ html[data-festival] footer [class~="text-[#D6F0FF]"],
 html[data-festival] footer [class~="text-[#7FD8FF]"] { color: var(--f-foot); }
 html[data-festival] footer [class*="from-[#00B8FF]"] { background-image: linear-gradient(to bottom, color-mix(in srgb, var(--f-accent) 48%, transparent), transparent); }
 html[data-festival] [class~="text-[#9FD6FF]"] { color: var(--f-foot); }
+/* The tagline in the bottom bar. */
+html[data-festival] .fixed [class~="text-[#7FD8FF]"] { color: var(--f-accent); }
 
 /* The pattern behind heroes, turning very slowly. */
 html[data-festival] .cl-hero::after {

@@ -37,7 +37,7 @@ const SECTOR_STORY = {
   },
   Lending: {
     line: "Deliver flawless customer experiences while maintaining absolute regulatory compliance. Cube Software provides encrypted logging, automated collections, and secure cloud PBX for modern financial institutions.",
-    points: ["100% Regulatory Compliance", "Automated Debt Collection", "Secure SIP Trunking"],
+    points: ["Built for Regulatory Compliance", "Automated Debt Collection", "Secure SIP Trunking"],
   },
   Telecom: {
     line: "Powering the backbone of modern communication. We provide telecom operators and ISPs with high-capacity routing, SIP trunking, and advanced billing software.",

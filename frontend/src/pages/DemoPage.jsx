@@ -12,7 +12,7 @@ import { CONTACT, tel } from "../components/home/catalog";
 
 const POINTS = ["99.5% uptime SLA", "Ready. Set. Go Live!", "Voice without Limits"];
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const EMPTY = { name: "", phone: "", email: "", company: "", designation: "", interest: "", users: "", message: "", company_website: "" };
+const EMPTY = { name: "", phone: "", email: "", company: "", designation: "", interest: "", users: "", message: "", company_website: "", marketing: false };
 const FIELD =
   "w-full rounded-xl border border-[#E5EAF4] bg-[#F7F9FD] px-4 py-3 text-[15px] text-[#0A0626] transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-[#9CA3AF] focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10";
 
@@ -171,7 +171,7 @@ function Calendar({ month, setMonth, minMonth, maxMonth, available, selected, on
       </div>
       <div className="mt-5 grid grid-cols-7 gap-1 text-center">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="pb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8A8F98]">
+          <div key={d} className="pb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#6B6E75]">
             {d}
           </div>
         ))}
@@ -477,7 +477,7 @@ export default function DemoPage() {
                         >
                           {groups.map(([name, list]) => (
                             <div key={name}>
-                              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8A8F98]">{name}</p>
+                              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B6E75]">{name}</p>
                               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-1">
                                 {list.map((iso) => {
                                   const sel = iso === slot;
@@ -595,13 +595,17 @@ export default function DemoPage() {
                       , and consent to Cube Software using these details to schedule this demo and contact me about it, including storing them on servers outside my country (EU).
                     </span>
                   </label>
+                  <label htmlFor="b-news" className="mt-3 flex items-start gap-3 text-[13px] leading-5 text-[#4A4D53]">
+                    <input id="b-news" type="checkbox" checked={form.marketing} onChange={(e) => setForm({ ...form, marketing: e.target.checked })} className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-[#0047FF]" />
+                    <span>Optional: send me occasional product news from Cube Software. Unsubscribe any time with the link in every email.</span>
+                  </label>
                   <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row">
                     <button
                       type="submit"
                       disabled={sending}
                       className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-primary px-8 py-3.5 text-[16px] font-medium text-white shadow-[0_16px_30px_-14px_rgb(0_71_255/0.9)] transition-[background-color,transform] duration-200 hover:bg-[#2300DC] active:scale-[0.97] disabled:opacity-70 sm:w-auto"
                     >
-                      {sending ? "Booking..." : "Confirm booking"} <Send size={17} />
+                      {sending ? "Sending..." : "Request this demo"} <Send size={17} />
                     </button>
                     <span className="flex items-center gap-2 text-sm text-[#6B6E75]">
                       <ShieldCheck size={16} className="text-primary" /> Secure and confidential.
@@ -619,9 +623,9 @@ export default function DemoPage() {
                   >
                     <Check size={30} strokeWidth={3} />
                   </motion.span>
-                  <h2 className="mt-6 text-[28px] font-medium text-[#0A0626]">Your demo is booked</h2>
+                  <h2 className="mt-6 text-[28px] font-medium text-[#0A0626]">Your demo request is in</h2>
                   <p className="mt-3 max-w-[460px] text-[16px] leading-7 text-[#4A4D53]">
-                    {when} ({tz.replace(/_/g, " ")}). We've emailed a confirmation to <span className="font-medium text-[#0A0626]">{form.email}</span>, and our team will send the meeting link before the call.
+                    {when} ({tz.replace(/_/g, " ")}). Our team will confirm this time by email at <span className="font-medium text-[#0A0626]">{form.email}</span>, and send the meeting link before the call.
                   </p>
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                     <Link to="/" className="rounded-xl bg-primary px-7 py-3 font-medium text-white transition-colors hover:bg-[#2300DC]">

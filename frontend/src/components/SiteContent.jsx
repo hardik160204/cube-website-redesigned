@@ -1,8 +1,8 @@
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { isVideo, pagePath, setContent, useContent } from "../lib/content";
+import { isVideo, pagePath, refreshContent, setContent, useContent } from "../lib/content";
 import { EDIT_FLAG, editing as editMode } from "../lib/editable";
-import { useSiteData } from "../lib/site";
+import { refreshSiteData, useSiteData } from "../lib/site";
 
 // Applies the text, image and video edits made in the admin's visual editor. Each edit says "on this page
 // (or on every page), show X instead of Y"; matching text nodes, <img> sources and <video> sources are
@@ -16,7 +16,7 @@ const norm = (s) => s.replace(/\s+/g, " ").trim();
 // What a node showed before we changed it, so the editor can always find the original text or image.
 export const originals = new WeakMap();
 
-const skip = (el) => !el || el.closest("[data-cube-ui], script, style, textarea, input, [contenteditable]");
+const skip = (el) => !el || el.closest("[data-cube-ui], [data-cube-counting], script, style, textarea, input, [contenteditable]");
 
 // --- Removing things from the site ------------------------------------------------------------------------
 // A removal is saved as an edit whose "original" says what was clicked and how much goes with it:
@@ -188,7 +188,7 @@ function applyPhones(texts) {
     if (next === value) continue;
     const prev = originals.get(n);
     const shown = norm(value);
-    originals.set(n, { original: prev && prev.shown === shown ? prev.original : shown, shown: norm(next) });
+    originals.set(n, { original: prev && prev.shown === shown ? prev.original : shown, shown: norm(next), phone: true });
     n.nodeValue = next;
   }
 }
@@ -201,18 +201,22 @@ function apply(overrides, path, sectionsOff) {
     if (o.kind === "text") texts.set(o.original, o.replacement);
     else if (o.replacement) images.set(o.original, o);
   }
-  if (texts.size) {
+  {
     const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n = walk.nextNode(); n; n = walk.nextNode()) {
       const shown = norm(n.nodeValue);
       if (!shown) continue;
       const prev = originals.get(n);
-      const original = prev && prev.shown === shown ? prev.original : shown;
-      const next = texts.get(original);
+      const ours = prev && prev.shown === shown;
+      const original = ours ? prev.original : shown;
+      let next = texts.get(original);
+      // Text the header or footer kept from the last page's edit (or an edit just deleted) goes back to its own words.
+      if (next === undefined && ours && !prev.phone && original !== shown) next = original;
       if (next === undefined || next === shown || skip(n.parentElement)) continue;
       const [, lead, , trail] = n.nodeValue.match(/^(\s*)([\s\S]*?)(\s*)$/);
       n.nodeValue = `${lead}${next}${trail}`;
-      originals.set(n, { original, shown: norm(next) });
+      if (next === original) originals.delete(n);
+      else originals.set(n, { original, shown: norm(next) });
     }
   }
   applyPhones(texts);
@@ -280,13 +284,27 @@ export default function SiteContent() {
 
   useEffect(() => {
     run();
-    const watch = new MutationObserver(run);
+    // A number counting up changes every frame; reacting to it would hold back every other edit until it stops.
+    const counting = (r) => (r.target.nodeType === Node.TEXT_NODE ? r.target.parentElement : r.target)?.closest?.("[data-cube-counting]");
+    const watch = new MutationObserver((records) => records.some((r) => !counting(r)) && run());
     watch.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["src"] });
     return () => {
       watch.disconnect();
       cancelAnimationFrame(frame.current);
     };
   }, [overrides, run]);
+
+  // Edits saved in the dashboard while this tab sat open show up when the visitor comes back to it.
+  useEffect(() => {
+    if (editing) return undefined;
+    const back = () => {
+      if (document.visibilityState !== "visible") return;
+      refreshContent();
+      refreshSiteData();
+    };
+    document.addEventListener("visibilitychange", back);
+    return () => document.removeEventListener("visibilitychange", back);
+  }, [editing]);
 
   return editing ? (
     <Suspense fallback={null}>

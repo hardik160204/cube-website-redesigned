@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 import Hero from "../components/home/Hero";
+import StatsBand from "../components/home/StatsBand";
 import PlatformOrbit from "../components/home/PlatformOrbit";
 import Products from "../components/home/Products";
 import FeatureTabs from "../components/home/FeatureTabs";
@@ -34,7 +35,11 @@ const Home = () => {
 
   return (
     <>
-        <Hero />
+        {/* The hero and the numbers share the first screen (site-effects.css) */}
+        <div className="cl-home-top">
+          <Hero />
+          <StatsBand />
+        </div>
         <PlatformOrbit />
         <Products />
         <FeatureTabs />

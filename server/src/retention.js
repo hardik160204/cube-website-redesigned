@@ -16,6 +16,9 @@ async function sweep(db, now = Date.now()) {
     signInCodes: await del("DELETE FROM login_challenges WHERE expires_at < ?", now),
     consents: await del("DELETE FROM consents WHERE updated_at < now() - interval '13 months'"),
     pageViews: await del("DELETE FROM page_views WHERE at < now() - interval '13 months'"),
+    // Visitor details (IP address and place) are kept 90 days; the page counts stay.
+    visitorDetails: await del("UPDATE page_views SET ip = '', city = '', region = '', country = '' WHERE ip <> '' AND at < now() - interval '90 days'"),
+    networks: await del("DELETE FROM ip_networks WHERE looked_up_at < now() - interval '90 days'"),
     auditLog: await del("DELETE FROM audit_log WHERE at < now() - interval '1 year'"),
     bookings: await del("DELETE FROM bookings WHERE created_at < now() - make_interval(months => ?) AND slot_start < ?", enquiryMonths, new Date(now).toISOString()),
     leads: await del("DELETE FROM leads WHERE created_at < now() - make_interval(months => ?)", enquiryMonths),

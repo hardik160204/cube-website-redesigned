@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Cookie, X } from "lucide-react";
 import { ease } from "../lib/motion";
 import { readConsent, saveConsent, useCookieSettingsRequest } from "../lib/consent";
+import { useSiteData } from "../lib/site";
 
 // The cookie notice. New visitors, anyone whose choice is over 12 months old, and everyone after the notice
 // changes see it until they choose; "Cookie settings" in the bottom strip reopens it. Accept and Reject are
@@ -18,7 +19,7 @@ const CATEGORIES = [
   {
     key: "analytics",
     title: "Analytics",
-    desc: "Count which pages are visited, the site you came from and your device type, so we can improve the site. No IP address, cookie or visitor id is stored. Deleted after 13 months.",
+    desc: "Count which pages are visited, the site you came from and your device type, so we can improve the site. Unless noted below, no IP address, cookie or visitor id is stored. Deleted after 13 months.",
   },
   {
     key: "functional",
@@ -26,6 +27,11 @@ const CATEGORIES = [
     desc: "Show the Google Maps view of our office on the Contact page. Google sets its own cookies when the map loads.",
   },
 ];
+
+// Shown with Analytics while Google Analytics is switched on in the dashboard.
+const GA_NOTE = "Google Analytics also counts visits and sets its own cookies (_ga, kept up to 13 months; no advertising use).";
+// And this while visitor details are switched on (Visitor analytics in the dashboard).
+const IP_NOTE = "We also record your IP address, the city and country it points to, and your device, to see where our visitors come from (kept 90 days).";
 
 function Toggle({ checked, onChange, disabled, label }) {
   return (
@@ -49,12 +55,18 @@ export default function CookieConsent() {
   const [custom, setCustom] = useState(false);
   const [choices, setChoices] = useState({ functional: false, analytics: false });
   const first = useRef(null);
+  const { google, tracking, ready } = useSiteData();
+  const ga = Boolean(google?.gaId);
+  const ip = tracking;
 
   useEffect(() => {
-    if (readConsent()) return undefined;
+    if (!ready) return undefined;
+    const c = readConsent();
+    // Asked again only if they allowed analytics before Google Analytics or visitor details were named here.
+    if (c && !(c.analytics && ((ga && !c.ga) || (ip && !c.ip)))) return undefined;
     const t = setTimeout(() => setOpen(true), 600);
     return () => clearTimeout(t);
-  }, []);
+  }, [ready, ga, ip]);
 
   useCookieSettingsRequest(
     useCallback(() => {
@@ -71,7 +83,7 @@ export default function CookieConsent() {
   }, [open, custom]);
 
   const choose = (value) => {
-    saveConsent(value);
+    saveConsent({ ...value, ga, ip });
     setOpen(false);
     setCustom(false);
   };
@@ -106,7 +118,7 @@ export default function CookieConsent() {
             </h2>
           </div>
           <p id="cookie-desc" className="mt-3 text-[14px] leading-6 text-[#4A4D53]">
-            We use strictly necessary storage to run this site. With your permission we also count page visits (no IP address or id kept) and load Google
+            We use strictly necessary storage to run this site. With your permission we also count page visits {ip ? "(details just below)" : "(no IP address or id kept)"} and load Google
             Maps, which sets its own cookies. We don't use advertising or cross-site tracking cookies. Change your choice anytime from <span className="font-medium text-[#0A0626]">Cookie settings</span> at the bottom of the page.
             See our{" "}
             <Link to="/privacy" className="font-medium text-primary underline underline-offset-2">
@@ -114,6 +126,8 @@ export default function CookieConsent() {
             </Link>
             .
           </p>
+          {ga && <p className="mt-2 text-[13px] leading-5 text-[#4A4D53]">{GA_NOTE}</p>}
+          {ip && <p className="mt-2 text-[13px] leading-5 text-[#4A4D53]">{IP_NOTE}</p>}
 
           <AnimatePresence initial={false}>
             {custom && (
@@ -128,6 +142,8 @@ export default function CookieConsent() {
                     <span>
                       <span className="block text-[14px] font-medium">{c.title}</span>
                       <span className="mt-0.5 block text-[13px] leading-5 text-[#5A5E66]">{c.desc}</span>
+                      {ga && c.key === "analytics" && <span className="mt-1 block text-[13px] leading-5 text-[#5A5E66]">{GA_NOTE}</span>}
+                      {ip && c.key === "analytics" && <span className="mt-1 block text-[13px] leading-5 text-[#5A5E66]">{IP_NOTE}</span>}
                     </span>
                     <Toggle label={c.title} checked={Boolean(c.locked || choices[c.key])} disabled={c.locked} onChange={(v) => setChoices({ ...choices, [c.key]: v })} />
                   </li>

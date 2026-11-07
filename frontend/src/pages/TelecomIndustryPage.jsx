@@ -25,7 +25,7 @@ const SECTIONS = [
     ],
   },
   {
-    title: "Unmatched reliability for service providers.",
+    title: "Reliability service providers can count on.",
     list: [
       "High-Capacity SIP Trunking & PRI Lines",
       "Advanced Voice Logger Integrations",

@@ -1,4 +1,4 @@
-// Emails to the sales team (every booking and enquiry) and a confirmation to the visitor who booked a demo.
+// Sending email, and the emails to the sales team (every demo request and enquiry). Emails to visitors are in mailing.js.
 // Without SMTP settings (local development) messages are printed to the console instead of sent.
 const nodemailer = require("nodemailer");
 const config = require("./config");
@@ -64,44 +64,27 @@ async function send(message) {
 
 const SALES_PHONE = "+91 80 68 69 44 40";
 
-async function bookingEmails(b, salesEmails, demo, phone = SALES_PHONE) {
+// A new demo request, for the sales team. The visitor hears from us only once the team confirms it in the
+// dashboard (mailing.js sends that email, with the calendar invite).
+async function bookingRequestEmail(b, salesEmails) {
   const ist = when(b.slot_start, "Asia/Kolkata");
-  const local = when(b.slot_start, b.timezone);
-  const invite = ics({
-    id: b.id,
-    start: b.slot_start,
-    minutes: demo.slotMinutes,
-    summary: "Cube Software product demo",
-    description: `Demo with ${b.name} (${b.company}). Phone ${b.phone}. Email ${b.email}.`,
-    organizer: salesEmails[0] || "sales@cube-software.com",
-  });
-  const details = table([
-    ["Date & time (IST)", ist],
-    [`Visitor's time (${b.timezone})`, local],
-    ["Name", b.name],
-    ["Email", b.email],
-    ["Phone", b.phone],
-    ["Company", b.company],
-    ["Designation", b.designation],
-    ["Team size", b.users],
-    ["Interested in", b.interest],
-    ["Message", b.message],
-  ]);
   await send({
     to: salesEmails.join(","),
     replyTo: b.email,
-    subject: `New demo booked: ${b.company} — ${ist}`,
-    html: `<h2 style="font:600 20px Arial,sans-serif;color:#0047FF">New demo booking</h2>${details}`,
-    icalEvent: { method: "REQUEST", content: invite },
-  });
-  await send({
-    to: b.email,
-    subject: "Your Cube Software demo is scheduled",
-    html: `<p style="font:15px Arial,sans-serif">Hi ${esc(b.name)},</p>
-<p style="font:15px Arial,sans-serif">Thank you for booking a demo with Cube Software. Your session is on <b>${esc(local)}</b> (${esc(b.timezone)}).
-Our team will send you the meeting link before the call. Need to change the time? Reply to this email or call ${esc(phone)}.</p>
-<p style="font:15px Arial,sans-serif">— Team Cube Software</p>`,
-    icalEvent: { method: "REQUEST", content: invite },
+    subject: `New demo request: ${b.company} — ${ist}`,
+    html: `<h2 style="font:600 20px Arial,sans-serif;color:#0047FF">New demo request: please confirm or decline it</h2>
+<p style="font:14px Arial,sans-serif;color:#404348">Open the dashboard → Demo bookings and press ✓ to confirm (the visitor is then emailed) or ✗ to decline.</p>${table([
+      ["Date & time (IST)", ist],
+      [`Visitor's time (${b.timezone})`, when(b.slot_start, b.timezone)],
+      ["Name", b.name],
+      ["Email", b.email],
+      ["Phone", b.phone],
+      ["Company", b.company],
+      ["Designation", b.designation],
+      ["Team size", b.users],
+      ["Interested in", b.interest],
+      ["Message", b.message],
+    ])}`,
   });
 }
 
@@ -125,4 +108,4 @@ async function leadEmail(l, salesEmails) {
   });
 }
 
-module.exports = { SALES_PHONE, bookingEmails, leadEmail, esc, ics, configured: Boolean(transport) };
+module.exports = { SALES_PHONE, bookingRequestEmail, leadEmail, send, esc, ics, table, when, configured: Boolean(transport) };

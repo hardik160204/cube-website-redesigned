@@ -12,7 +12,7 @@ const SECTIONS = [
       "Reach thousands of customers instantly with pre-recorded voice messages. Automate your announcements, promotional offers, and reminders with just one click.",
     ],
     image: "/bulk-voice-call-hero.png", imageAlt: "Bulk Voice Calls Illustration",
-    button: "Start Free Trial",
+    button: "Book a Free Demo",
   },
   {
     title: <>{"Mass Communication "}<Hi>Made Simple</Hi></>,
@@ -45,10 +45,10 @@ const SECTIONS = [
   {
     title: <>{"Why choose our "}<Hi>Bulk Voice Solution?</Hi></>,
     cards: [
-      { icon: ListChecks, title: "DND Scrubbing", desc: "Ensure 100% compliance. Our system automatically filters out Do-Not-Disturb (DND) registered numbers before initiating the broadcast." },
+      { icon: ListChecks, title: "DND Scrubbing", desc: "Stay compliant. Our system automatically filters out Do-Not-Disturb (DND) registered numbers before initiating the broadcast." },
       { icon: PhoneCall, title: "Automated Retries", desc: "Maximize reach with auto-retry features. If a call is unanswered or busy, the system will automatically attempt to call back at a later interval." },
       { icon: Languages, title: "Text-to-Speech (TTS)", desc: "Don't have pre-recorded audio? Simply type your message, and our advanced AI will convert your text into natural-sounding voice audio in regional languages." },
-      { icon: Maximize, title: "Unmatched Scalability", desc: "Whether sending 500 calls or 500,000 calls, our multi-tenant cloud architecture processes massive volumes simultaneously without lag." },
+      { icon: Maximize, title: "Massive Scalability", desc: "Whether sending 500 calls or 500,000 calls, our multi-tenant cloud architecture processes massive volumes simultaneously without lag." },
       { icon: Mic, title: "Interactive Press 1 (IVR)", desc: "Convert one-way broadcasts into two-way communication. Allow users to \"Press 1\" during the message to instantly connect with a live sales agent." },
       { icon: BarChart, title: "Real-Time Analytics", desc: "Track answered calls, failed calls, average listen durations, and key presses via a comprehensive real-time dashboard." },
     ],

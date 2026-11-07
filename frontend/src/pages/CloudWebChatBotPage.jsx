@@ -11,7 +11,7 @@ const SECTIONS = [
     body: [
       "Convert your website visitors into loyal customers instantly. Deploy an intelligent AI chatbot to automate support, capture leads, and provide 24/7 assistance directly on your site.",
     ],
-    button: "Deploy Your Bot Free",
+    button: "Book a Free Demo",
   },
   {
     title: <>{"Turn Traffic into "}<Hi>Transactions</Hi></>,

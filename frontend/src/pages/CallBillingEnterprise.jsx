@@ -57,7 +57,7 @@ const PAGE_DATA = {
 };
 
 const ENTERPRISE_FEATURES = [
-  { icon: ShieldCheck, title: "Enterprise Grade Security", description: "End-to-end encryption, audit trails, and strict compliance with global telecom data protection regulations." },
+  { icon: ShieldCheck, title: "Enterprise Grade Security", description: "End-to-end encryption and audit trails, built to help you meet telecom data protection regulations." },
   { icon: Layers, title: "Custom Middleware", description: "Need a unique integration? Our engineers can develop custom middleware to bridge the billing engine with proprietary systems." },
   { icon: Database, title: "Massive Scalability", description: "Engineered to handle millions of call records per month without performance degradation." },
   { icon: Headphones, title: "Priority Support SLA", description: "Enterprise clients receive priority 24/7 technical support and dedicated account management." },

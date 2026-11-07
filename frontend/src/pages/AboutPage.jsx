@@ -34,7 +34,7 @@ const DIRECTORS = [
 const MILESTONES = [
   { year: "1990", text: "Cube Software is founded, pioneering Computer Telephony Integration in India." },
   { year: "1998", text: "Callisto Voice Logger launches, becoming a recording standard for hotels, banks and helplines." },
-  { year: "2005", text: "Quick Call Dialer powers some of the country's largest BPO floors." },
+  { year: "2005", text: "Quick Call Dialer powers busy BPO floors across India." },
   { year: "2012", text: "Enterprise rollouts with international telecom vendors across multiple continents." },
   { year: "2018", text: "Cloud-hosted telephony suite debuts — dialer and logger without hardware." },
   { year: "2026", text: "AI-powered routing, transcription and analytics join the platform." },
